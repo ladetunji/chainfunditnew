@@ -1,0 +1,94 @@
+import React from "react";
+import { ArrowRight, Headphones } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+
+type Props = {};
+
+const Hero = (props: Props) => {
+  return (
+    <div className="mt-16 mb-10 font-source px-12">
+      <div className="flex gap-5 w-full h-fit my-5">
+        <section className="md:w-2/3 bg-[url('/images/bolu.png')] bg-cover bg-no-repeat h-[600px] flex">
+          <div className="flex gap-8 mt-auto ml-16 -mb-3">
+            <section className="w-fit h-fit bg-[#FFFFFF33] rounded-xl backdrop-blur-sm p-2.5">
+              <div className="flex gap-2">
+                <p className="w-6 h-6 bg-[#104901] rounded-sm flex justify-center items-center font-source font-bold text-lg text-white">
+                  ₦
+                </p>
+                <span className="font-source font-semibold text-base text-white">Amount raised</span>
+              </div>
+              <p className="font-source font-semibold text-3xl text-white">400,000</p>
+            </section>
+            <section className="w-fit h-fit bg-[#FFFFFF33] rounded-xl backdrop-blur-sm p-2.5">
+              <div className="flex gap-2">
+                <p className="w-6 h-6 bg-[#104901] rounded-sm flex justify-center items-center font-source font-bold text-base text-white">
+                  <Headphones size={16} />
+                </p>
+                <span className="font-source font-semibold text-base text-white">Campaign goal</span>
+              </div>
+              <p className="font-source font-semibold text-3xl text-white">Hearing aids for Bolu</p>
+            </section>
+          </div>
+        </section>
+        <section className="md:w-1/3 flex flex-col mt-auto gap-3">
+          <div className="flex gap-2 items-center">
+            <ul className="flex">
+              <li className="w-10 h-10 rounded-full border-2 border-white">
+                <Image
+                  src="/images/avatar-3.png"
+                  alt="avatar"
+                  width={40}
+                  height={40}
+                />
+              </li>
+              <li className="w-10 h-10 rounded-full border-2 border-white -ml-3">
+                <Image
+                  src="/images/avatar-4.png"
+                  alt="avatar"
+                  width={40}
+                  height={40}
+                />
+              </li>
+              <li className="w-10 h-10 rounded-full border-2 border-white -ml-3">
+                <Image
+                  src="/images/avatar-5.png"
+                  alt="avatar"
+                  width={40}
+                  height={40}
+                />
+              </li>
+              <li className="w-10 h-10 rounded-full border-2 border-white -ml-3">
+                <Image
+                  src="/images/avatar-6.png"
+                  alt="avatar"
+                  width={40}
+                  height={40}
+                />
+              </li>
+            </ul>
+            <p className="font-source font-normal text-xs text-black">
+              Over 100 life-changing experiences created on Chainfundit
+            </p>
+          </div>
+
+          <p className="font-source font-bold text-5xl text-black">
+            Change the world{" "}
+            <span className="font-serif font-semibold italic">
+              one donation{" "}
+            </span>
+            at a time
+          </p>
+          <span className="font-source font-medium text-base text-black">
+            Support causes you love with fundraisers built on modern tools
+          </span>
+          <Button className="h-16 flex justify-between font-source font-semibold text-2xl">
+            Create Campaign <ArrowRight size={32} className="text-3xl" />{" "}
+          </Button>
+        </section>
+      </div>
+    </div>
+  );
+};
+
+export default Hero;
