@@ -5,6 +5,8 @@ import Image from "next/image";
 import { PiYoutubeLogoLight } from "react-icons/pi";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
+import CardDetailsDrawer from "./CardDetailsDrawer";
+import { NotificationsMarquee } from "./notififications-marquee";
 
 type Props = {};
 
@@ -16,6 +18,58 @@ const Main = (props: Props) => {
   ];
 
   const [currentImage, setCurrentImage] = useState(0);
+  const [openCard, setOpenCard] = useState<number | null>(null);
+
+  const cardDetails = [
+    {
+      title: "91 Days of Kindness Challenge",
+      description:
+        "Nigeria is a nation built on resilience, unity, and a love for community. This campaign aims to spread kindness across the country, one act at a time. Join us in making a difference!",
+      raised: "₦1,201,000 raised",
+      image: "/images/card-img1.png",
+      extra: "Goal: ₦2,000,000. Over 500 acts of kindness completed so far!",
+      date: "March 24, 2025",
+      timeLeft: "5 days left",
+      avatar: "/images/avatar-7.png",
+      creator: "Adebola Ajani",
+      createdFor: "Ajegunle Children’s Charity",
+      percentage: "40%",
+      total: "₦3,000,000 total",
+      donors: 64,
+    },
+    {
+      title: "Let’s Help Get Jeffrey off the Streets",
+      description:
+        "Jeffrey has been a recognisable face in Brunswick village. This campaign is dedicated to helping him find a home and a new start. Your support can change a life.",
+      raised: "$121,500 raised",
+      image: "/images/card-img2.png",
+      extra: "Goal: $150,000. Housing secured, now raising for job training.",
+      date: "April 28, 2025",
+      timeLeft: "12 days left",
+      avatar: "/images/avatar-7.png",
+      creator: "Adebola Ajani",
+      createdFor: "Ajegunle Children’s Charity",
+      percentage: "93%",
+      total: "₦3,000,000 total",
+      donors: 64,
+    },
+    {
+      title: "Support Kamala’s Tuition at West End Primary",
+      description:
+        "Kamala, our first daughter, won a part-scholarship to attend West End Primary. Help us cover the remaining tuition and give her the education she deserves!",
+      raised: "£2,000 raised",
+      image: "/images/card-img3.png",
+      extra: "Goal: £5,000. 40% funded. Every bit helps Kamala stay in school!",
+      date: "June 4, 2025",
+      timeLeft: "7 days left",
+      avatar: "/images/avatar-7.png",
+      creator: "Adebola Ajani",
+      createdFor: "Ajegunle Children’s Charity",
+      percentage: "13%",
+      total: "₦3,000,000 total",
+      donors: 64,
+    },
+  ];
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -91,7 +145,7 @@ const Main = (props: Props) => {
           </ul>
         </section>
       </div>
-      {/* discover */}
+      {/* campaign cards */}
       <div className="p-12 w-full h-fit flex flex-col gap-5 my-5 bg-[#F2F1E9]">
         <div className="flex justify-between items-center">
           <section className="flex flex-col gap-3">
@@ -112,72 +166,48 @@ const Main = (props: Props) => {
         </div>
 
         <div className="flex gap-3 w-full">
-          <section className="w-1/3 p-2 flex flex-col gap-2">
-            <Image
-              src="/images/card-img1.png"
-              alt="Campaign 1"
-              width={400}
-              height={300}
-            />
-            <p className="font-source font-medium text-xl text-black">
-              91 Days of Kindness Challenge
-            </p>
-            <span className="font-source font-normal text-base text-black">
-              Nigeria is a nation built on resilience, unity, and a love...
-            </span>
-
-            <span className="font-medium text-lg text-black">
-              ₦1,201,000 raised
-            </span>
-            <div className="w-full bg-[#FBFBFB] h-2">
-              <div className="w-[60%] bg-[#104901] h-full"></div>
-            </div>
-          </section>
-          <section className="w-1/3 p-2 flex flex-col gap-2">
-            <Image
-              src="/images/card-img2.png"
-              alt="Campaign 2"
-              width={400}
-              height={300}
-            />
-            <p className="font-source font-medium text-xl text-black">
-            Let’s Help Get Jeffrey off the Streets
-            </p>
-            <span className="font-source font-normal text-base text-black">
-            Jeffrey has been a recognisable face in Brunswick village...
-            </span>
-
-            <span className="font-medium text-lg text-black">
-            $121,500 raised
-            </span>
-            <div className="w-full bg-[#FBFBFB] h-2">
-              <div className="w-[93%] bg-[#104901] h-full"></div>
-            </div>
-          </section>
-          <section className="w-1/3 p-2 flex flex-col gap-2">
-            <Image
-              src="/images/card-img3.png"
-              alt="Campaign 3"
-              width={400}
-              height={300}
-            />
-            <p className="font-source font-medium text-xl text-black">
-            Support Kamala’s Tuition at West End Primary
-            </p>
-            <span className="font-source font-normal text-base text-black">
-            Kamala, our first daughter won a part-scholarship to attend...
-            </span>
-
-            <span className="font-medium text-lg text-black">
-            £2,000 raised
-            </span>
-            <div className="w-full bg-[#FBFBFB] h-2">
-              <div className="w-[13%] bg-[#104901] h-full"></div>
-            </div>
-          </section>
+          {cardDetails.map((card, idx) => (
+            <section
+              key={idx}
+              className="w-1/3 p-2 flex flex-col gap-2 cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => setOpenCard(idx)}
+            >
+              <Image
+                src={card.image}
+                alt={card.title}
+                width={400}
+                height={300}
+              />
+              <p className="font-source font-medium text-xl text-black">
+                {card.title}
+              </p>
+              <span className="font-source font-normal text-base text-black">
+                {card.description.slice(0, 60)}...
+              </span>
+              <span className="font-medium text-lg text-black">
+                {card.raised}
+              </span>
+              <div className="w-full bg-[#FBFBFB] h-2">
+                <div
+                  className={
+                    idx === 0
+                      ? "w-[60%] bg-[#104901] h-full"
+                      : idx === 1
+                      ? "w-[93%] bg-[#104901] h-full"
+                      : "w-[13%] bg-[#104901] h-full"
+                  }
+                ></div>
+              </div>
+            </section>
+          ))}
+          <CardDetailsDrawer
+            open={openCard !== null}
+            onOpenChange={(open) => !open && setOpenCard(null)}
+            card={openCard !== null ? cardDetails[openCard] : null}
+          />
         </div>
       </div>
-      {/* all you need */}
+      {/* features*/}
       <div className="px-12 mt-5">
         <h2 className="font-semibold text-3xl text-black">
           All you need for a successful fundraiser
@@ -233,7 +263,7 @@ const Main = (props: Props) => {
           </section>
           <section className="bg-[url('/images/main-2.png')] bg-cover bg-no-repeat md:w-1/3 h-[500px]">
             <section className="bg-[linear-gradient(180deg,rgba(255,255,255,0)_70%,#fff_100%)] h-full px-4 py-6 flex flex-col gap-3">
-              <div className="w-[270px] h-[125px] p-4 rounded-xl bg-white flex items-start gap-3 font-dm">
+              <div className="w-[300px] h-fit p-4 rounded-xl bg-white flex items-start gap-3 font-dm">
                 <Image
                   src="/images/avatar-2.png"
                   alt="avatar"
@@ -262,7 +292,6 @@ const Main = (props: Props) => {
           </section>
         </div>
       </div>
-      {/* guide */}
       <div className="px-12 flex gap-5 w-full h-fit my-5">
         <section className="bg-[url('/images/video.png')] bg-cover bg-no-repeat md:w-1/3 h-[650px]">
           <section className="bg-[linear-gradient(180deg,rgba(255,255,255,0)_70%,#F2F1E9_100%)] h-full px-4 py-6 flex flex-col">
@@ -281,7 +310,7 @@ const Main = (props: Props) => {
         </section>
         <section className="bg-[#F5F5F5] md:w-2/3 h-[650px] ">
           <section className="bg-[linear-gradient(180deg,rgba(255,255,255,0)_70%,#fff_100%)] h-full px-4 py-6 flex flex-col">
-            <div className="flex flex-col items-center gap-1 mt-24">
+            {/* <div className="flex flex-col items-center gap-1 mt-24">
               <section className="w-[660px] h-fit p-3 flex justify-between items-center bg-white rounded-xl">
                 <Image
                   src="/images/stripe.png"
@@ -374,7 +403,9 @@ const Main = (props: Props) => {
                   height={36}
                 />
               </section>
-            </div>
+            </div> */}
+
+            <NotificationsMarquee />
 
             <div className="flex flex-col gap-1 justify-end mt-auto">
               <p className="font-dm font-medium text-xl text-black">

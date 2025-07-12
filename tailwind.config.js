@@ -16,11 +16,20 @@ module.exports = {
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
-		fontFamily: {
-			'source': ['Source Sans 3', 'sans-serif'],
-			'dm': ['DM Sans', 'sans-serif'],
-			'serif': ['Source Serif Pro', 'sans-serif']
-		},
+  		fontFamily: {
+  			source: [
+  				'Source Sans 3',
+  				'sans-serif'
+  			],
+  			dm: [
+  				'DM Sans',
+  				'sans-serif'
+  			],
+  			serif: [
+  				'Source Serif Pro',
+  				'sans-serif'
+  			]
+  		},
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
@@ -62,6 +71,28 @@ module.exports = {
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
   			}
+  		},
+  		keyframes: {
+  			'accordion-down': {
+  				from: {
+  					height: '0'
+  				},
+  				to: {
+  					height: 'var(--radix-accordion-content-height)'
+  				}
+  			},
+  			'accordion-up': {
+  				from: {
+  					height: 'var(--radix-accordion-content-height)'
+  				},
+  				to: {
+  					height: '0'
+  				}
+  			}
+  		},
+  		animation: {
+  			'accordion-down': 'accordion-down 0.2s ease-out',
+  			'accordion-up': 'accordion-up 0.2s ease-out'
   		}
   	}
   },
