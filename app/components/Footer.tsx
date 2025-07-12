@@ -7,8 +7,8 @@ type Props = {};
 
 const Footer = (props: Props) => {
   return (
-    <div className="bg-[#104901] border border-[#B5C7B080] py-10 font-source">
-      <div className="px-10 py-5">
+    <div className="bg-[#104901] border border-[#B5C7B080] py-12 font-source">
+      <div className="p-10">
         <p className="font-normal text-base text-white">
           ChainFundIt Limited is a For-Profit Organization operating a
           “Donation-based” Crowdfunding Platform. <br /> Registered in England
@@ -31,8 +31,8 @@ const Footer = (props: Props) => {
 
       <hr color="#B5C7B080" className="w-full" />
 
-      <div className="px-10 py-5 flex justify-between items-center">
-        <section className="flex flex-col gap-2">
+      <div className="p-10 w-full flex justify-between items-center">
+        <section className="w-1/3 flex flex-col gap-2">
           <section className="flex gap-2 items-center">
             <Image
               src="/images/logo-white.png"
@@ -57,18 +57,77 @@ const Footer = (props: Props) => {
             <span className="font-normal text-xl text-white">@chainfundit</span>
           </section>
         </section>
+
+        <div className="w-2/3 flex justify-between">
+          <section className="w-1/3 flex flex-col gap-2">
+            <p className="font-bold text-base text-white uppercase">
+              chainfund for
+            </p>
+            <ul className="flex flex-col gap-2 font-normal text-base text-white">
+              <li>Medical Emergencies</li>
+              <li>Business</li>
+              <li>Memorials</li>
+              <li>Events & Weddings</li>
+              <li>Education</li>
+              <li>Sports</li>
+              <li>Charity</li>
+            </ul>
+          </section>
+          <section className="w-1/3 lex flex-col gap-2">
+            <p className="font-bold text-base text-white uppercase">
+            discover
+            </p>
+            <ul className="flex flex-col gap-2 font-normal text-base text-white">
+              <li>About us</li>
+              <li>How ChainFundIt works</li>
+              <li>Join the Chain Reaction</li>
+              <li>Careers</li>
+              <li>Success stories</li>
+              <li>Pricing</li>
+              <li>Blog</li>
+            </ul>
+          </section>
+          <section className="w-1/3 flex flex-col gap-2">
+            <p className="font-bold text-base text-white uppercase">
+            resources
+            </p>
+            <ul className="flex flex-col gap-2 font-normal text-base text-white">
+              <li>Privacy policy</li>
+              <li>Terms and Conditions</li>
+              <li>Ambassador Agreement</li>
+              <li>Fundraising tips</li>
+              <li>Fundraising ideas</li>
+              <li>Contact us</li>
+              <li>Disclaimer</li>
+            </ul>
+          </section>
+        </div>
       </div>
 
       <div className="flex justify-between items-center px-10">
-        <p className="font-normal text-base text-white">@ Copyright 2025 Chainfundit Limited</p>
+        <p className="font-normal text-base text-white">
+          @ Copyright 2025 Chainfundit Limited
+        </p>
         <section className="flex gap-3 items-center">
           {[
             { src: "/images/paystack-white.png", alt: "Paystack", width: 177 },
             { src: "/images/stripe-white.png", alt: "Stripe", width: 47 },
             { src: "/images/visa-white.png", alt: "Visa", width: 56 },
-            { src: "/images/mastercard-white.png", alt: "Mastercard", width: 32 },
-            { src: "/images/amex-white.png", alt: "American Express", width: 28 },
-            { src: "/images/google-pay-white.png", alt: "Google Pay", width: 49 },
+            {
+              src: "/images/mastercard-white.png",
+              alt: "Mastercard",
+              width: 32,
+            },
+            {
+              src: "/images/amex-white.png",
+              alt: "American Express",
+              width: 28,
+            },
+            {
+              src: "/images/google-pay-white.png",
+              alt: "Google Pay",
+              width: 49,
+            },
             { src: "/images/apple-pay-white.png", alt: "Apple Pay", width: 48 },
           ].map((img) => (
             <Image

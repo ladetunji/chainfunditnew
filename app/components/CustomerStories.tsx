@@ -54,7 +54,7 @@ const CustomerStories = (props: Props) => {
 
   return (
     <div className="w-full font-source my-6">
-      <div className="bg-[#F2F1E9] px-4 py-8 flex flex-col gap-4">
+      <div className="bg-[#F2F1E9] px-4 py-12 flex flex-col gap-4">
         <div className="w-full flex justify-between items-start">
           <section className="flex flex-col gap-2">
             <p className="font-semibold text-3xl text-black">

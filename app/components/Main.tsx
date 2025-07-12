@@ -82,7 +82,7 @@ const Main = (props: Props) => {
   return (
     <div className="my-6">
       {/* benefits */}
-      <div className="px-12 w-full h-[550px] p-3 flex gap-10">
+      <div className="px-12 py-10 w-full h-[650px] p-3 flex gap-10">
         <section
           className="md:w-1/2 h-full bg-cover bg-no-repeat relative"
           style={{
@@ -106,7 +106,7 @@ const Main = (props: Props) => {
             ))}
           </div>
         </section>
-        <section className="md:w-1/2 h-[550px] flex flex-col mx-auto gap-5">
+        <section className="md:w-1/2 h-[650px] flex flex-col mx-auto gap-5">
           <h4 className="font-source font-semibold text-4xl text-black">
             Maximise your fundraising efforts
           </h4>
@@ -208,7 +208,7 @@ const Main = (props: Props) => {
         </div>
       </div>
       {/* features*/}
-      <div className="px-12 mt-5">
+      <div className="px-12 py-10 mt-5">
         <h2 className="font-semibold text-3xl text-black">
           All you need for a successful fundraiser
         </h2>

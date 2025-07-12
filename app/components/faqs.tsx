@@ -7,7 +7,7 @@ type Props = {};
 
 const FAQs = (props: Props) => {
   return (
-    <div className="p-10 w-full bg-[#F2F1E9] flex gap-10 justify-between font-source">
+    <div className="px-4 py-16 w-full bg-[#F2F1E9] flex gap-10 justify-between font-source">
       <section className="w-1/3 flex flex-col gap-3">
         <p className="font-semibold text-3xl text-black">FAQs</p>
         <span className="font-normal text-base text-black">
