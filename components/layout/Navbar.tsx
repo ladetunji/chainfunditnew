@@ -36,7 +36,7 @@ const Navbar = (props: Props) => {
       </ul>
 
       <section className="flex items-center gap-3">
-         <Link href='/auth/login' className="font-medium text-base text-black">Login</Link>
+         <Link href='/login' className="font-medium text-base text-black">Login</Link>
          <Button className="px-4 py-3 border-2 border-white text-base font-semibold rounded-none">Create Campaign</Button>
       </section>
     </div>

@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Props = {};
 
 const CustomerStories = (props: Props) => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const router = useRouter();
 
   const stories = [
     {
@@ -122,7 +124,7 @@ const CustomerStories = (props: Props) => {
           </p>
         </section>
         <section className="w-1/3 bg-[url('/images/logo-bg.png')] bg-cover bg-no-repeat h-full flex items-center">
-          <Button className="w-[426px] h-24 flex justify-between items-center font-semibold text-2xl">
+          <Button onClick={() => {router.push('/signup')}} className="w-[426px] h-24 flex justify-between items-center font-semibold text-2xl">
             Get Started <ArrowRight />
           </Button>
         </section>

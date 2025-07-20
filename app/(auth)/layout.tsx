@@ -89,9 +89,17 @@ function Carousel() {
             </div>
           ))}
         </div>
-        <div>
+        <div className="flex items-center">
+          <div className="flex -space-x-3">
+            {[...Array(selectedIndex + 1)].map((_, i) => (
+              <span
+                key={i}
+                className="w-[36px] h-[36px] border-[3px] border-white rounded-full bg-transparent"
+              />
+            ))}
+          </div>
           <Button
-            className="rounded-[30px] border-white hover:text-white hover:bg-transparent px-10 py-3 bg-transparent"
+            className="rounded-[30px] -ml-3 border-[3px] border-white hover:text-white hover:bg-transparent px-10 py-3 bg-transparent"
             variant="outline"
           >
             {carouselData[selectedIndex].buttonText}

@@ -2,13 +2,13 @@ import Image from "next/image";
 import "./globals.css";
 
 import React from "react";
-import Navbar from "@/components/Navbar";
-import Main from "@/components/Main";
-import Partners from "@/components/Partners";
-import Hero from "@/components/Hero";
-import CustomerStories from "@/components/CustomerStories";
-import FAQs from "@/components/faqs";
-import Footer from "@/components/Footer";
+import Navbar from "@/components/layout/Navbar";
+import Main from '@/components/homepage/Main'
+import Partners from '@/components/homepage/Partners'
+import Hero from '@/components/homepage/Hero'
+import CustomerStories from '@/components/homepage/CustomerStories'
+import FAQs from '@/components/homepage/faqs'
+import Footer from "@/components/layout/Footer";
 
 type Props = {};
 

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { PiYoutubeLogoLight } from "react-icons/pi";
-import CardDetailsDrawer from "./CardDetailsDrawer";
+import CardDetailsDrawer from "@/components/homepage/CardDetailsDrawer";
 import {
   Select,
   SelectContent,
@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { NotificationsList } from "./notifications-list";
+import { NotificationsList } from "@/components/homepage/notifications-list";
 import BenefitsCarousel from "./BenefitsCarousel";
 
 type Props = {};

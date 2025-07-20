@@ -13,6 +13,11 @@ export const auth = betterAuth({
             // Example: service: 'resend', apiKey: process.env.RESEND_API_KEY
         },
         {
+            type: "phone-otp",
+            // You may need to configure your SMS provider here
+            // Example: service: 'twilio', apiKey: process.env.TWILIO_API_KEY
+        },
+        {
             type: "oauth",
             id: "google",
             clientId: process.env.GOOGLE_CLIENT_ID!,

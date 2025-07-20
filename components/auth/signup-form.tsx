@@ -24,16 +24,21 @@ export function SignupForm({
     setIsLoading(true);
     setError("");
     try {
-      // TODO: Call Better Auth API to send OTP
-      // await fetch('/api/auth/[...betterauth]', { ... })
-      console.log("Submitting:", isPhone ? phone : email);
-      
+      const res = await fetch("/api/auth/[...betterauth]", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          isPhone
+            ? { action: "request_phone_otp", phone }
+            : { action: "request_email_otp", email }
+        ),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send OTP");
       // Redirect based on input type
       if (isPhone) {
-        // For phone, redirect to phone linking page first
-        window.location.href = "/auth/phone";
+        window.location.href = "/auth/phone-otp";
       } else {
-        // For email, redirect to OTP page
         window.location.href = "/auth/otp";
       }
     } catch (err: any) {
