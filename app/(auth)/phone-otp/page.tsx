@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowRight, Clipboard } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from "sonner";
 
 function OtpInput({ value, onChange, length = 6 }: { value: string; onChange: (val: string) => void; length?: number }) {
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
@@ -25,7 +26,6 @@ function OtpInput({ value, onChange, length = 6 }: { value: string; onChange: (v
   const handleChange = (index: number, val: string) => {
     const newValue = value.substring(0, index) + val + value.substring(index + 1);
     onChange(newValue.padEnd(length, ""));
-    
     if (val && index < length - 1) {
       focusNext(index);
     }
@@ -79,7 +79,20 @@ export default function PhoneOtpPage() {
   const [otpTimer, setOtpTimer] = useState(21);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [phone, setPhone] = useState<string | null>(null);
+  const [email, setEmail] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Get phone and email from query or localStorage
+  useEffect(() => {
+    const p = searchParams.get("phone");
+    const e = searchParams.get("email");
+    if (p) setPhone(p);
+    else setPhone(localStorage.getItem("link_phone_number"));
+    if (e) setEmail(e);
+    else setEmail(localStorage.getItem("link_phone_email"));
+  }, [searchParams]);
 
   // Timer for resend code
   useEffect(() => {
@@ -94,17 +107,29 @@ export default function PhoneOtpPage() {
     if (otp.length === 6 && !isLoading) {
       handleOtpSubmit();
     }
+    // eslint-disable-next-line
   }, [otp]);
 
   const handleOtpSubmit = async () => {
-    if (otp.length !== 6 || isLoading) return;
-    
+    if (otp.length !== 6 || isLoading || !phone || !email) return;
     setIsLoading(true);
     setError("");
     try {
-      // TODO: Call Better Auth API to verify phone OTP
-      console.log("Phone OTP submitted:", otp);
-      // Redirect to dashboard on success
+      const res = await fetch("/api/auth/link-phone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "verify_link_otp",
+          phone,
+          otp,
+          email,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Invalid OTP");
+      // On success, clear localStorage
+      localStorage.removeItem("link_phone_number");
+      localStorage.removeItem("link_phone_email");
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message || "Invalid OTP");
@@ -113,21 +138,31 @@ export default function PhoneOtpPage() {
     }
   };
 
+  const handlePasteCode = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const code = text.replace(/\D/g, '').slice(0, 6);
+      if (code.length === 6) setOtp(code);
+      else toast.error("Clipboard does not contain a valid 6-digit code.");
+    } catch {
+      toast.error("Failed to read from clipboard.");
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-col gap-2 items-center justify-center flex-1">
-
         <div className="flex justify-center w-full">
           <div className="w-full max-w-lg pt-6">
             <form className="flex flex-col gap-6 w-full pt-5">
               <div className="grid gap-6">
                 <div className="flex flex-col gap-5">
                   <h2 className="font-normal text-2xl text-[#104901]">Enter Code</h2>
-                  <p className="text-base">Please enter the 6 digit code we sent to:<br /><span className="font-semibold text-[#104901]">+44 0123 456 7890</span></p>
+                  <p className="text-base">Please enter the 6 digit code we sent to:<br /><span className="font-semibold text-[#104901]">{phone ? phone : <span className="text-red-600">No phone number found. Please go back and enter your phone.</span>}</span></p>
                   <OtpInput value={otp} onChange={setOtp} length={6} />
                   <hr />
                   <div className="flex justify-between mt-2">
-                    <Button type="button" variant="outline" className="px-4" onClick={() => setOtp('')}><Clipboard/> Paste code</Button>
+                    <Button type="button" variant="outline" className="px-4" onClick={handlePasteCode}><Clipboard/> Paste code</Button>
                     <span className="text-sm text-gray-500">Resend code in {otpTimer}s</span>
                   </div>
                 </div>
@@ -138,7 +173,6 @@ export default function PhoneOtpPage() {
           </div>
         </div>
       </div>
-      
       <div
         className="flex gap-4 items-center px-5 py-8 w-full"
         style={{

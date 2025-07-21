@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowRight, Clipboard, Copy } from "lucide-react";
+import { ArrowRight, Clipboard } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from "sonner";
 
 function OtpInput({ value, onChange, length = 6 }: { value: string; onChange: (val: string) => void; length?: number }) {
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
@@ -25,7 +26,6 @@ function OtpInput({ value, onChange, length = 6 }: { value: string; onChange: (v
   const handleChange = (index: number, val: string) => {
     const newValue = value.substring(0, index) + val + value.substring(index + 1);
     onChange(newValue.padEnd(length, ""));
-    
     if (val && index < length - 1) {
       focusNext(index);
     }
@@ -79,7 +79,31 @@ export default function OtpPage() {
   const [otpTimer, setOtpTimer] = useState(40);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [identifier, setIdentifier] = useState<string | null>(null);
+  const [loginType, setLoginType] = useState<"email" | "phone" | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Determine identifier and type (signup: query, login: localStorage)
+  useEffect(() => {
+    const email = searchParams.get("email");
+    const phone = searchParams.get("phone");
+    if (email) {
+      setIdentifier(email);
+      setLoginType("email");
+    } else if (phone) {
+      setIdentifier(phone);
+      setLoginType("phone");
+    } else {
+      // fallback to login localStorage
+      const t = localStorage.getItem("otp_login_type");
+      const id = localStorage.getItem("otp_login_identifier");
+      if (t === "email" || t === "phone") {
+        setLoginType(t);
+        setIdentifier(id);
+      }
+    }
+  }, [searchParams]);
 
   // Timer for resend code
   useEffect(() => {
@@ -94,39 +118,74 @@ export default function OtpPage() {
     if (otp.length === 6 && !isLoading) {
       handleOtpSubmit();
     }
+    // eslint-disable-next-line
   }, [otp]);
 
   const handleOtpSubmit = async () => {
-    if (otp.length !== 6 || isLoading) return;
-    
+    if (otp.length !== 6 || isLoading || !identifier || !loginType) return;
     setIsLoading(true);
     setError("");
     try {
-      // TODO: Call Better Auth API to verify OTP
-      console.log("OTP submitted:", otp);
-      router.push('/phone');
+      // Use /api/auth/login for both login and signup OTP verification
+      const payload =
+        loginType === "email"
+          ? { action: "verify_email_otp", email: identifier, otp }
+          : { action: "verify_phone_otp", phone: identifier, otp };
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Invalid OTP");
+      // On success, clear login localStorage (if any)
+      localStorage.removeItem("otp_login_type");
+      localStorage.removeItem("otp_login_identifier");
+      toast.success("OTP verified! Redirecting...");
+      // Redirect to dashboard or next step
+      if (searchParams.get("email")) {
+        router.push("/phone");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: any) {
       setError(err.message || "Invalid OTP");
+      toast.error(err.message || "Invalid OTP");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePasteCode = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const code = text.replace(/\D/g, '').slice(0, 6);
+      if (code.length === 6) setOtp(code);
+      else toast.error("Clipboard does not contain a valid 6-digit code.");
+    } catch {
+      toast.error("Failed to read from clipboard.");
     }
   };
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex flex-col gap-2 items-center justify-center flex-1">
-        
         <div className="flex justify-center w-full">
           <div className="w-full max-w-lg pt-6">
             <form className="flex flex-col gap-6 w-full pt-5">
               <div className="grid gap-6">
                 <div className="flex flex-col gap-5">
                   <h2 className="font-normal text-2xl text-[#104901]">Enter Code</h2>
-                  <p className="text-base">Please enter the 6 digit code we sent to:<br /><span className="font-semibold text-[#104901]">tolulope.smith@gmail.com</span></p>
+                  <p className="text-base">
+                    Please enter the 6 digit code we sent to:<br />
+                    <span className="font-semibold text-[#104901]">
+                      {identifier ? identifier : <span className="text-red-600">No identifier found. Please go back and enter your email or phone.</span>}
+                    </span>
+                  </p>
                   <OtpInput value={otp} onChange={setOtp} length={6} />
                   <hr />
                   <div className="flex justify-between mt-2">
-                    <Button type="button" variant="outline" className="px-4" onClick={() => setOtp('')}><Clipboard/> Paste code</Button>
+                    <Button type="button" variant="outline" className="px-4" onClick={handlePasteCode}><Clipboard/> Paste code</Button>
                     <span className="text-sm text-gray-500">Resend code in {otpTimer}s</span>
                   </div>
                 </div>
@@ -137,7 +196,6 @@ export default function OtpPage() {
           </div>
         </div>
       </div>
-      
       <div
         className="flex gap-4 items-center px-5 py-8 w-full"
         style={{

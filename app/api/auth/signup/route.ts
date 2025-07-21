@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
-import twilio from 'twilio';
+import { db } from '@/lib/db';
+import { emailOtps } from '@/lib/schema/email-otps';
+import { users } from '@/lib/schema/users';
+import { eq, and, desc, gt } from 'drizzle-orm';
+import { generateUserJWT } from '@/lib/auth';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -11,74 +15,72 @@ function generateOtp() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { action, email, phone } = body;
-
-    console.log('Signup request:', { action, email, phone });
+    const { action, email, otp, fullName } = body;
 
     if (action === 'request_email_otp') {
       if (!email) {
         return NextResponse.json({ success: false, error: 'Email is required' }, { status: 400 });
       }
-      const otp = generateOtp();
-      // Send OTP email using Resend
+      const generatedOtp = generateOtp();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      await db.insert(emailOtps).values({ email, otp: generatedOtp, expiresAt });
       try {
         await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL || 'no-reply@yourdomain.com',
+          from: process.env.RESEND_FROM_EMAIL || 'noreply@example.com',
           to: email,
-          subject: 'Your Chainfundit OTP Code',
-          text: `Your OTP code is: ${otp}`,
+          subject: 'Signup OTP - ChainFundIt',
+          html: `
+            <h2>Your Signup OTP</h2>
+            <p>Your verification code is: <strong>${generatedOtp}</strong></p>
+            <p>This code will expire in 10 minutes.</p>
+            <p>If you didn't request this code, please ignore this email.</p>
+          `,
         });
-      } catch (err) {
-        return NextResponse.json({ success: false, error: 'Failed to send OTP email' }, { status: 500 });
+        return NextResponse.json({ success: true, message: 'Email OTP sent successfully' });
+      } catch (error) {
+        console.error('Resend error:', error);
+        return NextResponse.json({ success: false, error: 'Failed to send email OTP' }, { status: 500 });
       }
-      // For testing, return the OTP (do not do this in production)
-      return NextResponse.json({ success: true, message: 'Email OTP sent', otp });
     }
 
-    if (action === 'request_phone_otp') {
-      console.log('Processing phone OTP request');
-      
-      if (!phone) {
-        return NextResponse.json({ success: false, error: 'Phone is required' }, { status: 400 });
+    if (action === 'verify_email_otp') {
+      if (!email || !otp) {
+        return NextResponse.json({ success: false, error: 'Email and OTP are required' }, { status: 400 });
       }
-      
-      // Check if Twilio environment variables are present
-      console.log('Checking Twilio env vars:', {
-        hasAccountSid: !!process.env.TWILIO_ACCOUNT_SID,
-        hasAuthToken: !!process.env.TWILIO_AUTH_TOKEN
+      const now = new Date();
+      const [record] = await db.select().from(emailOtps)
+        .where(and(eq(emailOtps.email, email), eq(emailOtps.otp, otp), gt(emailOtps.expiresAt, now)))
+        .orderBy(desc(emailOtps.createdAt))
+        .limit(1);
+      if (!record) {
+        return NextResponse.json({ success: false, error: 'No OTP found for this email or OTP expired/invalid' }, { status: 400 });
+      }
+      // Invalidate OTP
+      await db.delete(emailOtps).where(eq(emailOtps.id, record.id));
+      // Check if user exists
+      let [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      if (!user) {
+        // Create user (require fullName, or use email as fallback)
+        const name = fullName || email.split('@')[0];
+        await db.insert(users).values({ email, fullName: name });
+        [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      }
+      // Generate JWT and set as cookie
+      const token = generateUserJWT({ id: user.id, email: user.email });
+      const response = NextResponse.json({ success: true, message: 'Signup complete. User created and verified.', user, token });
+      response.cookies.set('auth_token', token, {
+        httpOnly: true,
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
       });
-      
-      if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
-        console.log('Twilio environment variables missing');
-        return NextResponse.json({ 
-          success: false, 
-          error: 'WhatsApp service not configured. Please set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN environment variables.' 
-        }, { status: 500 });
-      }
-
-      console.log('Initializing Twilio client');
-      // Initialize Twilio client only when needed
-      const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-
-      const otp = generateOtp();
-      try {
-        // Send WhatsApp message using Twilio
-        await twilioClient.messages.create({
-          from: process.env.TWILIO_WHATSAPP_FROM, // e.g., 'whatsapp:+14155238886'
-          to: `whatsapp:${phone}`, // Add whatsapp: prefix to the phone number
-          body: `Your Chainfundit OTP code is: ${otp}`,
-        });
-      } catch (err) {
-        console.error('WhatsApp OTP error:', err);
-        return NextResponse.json({ success: false, error: 'Failed to send WhatsApp OTP' }, { status: 500 });
-      }
-      // For testing, return the OTP (do not do this in production)
-      return NextResponse.json({ success: true, message: 'WhatsApp OTP sent', otp });
+      return response;
     }
 
     return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
   } catch (error) {
-    console.error('Signup error:', error);
+    console.error('Signup API error:', error);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 } 

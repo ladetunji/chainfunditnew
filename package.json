@@ -27,9 +27,11 @@
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.5",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.525.0",
     "motion": "^12.23.3",
     "next": "15.3.5",
+    "nookies": "^2.5.2",
     "radix-ui": "^1.4.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -44,6 +46,7 @@
     "zod": "^4.0.5"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

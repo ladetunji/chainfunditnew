@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
+import { parseCookies } from 'nookies';
 
 export default function PhonePage() {
   const [phone, setPhone] = useState("");
@@ -17,10 +18,19 @@ export default function PhonePage() {
     setIsLoading(true);
     setError("");
     try {
-      // TODO: Call Better Auth API to send phone OTP
-      console.log("Phone submitted:", phone);
-      // Redirect to phone OTP page
-      window.location.href = "/phone-otp";
+      // Get email from cookie (JWT) if available
+      let email = "";
+      try {
+        const cookies = parseCookies();
+        const token = cookies['auth_token'];
+        if (token) {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          email = payload.email;
+        }
+      } catch {}
+      // TODO: Call API to send phone OTP here if needed
+      // Redirect to phone OTP page with phone and email as query params
+      window.location.href = `/phone-otp?phone=${encodeURIComponent(phone)}&email=${encodeURIComponent(email)}`;
     } catch (err: any) {
       setError(err.message || "Failed to send OTP");
     } finally {

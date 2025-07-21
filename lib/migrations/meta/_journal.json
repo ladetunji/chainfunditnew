@@ -8,6 +8,13 @@
       "when": 1752983212002,
       "tag": "0000_hot_the_captain",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1753100196867,
+      "tag": "0001_massive_raider",
+      "breakpoints": true
     }
   ]
 }

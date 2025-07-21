@@ -9,4 +9,5 @@ export * from './payments';
 export * from './notifications';
 export * from './campaign-media';
 export * from './campaign-updates';
-export * from './campaign-comments'; 
+export * from './campaign-comments';
+export * from './email-otps'; 
