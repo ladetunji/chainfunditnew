@@ -104,7 +104,7 @@ export default function OtpPage() {
     try {
       // TODO: Call Better Auth API to verify OTP
       console.log("OTP submitted:", otp);
-      router.push('/auth/phone');
+      router.push('/phone');
     } catch (err: any) {
       setError(err.message || "Invalid OTP");
     } finally {

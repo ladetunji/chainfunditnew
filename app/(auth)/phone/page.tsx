@@ -20,7 +20,7 @@ export default function PhonePage() {
       // TODO: Call Better Auth API to send phone OTP
       console.log("Phone submitted:", phone);
       // Redirect to phone OTP page
-      window.location.href = "/auth/phone-otp";
+      window.location.href = "/phone-otp";
     } catch (err: any) {
       setError(err.message || "Failed to send OTP");
     } finally {

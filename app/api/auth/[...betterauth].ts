@@ -1,5 +1,4 @@
-import { auth } from '@/lib/auth';
-import { NextRequest, NextResponse } from 'next/server';
+// pages/api/auth/[...betterauth].ts
+import { betterAuthHandler } from "better-auth/server";
 
-export const GET = auth;
-export const POST = auth; 
+export default betterAuthHandler();

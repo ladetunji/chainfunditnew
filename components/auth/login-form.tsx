@@ -9,6 +9,7 @@ import { ArrowRight, Smartphone } from "lucide-react";
 import { FaGoogle } from "react-icons/fa";
 import { FaFacebook } from "react-icons/fa";
 import React from "react";
+import { toast } from "sonner";
 
 function OtpInput({ value, onChange, length = 6, ...props }: { value: string; onChange: (val: string) => void; length?: number }) {
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
@@ -104,7 +105,7 @@ export function LoginForm({
     setIsLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/auth/[...betterauth]", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
@@ -113,12 +114,18 @@ export function LoginForm({
             : { action: "request_email_otp", email }
         ),
       });
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Unexpected response from server");
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to send OTP");
       setStep("otp");
       setOtpTimer(60);
+      toast.success("OTP sent successfully!");
     } catch (err: any) {
       setError(err.message || "Failed to send OTP");
+      toast.error(err.message || "Failed to send OTP");
     } finally {
       setIsLoading(false);
     }
@@ -129,7 +136,7 @@ export function LoginForm({
     setIsLoading(true);
     setError("");
     try {
-      const res = await fetch("/api/auth/[...betterauth]", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
@@ -138,12 +145,17 @@ export function LoginForm({
             : { action: "verify_email_otp", email, otp }
         ),
       });
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Unexpected response from server");
+      }
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Invalid OTP");
-      // Success: redirect or show success message
-      // window.location.href = "/dashboard";
+      toast.success("OTP verified! Redirecting...");
+      window.location.href = "/dashboard";
     } catch (err: any) {
       setError(err.message || "Invalid OTP");
+      toast.error(err.message || "Invalid OTP");
     } finally {
       setIsLoading(false);
     }
@@ -227,7 +239,7 @@ export function LoginForm({
         Chainfundit <span className="font-bold">Terms of Service</span> as well
         as the <span className="font-bold">Privacy Policy</span>.
       </p>
-      {error && <p className="text-center text-red-500">{error}</p>}
+      {/* {error && <p className="text-center text-red-500">{error}</p>} */}
     </form>
   );
 }

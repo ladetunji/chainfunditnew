@@ -15,7 +15,7 @@ export default function LoginPage() {
         Create life-changing <br /> experiences on Chainfundit
       </h2>
       <p className="font-normal text-xl text-[#104901]">
-        Please sign in or sign up below.
+        Please sign in below.
       </p>
       <div className="flex flex-1 items-center justify-center w-full">
         <div className="w-full max-w-lg pt-6">
