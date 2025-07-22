@@ -51,6 +51,15 @@ a {
   }
 }
 
+@keyframes grow {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
 .animate-marquee {
   animation: marquee 20s linear infinite;
 }
