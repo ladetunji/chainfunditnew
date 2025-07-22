@@ -113,6 +113,39 @@ function OtpPageInner() {
     }
   }, [otpTimer]);
 
+  // Resend OTP handler
+  const handleResendOtp = async () => {
+    if (!identifier || !loginType) {
+      toast.error('Missing identifier or login type.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      // Use /api/auth/login for both login and signup OTP resend
+      const payload =
+        loginType === "email"
+          ? { action: "request_email_otp", email: identifier }
+          : { action: "request_phone_otp", phone: identifier };
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOtp("");
+        setOtpTimer(40);
+        toast.success('OTP resent!');
+      } else {
+        toast.error(data.error || 'Failed to resend OTP');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to resend OTP');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Auto-submit when OTP is complete
   useEffect(() => {
     if (otp.length === 6 && !isLoading) {
@@ -169,7 +202,7 @@ function OtpPageInner() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex flex-col gap-2 items-center justify-center flex-1">
+      <div className="flex flex-col gap-2 items-center justify-center flex-1 p-2 md:p-0">
         <div className="flex justify-center w-full">
           <div className="w-full max-w-lg pt-6">
             <form className="flex flex-col gap-6 w-full pt-5">
@@ -186,7 +219,19 @@ function OtpPageInner() {
                   <hr />
                   <div className="flex justify-between mt-2">
                     <Button type="button" variant="outline" className="px-4" onClick={handlePasteCode}><Clipboard/> Paste code</Button>
-                    <span className="text-sm text-gray-500">Resend code in {otpTimer}s</span>
+                    {otpTimer > 0 ? (
+                      <span className="text-sm text-gray-500">Resend code in {otpTimer}s</span>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="px-4 ml-2"
+                        onClick={handleResendOtp}
+                        disabled={isLoading}
+                      >
+                        Resend OTP
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

@@ -28,11 +28,16 @@ export async function POST(request: NextRequest) {
       otpStore.set(phone, { otp: generatedOtp, expires });
       try {
         const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        // Log parameters for debugging
+        console.log('Sending WhatsApp OTP:', {
+          from: process.env.TWILIO_WHATSAPP_FROM,
+          to: `whatsapp:${phone}`,
+          body: `Your OTP code is: ${generatedOtp}`
+        });
         await twilioClient.messages.create({
           from: process.env.TWILIO_WHATSAPP_FROM,
           to: `whatsapp:${phone}`,
-          contentSid: 'HX229f5a04fd0510ce1b071852155d3e75',
-          contentVariables: JSON.stringify({ '1': generatedOtp })
+          body: `Your OTP code is: ${generatedOtp}`
         });
         return NextResponse.json({ success: true, message: 'OTP sent to phone' });
       } catch (error) {

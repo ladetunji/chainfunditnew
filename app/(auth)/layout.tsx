@@ -113,9 +113,9 @@ function Carousel() {
 
 const layout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="w-full flex gap-5 p-5 font-source h-screen">
+    <div className="w-full flex gap-5 md:p-5 p-2 font-source h-screen">
       <div
-        className="w-2/5 flex flex-col gap-3 pt-5"
+        className="w-full md:w-2/5 flex flex-col gap-3 pt-5"
         style={{
           background:
             "linear-gradient(180deg, #F2F1E9 75%, rgba(255, 255, 255, 0.5) 100%)",
@@ -124,7 +124,7 @@ const layout = ({ children }: { children: React.ReactNode }) => {
         {children}
       </div>
 
-      <div className="w-3/5 relative hidden lg:block">
+      <div className="md:w-3/5 relative hidden lg:block">
         <Carousel />
       </div>
     </div>

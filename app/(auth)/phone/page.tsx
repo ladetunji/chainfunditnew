@@ -28,9 +28,22 @@ export default function PhonePage() {
           email = payload.email;
         }
       } catch {}
-      // TODO: Call API to send phone OTP here if needed
-      // Redirect to phone OTP page with phone and email as query params
-      window.location.href = `/phone-otp?phone=${encodeURIComponent(phone)}&email=${encodeURIComponent(email)}`;
+      // Call API to send phone OTP here
+      const res = await fetch('/api/auth/link-phone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'request_link_otp',
+          phone,
+          email,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        window.location.href = `/phone-otp?phone=${encodeURIComponent(phone)}&email=${encodeURIComponent(email)}`;
+      } else {
+        setError(data.error || 'Failed to send OTP');
+      }
     } catch (err: any) {
       setError(err.message || "Failed to send OTP");
     } finally {
@@ -52,7 +65,7 @@ export default function PhonePage() {
           Link Phone number
         </h2>
         
-        <div className="flex justify-center w-full">
+        <div className="flex justify-center w-full p-2">
           <div className="w-full max-w-lg pt-6">
             <form className="flex flex-col gap-6 w-full pt-5" onSubmit={handleSubmit}>
               <div className="grid gap-6">
@@ -63,7 +76,7 @@ export default function PhonePage() {
                     id="phone"
                     type="tel"
                     placeholder="+44 0123 456 7890"
-                    className="h-16 bg-white rounded-lg border border-[#D9D9DC] outline-[#104901] placeholder:text-[#767676]"
+                    className="w-[420px] md:w-full bg-white rounded-lg border border-[#D9D9DC] outline-[#104901] placeholder:text-[#767676]"
                     required
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
@@ -72,7 +85,7 @@ export default function PhonePage() {
                 </div>
                 <Button
                   type="submit"
-                  className="w-full h-16 flex justify-between font-semibold text-2xl"
+                  className="w-[420px] md:w-full h-16 flex justify-between font-semibold text-2xl"
                   disabled={isLoading}
                 >
                   Continue

@@ -7,6 +7,7 @@ import { ArrowRight, Clipboard } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from "sonner";
+import { parseCookies } from 'nookies';
 
 function OtpInput({ value, onChange, length = 6 }: { value: string; onChange: (val: string) => void; length?: number }) {
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
@@ -88,10 +89,39 @@ function PhoneOtpPageInner() {
   useEffect(() => {
     const p = searchParams.get("phone");
     const e = searchParams.get("email");
+    console.log('phone from query:', p, 'email from query:', e);
     if (p) setPhone(p);
     else setPhone(localStorage.getItem("link_phone_number"));
-    if (e) setEmail(e);
-    else setEmail(localStorage.getItem("link_phone_email"));
+    if (e) {
+      setEmail(e);
+      localStorage.setItem("link_phone_email", e);
+    } else {
+      const localEmail = localStorage.getItem("link_phone_email");
+      if (localEmail) {
+        setEmail(localEmail);
+        console.log('email from localStorage:', localEmail);
+      } else {
+        // Try to get email from JWT cookie
+        try {
+          const cookies = parseCookies();
+          const token = cookies['auth_token'];
+          if (token) {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.email) {
+              setEmail(payload.email);
+              localStorage.setItem("link_phone_email", payload.email);
+              console.log('email from JWT cookie:', payload.email);
+            } else {
+              console.log('No email in JWT payload:', payload);
+            }
+          } else {
+            console.log('No auth_token cookie found');
+          }
+        } catch (err) {
+          console.log('Error parsing JWT cookie:', err);
+        }
+      }
+    }
   }, [searchParams]);
 
   // Timer for resend code
@@ -101,6 +131,38 @@ function PhoneOtpPageInner() {
       return () => clearTimeout(timer);
     }
   }, [otpTimer]);
+
+  // Resend OTP handler
+  const handleResendOtp = async () => {
+    if (!phone || !email) {
+      toast.error('Missing phone or email.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/auth/link-phone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'request_link_otp',
+          phone,
+          email,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOtp("");
+        setOtpTimer(21);
+        toast.success('OTP resent!');
+      } else {
+        toast.error(data.error || 'Failed to resend OTP');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to resend OTP');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Auto-submit when OTP is complete
   useEffect(() => {
@@ -115,6 +177,7 @@ function PhoneOtpPageInner() {
     setIsLoading(true);
     setError("");
     try {
+      console.log('Verifying OTP with:', { phone, otp, email });
       const res = await fetch("/api/auth/link-phone", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -151,7 +214,7 @@ function PhoneOtpPageInner() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex flex-col gap-2 items-center justify-center flex-1">
+      <div className="flex flex-col gap-2 items-center justify-center flex-1 p-2 md:p-0">
         <div className="flex justify-center w-full">
           <div className="w-full max-w-lg pt-6">
             <form className="flex flex-col gap-6 w-full pt-5">
@@ -163,7 +226,19 @@ function PhoneOtpPageInner() {
                   <hr />
                   <div className="flex justify-between mt-2">
                     <Button type="button" variant="outline" className="px-4" onClick={handlePasteCode}><Clipboard/> Paste code</Button>
-                    <span className="text-sm text-gray-500">Resend code in {otpTimer}s</span>
+                    {otpTimer > 0 ? (
+                      <span className="text-sm text-gray-500">Resend code in {otpTimer}s</span>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        className="px-4 ml-2"
+                        onClick={handleResendOtp}
+                        disabled={isLoading}
+                      >
+                        Resend OTP
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

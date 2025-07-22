@@ -93,7 +93,7 @@ const CustomerStories = (props: Props) => {
             {stories.map((story) => (
               <div
                 key={story.id}
-                className="w-[645px] h-[380px] flex border border-[#B5C7B0] bg-[#F5F5F5]"
+                className="w-[645px] h-[380px] flex md:flex-row flex-col border border-[#B5C7B0] bg-[#F5F5F5]"
               >
                 <div className="w-[420px] h-full relative">
                   <Image
@@ -103,7 +103,7 @@ const CustomerStories = (props: Props) => {
                     className="object-cover"
                   />
                 </div>
-                <div className="w-[225px] h-full flex flex-col justify-between p-6 bg-white">
+                <div className="md:w-[225px] w-[420px] h-full flex flex-col justify-between p-6 bg-white">
                   <p className="text-3xl font-semibold text-green-800">
                     {story.name}
                   </p>
@@ -117,13 +117,13 @@ const CustomerStories = (props: Props) => {
         </div>
       </div>
 
-      <div className="my-5 pl-5 w-full h-[340px] flex justify-between">
-        <section className="flex items-center w-2/3">
+      <div className="my-5 md:pl-5 px-3 w-full h-[340px] bg-[url('/images/logo-bg.png')] bg-contain bg-no-repeat bg-right flex md:flex-row flex-col justify-between">
+        <section className="flex items-center md:w-2/3 w-full">
           <p className="font-bold text-5xl text-black">
             Launch your campaign for free and begin raising funds in minutes.
           </p>
         </section>
-        <section className="w-1/3 bg-[url('/images/logo-bg.png')] bg-cover bg-no-repeat h-full flex items-center">
+        <section className="w-full md:w-1/3 flex items-center">
           <Button onClick={() => {router.push('/signup')}} className="w-[426px] h-24 flex justify-between items-center font-semibold text-2xl">
             Get Started <ArrowRight />
           </Button>

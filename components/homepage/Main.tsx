@@ -90,10 +90,10 @@ const Main = (props: Props) => {
       {/* benefits */}
       <BenefitsCarousel />
       {/* campaign cards */}
-      <div className="p-12 w-full h-fit flex flex-col gap-5 my-5 bg-[#F2F1E9]">
-        <div className="flex justify-between items-center">
-          <section className="flex flex-col gap-3">
-            <p className="font-source font-semibold text-3xl text-black">
+      <div className="p-4 md:p-12 w-full h-fit flex flex-col gap-5 my-5 bg-[#F2F1E9]">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 md:gap-0">
+          <section className="flex flex-col gap-2 md:gap-3">
+            <p className="font-source font-semibold text-2xl md:text-3xl text-black">
               Discover inspiring fundraisers close to you
             </p>
             <span className="font-source font-normal text-base text-black">
@@ -102,7 +102,7 @@ const Main = (props: Props) => {
           </section>
 
           <Select>
-            <SelectTrigger className="w-[250px] h-14 px-6 font-source font-normal text-base text-black border-2 border-[#0F4201] rounded-none">
+            <SelectTrigger className="w-full md:w-[250px] h-12 md:h-14 px-4 md:px-6 font-source font-normal text-base text-black border-2 border-[#0F4201] rounded-none">
               <SelectValue placeholder="Happening worldwide" />
             </SelectTrigger>
             <SelectContent>
@@ -128,11 +128,11 @@ const Main = (props: Props) => {
           </Select>
         </div>
 
-        <div className="flex gap-3 w-full">
+        <div className="flex flex-col md:flex-row gap-3 w-full">
           {cardDetails.map((card, idx) => (
             <section
               key={idx}
-              className="w-1/3 p-2 flex flex-col gap-2 cursor-pointer hover:shadow-lg transition-shadow"
+              className="w-full md:w-1/3 p-2 flex flex-col gap-2 cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => setOpenCard(idx)}
             >
               <Image
@@ -140,14 +140,15 @@ const Main = (props: Props) => {
                 alt={card.title}
                 width={400}
                 height={300}
+                className="w-full h-40 md:h-60 object-cover"
               />
-              <p className="font-source font-medium text-xl text-black">
+              <p className="font-source font-medium text-lg md:text-xl text-black">
                 {card.title}
               </p>
-              <span className="font-source font-normal text-base text-black">
+              <span className="font-source font-normal text-sm md:text-base text-black">
                 {card.description.slice(0, 60)}...
               </span>
-              <span className="font-medium text-lg text-black">
+              <span className="font-medium text-base md:text-lg text-black">
                 {card.raised}
               </span>
               <div className="w-full bg-[#FBFBFB] h-2">
@@ -171,23 +172,24 @@ const Main = (props: Props) => {
         </div>
       </div>
       {/* features*/}
-      <div className="px-12 py-10 mt-5">
-        <h2 className="font-semibold text-3xl text-black">
+      <div className="px-4 md:px-12 py-6 md:py-10 mt-5">
+        <h2 className="font-semibold text-2xl md:text-3xl text-black">
           All you need for a successful fundraiser
         </h2>
         <p className="font-normal text-base text-black">
           Modern, powerful tools to help your fundraisers reach their goals
           quick
         </p>
-        <div className="flex gap-5 w-full h-fit my-5">
-          <section className="bg-[url('/images/main-1.png')] bg-cover bg-no-repeat md:w-2/3 h-[500px]">
-            <section className="bg-[linear-gradient(180deg,rgba(255,255,255,0)_70%,#fff_100%)] h-full px-4 py-6 flex flex-col gap-3">
-              <div className="w-[365px] h-fit p-4 rounded-xl bg-white flex items-start gap-3 font-dm">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-5 w-full h-fit my-5">
+          <section className="bg-[url('/images/main-1.png')] bg-cover bg-no-repeat w-full md:w-2/3 h-60 md:h-[500px]">
+            <section className="bg-[linear-gradient(180deg,rgba(255,255,255,0)_70%,#fff_100%)] h-full px-2 md:px-4 py-4 md:py-6 flex flex-col gap-2 md:gap-3">
+              <div className="w-full md:w-[365px] h-fit p-2 md:p-4 rounded-xl bg-white flex items-start gap-2 md:gap-3 font-dm">
                 <Image
                   src="/images/avatar-1.png"
                   alt="avatar"
-                  width={50}
-                  height={50}
+                  width={40}
+                  height={40}
+                  className="md:w-[50px] md:h-[50px]"
                 />
                 <section className="flex flex-col gap-1">
                   <span className="font-normal text-base text-black">You</span>
@@ -197,7 +199,7 @@ const Main = (props: Props) => {
                   </p>
                 </section>
               </div>
-              <div className="w-[365px] h-fit p-4 rounded-xl bg-white flex items-start gap-3 font-dm">
+              <div className="w-full md:w-[365px] h-fit p-2 md:p-4 rounded-xl bg-white flex items-start gap-2 md:gap-3 font-dm">
                 <section className="flex flex-col gap-1">
                   <span className="font-normal text-base text-black">
                     Chainfundit
@@ -209,13 +211,14 @@ const Main = (props: Props) => {
                 <Image
                   src="/images/logo.svg"
                   alt="avatar"
-                  width={50}
-                  height={50}
+                  width={40}
+                  height={40}
+                  className="md:w-[50px] md:h-[50px]"
                 />
               </div>
 
               <div className="flex flex-col gap-1 justify-end mt-auto">
-                <p className="font-dm font-medium text-xl text-black">
+                <p className="font-dm font-medium text-lg md:text-xl text-black">
                   AI-powered writing
                 </p>
                 <span className="font-source font-normal text-base text-black">
@@ -224,14 +227,15 @@ const Main = (props: Props) => {
               </div>
             </section>
           </section>
-          <section className="bg-[url('/images/main-2.png')] bg-cover bg-no-repeat md:w-1/3 h-[500px]">
-            <section className="bg-[linear-gradient(180deg,rgba(255,255,255,0)_70%,#fff_100%)] h-full px-4 py-6 flex flex-col gap-3">
-              <div className="w-[300px] h-fit p-4 rounded-xl bg-white flex items-start gap-3 font-dm">
+          <section className="bg-[url('/images/main-2.png')] bg-cover bg-no-repeat w-full md:w-1/3 h-60 md:h-[500px]">
+            <section className="bg-[linear-gradient(180deg,rgba(255,255,255,0)_70%,#fff_100%)] h-full px-2 md:px-4 py-4 md:py-6 flex flex-col gap-2 md:gap-3">
+              <div className="w-full md:w-[300px] h-fit p-2 md:p-4 rounded-xl bg-white flex items-start gap-2 md:gap-3 font-dm">
                 <Image
                   src="/images/avatar-2.png"
                   alt="avatar"
-                  width={50}
-                  height={50}
+                  width={40}
+                  height={40}
+                  className="md:w-[50px] md:h-[50px]"
                 />
                 <section className="flex flex-col gap-1">
                   <span className="font-normal text-base text-black">
@@ -244,7 +248,7 @@ const Main = (props: Props) => {
               </div>
 
               <div className="flex flex-col gap-1 justify-end mt-auto">
-                <p className="font-dm font-medium text-xl text-black">
+                <p className="font-dm font-medium text-lg md:text-xl text-black">
                   Campaign updates
                 </p>
                 <span className="font-source font-normal text-base text-black">
@@ -255,14 +259,14 @@ const Main = (props: Props) => {
           </section>
         </div>
       </div>
-      <div className="px-12 flex gap-5 w-full h-fit my-5">
-        <section className="bg-[url('/images/video.png')] bg-cover bg-no-repeat md:w-1/3 h-[650px]">
-          <section className="bg-[linear-gradient(180deg,rgba(255,255,255,0)_70%,#F2F1E9_100%)] h-full px-4 py-6 flex flex-col">
+      <div className="px-4 md:px-12 flex flex-col md:flex-row gap-4 md:gap-5 w-full h-fit my-5">
+        <section className="bg-[url('/images/video.png')] bg-cover bg-no-repeat w-full md:w-1/3 h-60 md:h-[650px]">
+          <section className="bg-[linear-gradient(180deg,rgba(255,255,255,0)_70%,#F2F1E9_100%)] h-full px-2 md:px-4 py-4 md:py-6 flex flex-col">
             <section className="flex items-center justify-center my-auto">
-              <PiYoutubeLogoLight color="white" size={100} strokeWidth={0.1} />
+              <PiYoutubeLogoLight color="white" size={48} strokeWidth={0.1} className="md:w-[100px] md:h-[100px] w-[48px] h-[48px]" />
             </section>
             <div className="flex flex-col gap-1 justify-end ">
-              <p className="font-dm font-medium text-xl text-black">
+              <p className="font-dm font-medium text-lg md:text-xl text-black">
                 Video explainers
               </p>
               <span className="font-source font-normal text-base text-black">
@@ -271,12 +275,12 @@ const Main = (props: Props) => {
             </div>
           </section>
         </section>
-        <section className="bg-[#F5F5F5] md:w-2/3 h-[650px] ">
-          <section className="bg-[linear-gradient(180deg,rgba(255,255,255,0)_70%,#fff_100%)] h-full px-4 py-6 flex flex-col">
+        <section className="bg-[#F5F5F5] w-full md:w-2/3 h-60 md:h-[650px] ">
+          <section className="bg-[linear-gradient(180deg,rgba(255,255,255,0)_70%,#fff_100%)] h-full px-2 md:px-4 py-4 md:py-6 flex flex-col">
             <NotificationsList />
 
             <div className="flex flex-col gap-1 justify-end mt-auto">
-              <p className="font-dm font-medium text-xl text-black">
+              <p className="font-dm font-medium text-lg md:text-xl text-black">
                 Instant notifications
               </p>
               <span className="font-source font-normal text-base text-black">

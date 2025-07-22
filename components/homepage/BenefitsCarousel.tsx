@@ -52,9 +52,9 @@ const BenefitsCarousel = () => {
   }, [emblaApi]);
 
   return (
-    <div className="w-full px-12 py-10 h-[650px] overflow-hidden">
-      <div className="flex gap-10">
-        <section className="md:w-1/2 h-full bg-cover bg-no-repeat relative">
+    <div className="w-full md:px-12 px-4 py-10 h-[650px] overflow-hidden">
+      <div className="flex md:gap-10 w-full">
+        <section className="md:w-1/2 md:block hidden h-full bg-cover bg-no-repeat relative">
           <div className="overflow-hidden" ref={emblaRef}>
             <div className="flex">
               {images.map((img, idx) => (
@@ -83,7 +83,7 @@ const BenefitsCarousel = () => {
           </div>
         </section>
 
-        <section className="md:w-1/2 h-[650px] flex flex-col mx-auto gap-10">
+        <section className="md:w-1/2 w-full h-[650px] flex flex-col mx-auto gap-10">
           <section className="flex flex-col gap-2">
             <h4 className="font-source font-semibold text-4xl text-black">
               Maximise your fundraising efforts
@@ -97,7 +97,7 @@ const BenefitsCarousel = () => {
             {features.map((item, i) => (
               <li
                 key={i}
-                className={`w-[500px] h-fit p-5 flex flex-col gap-2 transition-all duration-300 ${
+                className={`md:w-[500px] w-full h-fit p-5 flex flex-col gap-2 transition-all duration-300 ${
                   current === i
                     ? "scale-[1.05] shadow-lg border-2 border-[#104901]"
                     : "opacity-70"

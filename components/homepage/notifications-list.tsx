@@ -58,8 +58,8 @@ const Notification = ({ name, message, paymentChannel, logo, alt }: Item) => {
         "transform-gpu dark:bg-transparent dark:backdrop-blur-md dark:[border:1px_solid_rgba(255,255,255,.1)] dark:[box-shadow:0_-20px_80px_-20px_#ffffff1f_inset]"
       )}
     >
-      <section className="w-[660px] h-fit p-3 flex justify-between items-center bg-white rounded-xl">
-        <section className="flex gap-3">
+      <section className="w-[660px] h-fit md:p-3 p-1 flex justify-between items-center bg-white rounded-xl">
+        <section className="flex md:gap-3 gap-1">
           <div className="w-[94px] h-[56px] flex items-center justify-center">
             <Image
               src={paymentChannel}
@@ -73,7 +73,7 @@ const Notification = ({ name, message, paymentChannel, logo, alt }: Item) => {
             <span className="font-source font-normal text-base text-black">
               {name}
             </span>
-            <p className="font-dm font-semibold text-lg text-black">
+            <p className="font-dm font-semibold md:text-lg text-xs text-black">
               {message}
             </p>
           </div>
