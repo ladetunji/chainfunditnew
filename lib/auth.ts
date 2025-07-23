@@ -10,6 +10,15 @@ export function generateUserJWT(user: { id: string; email: string }) {
   });
 }
 
+export function verifyUserJWT(token: string): { sub: string; email: string } | null {
+  const secret = process.env.JWT_SECRET || "dev_secret";
+  try {
+    return jwt.verify(token, secret) as { sub: string; email: string };
+  } catch {
+    return null;
+  }
+}
+
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, {

@@ -18,11 +18,28 @@ import { ArrowRight } from "lucide-react";
 export default function DashboardPage() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [showCompleteProfile, setShowCompleteProfile] = useState(false);
+  const [profileChecked, setProfileChecked] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    setShowWelcome(true);
+    async function checkProfile() {
+      try {
+        const res = await fetch('/api/user/profile', { method: 'GET' });
+        const data = await res.json();
+        if (data.success && data.user && !data.user.hasCompletedProfile) {
+          setShowWelcome(true);
+        }
+      } catch {
+        // fallback: show modal if error
+        setShowWelcome(true);
+      } finally {
+        setProfileChecked(true);
+      }
+    }
+    checkProfile();
   }, []);
+
+  if (!profileChecked) return null;
 
   return (
     <div className="w-full">
@@ -59,10 +76,9 @@ export default function DashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Complete Profile Modal */}
       <Dialog open={showCompleteProfile} onOpenChange={setShowCompleteProfile}>
-        <DialogContent className="bg-[#F5F5F5] w-[80%] max-w-md md:max-w-lg rounded-none font-source">
+        <DialogContent className="bg-[#F5F5F5] max-w-md md:max-w-xl rounded-none font-source">
           <DialogHeader>
             <DialogTitle className="font-source font-semibold text-left text-2xl md:text-4xl text-[#104901]">
               Complete Your Profile
@@ -77,11 +93,13 @@ export default function DashboardPage() {
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button onClick={() => {router.push('/campaigns')}} className="w-full h-14 md:h-[72px] flex justify-between items-center font-semibold text-lg md:text-2xl">Here we go! <ArrowRight size={20} className="md:w-6 md:h-6" /></Button>
+              <Button onClick={() => {router.push('/dashboard')}} className="w-full h-14 md:h-[72px] flex justify-between items-center font-semibold text-lg md:text-2xl">Here we go! <ArrowRight size={20} className="md:w-6 md:h-6" /></Button>
             </DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      
     </div>
   );
 }

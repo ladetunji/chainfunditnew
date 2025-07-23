@@ -95,17 +95,21 @@ export async function POST(request: NextRequest) {
         .from(users)
         .where(eq(users.email, email))
         .limit(1);
-      if (!user) {
-        // Create user (require fullName, or use email as fallback)
-        const name = fullName || email.split("@")[0];
-        await db.insert(users).values({ email, fullName: name });
-        console.log("Created new user record");
-        [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, email))
-          .limit(1);
+      if (user) {
+        return NextResponse.json(
+          { success: false, error: "User already exists. Please log in." },
+          { status: 409 }
+        );
       }
+      // Create user (require fullName, or use email as fallback)
+      const name = fullName || email.split("@")[0];
+      await db.insert(users).values({ email, fullName: name, hasCompletedProfile: false });
+      console.log("Created new user record");
+      [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1);
       // Generate JWT and set as cookie
       const token = generateUserJWT({ id: user.id, email: user.email });
       const response = NextResponse.json({

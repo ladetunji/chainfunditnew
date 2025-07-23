@@ -1,11 +1,14 @@
 import { ArrowUp, ArrowUp01 } from 'lucide-react';
 import React, { useRef, useState } from 'react'
+import { toast } from 'sonner';
 
 type Props = {}
 
 const CompleteProfile = (props: Props) => {
   const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -18,9 +21,31 @@ const CompleteProfile = (props: Props) => {
     }
   };
 
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitError("");
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fullName: (e.target as any).fullName.value, avatar: preview }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update profile");
+      toast.success("Profile updated!");
+      // Optionally, trigger a UI update or redirect here
+    } catch (err: any) {
+      setSubmitError(err.message || "Failed to update profile");
+      toast.error(err.message || "Failed to update profile");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className='font-source'>
-      <form action="" className='flex gap-4 items-center'>
+      <form className='flex gap-4 items-center' onSubmit={handleProfileSubmit}>
         <div className='relative'>
           <input
             type="file"
@@ -49,9 +74,13 @@ const CompleteProfile = (props: Props) => {
           </section>
         </div>
         <div className='flex flex-col gap-2'>
-            <label htmlFor="Name" className='font-normal text-xl text-[#104901]'>Name</label>
-          <input type="text" placeholder='firstname lastname' className='w-[250px] md:w-[370px] px-5 py-2.5 placeholder:font-normal placeholder:text-2xl placeholder:text-[#767676] border border-[#D9D9DC] rounded-lg outline-none' />
+          <label htmlFor="fullName" className='font-normal text-xl text-[#104901]'>Name</label>
+          <input name="fullName" id="fullName" type="text" placeholder='firstname lastname' className='w-[250px] md:w-[400px] px-5 py-2.5 placeholder:font-normal placeholder:text-2xl placeholder:text-[#767676] border border-[#D9D9DC] rounded-lg outline-none' required />
         </div>
+        <button type="submit" className="ml-4 px-6 py-2 bg-[#104901] text-white rounded-lg" disabled={isSubmitting}>
+          {isSubmitting ? "Saving..." : "Save"}
+        </button>
+        {submitError && <p className="text-red-500 ml-4">{submitError}</p>}
       </form>
     </div>
   )

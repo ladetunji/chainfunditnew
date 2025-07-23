@@ -63,6 +63,9 @@ module.exports = {
           5: "hsl(var(--chart-5))",
         },
       },
+      boxShadow: {
+        sm: '0px 4px 4px 0px #00000040',
+      },
       keyframes: {
         "accordion-down": {
           from: {

@@ -38,7 +38,7 @@ export function SignupForm({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to send OTP");
       toast.success("OTP sent successfully!");
-      window.location.href = `/otp?email=${encodeURIComponent(email)}`;
+      window.location.href = `/otp?email=${encodeURIComponent(email)}&mode=signup`;
     } catch (err: any) {
       setError(err.message || "Failed to send OTP");
       toast.error(err.message || "Failed to send OTP");
