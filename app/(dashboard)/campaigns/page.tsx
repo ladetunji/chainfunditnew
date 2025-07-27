@@ -9,6 +9,20 @@ import Comments from "./comments";
 
 const tabs = ["Live", "Past", "Chains", "Favourites", "Comments"];
 
+const mockCampaigns = [
+  {
+    id: 1,
+    title: "Support Kamala’s Tuition at Westfield",
+    amountRaised: 12035000,
+    goal: 20000000,
+    donors: 235,
+    chains: 8,
+    image: "/images/kamala.jpg",
+  },
+  // Add more items or leave empty to test empty UI
+];
+
+
 export default function CampaignsPage() {
   const [activeTab, setActiveTab] = useState("Live");
 
@@ -32,7 +46,7 @@ export default function CampaignsPage() {
         ))}
       </ul>
       <div className="mt-6">
-        {activeTab === "Live" && <LiveCampaigns />}
+        {activeTab === "Live" && <LiveCampaigns campaigns={mockCampaigns} />}
         {activeTab === "Past" && <PastCampaigns />}
         {activeTab === "Chains" && <Chains />}
         {activeTab === "Favourites" && <Favourites />}
