@@ -12,9 +12,16 @@ export const users = pgTable('users', {
   hasCompletedProfile: boolean('has_completed_profile').default(false),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  instagram: varchar('instagram', { length: 255 }),
+  facebook: varchar('facebook', { length: 255 }),
+  linkedin: varchar('linkedin', { length: 255 }),
+  twitter: varchar('twitter', { length: 255 }),
+  tiktok: varchar('tiktok', { length: 255 }),
+  youtube: varchar('youtube', { length: 255 }),
+  bio: text('bio'),
 });
 
 // Relations will be defined later to avoid circular dependencies
 
 export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert; 
+export type NewUser = typeof users.$inferInsert;

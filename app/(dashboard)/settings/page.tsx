@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useState} from "react";
+import React, { useState } from "react";
 import Account from "./account";
 import Preferences from "./preferences";
 import Payments from "./payments";
@@ -22,7 +22,7 @@ const SettingsPage = () => {
             }`}
             onClick={() => setActiveTab(tab)}
           >
-a            {tab}
+            {tab}
           </li>
         ))}
       </ul>

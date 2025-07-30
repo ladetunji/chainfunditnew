@@ -93,9 +93,14 @@ export default function DashboardPage() {
             <CompleteProfile formRef={formRef} />
           </div>
           <DialogFooter>
-            <DialogClose asChild>
-              <Button onClick={() => {router.push('/dashboard')}} className="w-full h-14 md:h-[72px] flex justify-between items-center font-semibold text-lg md:text-2xl">Here we go! <ArrowRight size={20} className="md:w-6 md:h-6" /></Button>
-            </DialogClose>
+            <Button
+              onClick={() => {
+                formRef.current?.requestSubmit();
+              }}
+              className="w-full h-14 md:h-[72px] flex justify-between items-center font-semibold text-lg md:text-2xl"
+            >
+              Here we go! <ArrowRight size={20} className="md:w-6 md:h-6" />
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

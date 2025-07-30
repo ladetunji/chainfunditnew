@@ -9,6 +9,7 @@ import {
   BookOpen,
   Briefcase,
   Cat,
+  Check,
   ChevronsLeft,
   ChevronsRight,
   DollarSign,
@@ -20,6 +21,7 @@ import {
   Gift,
   Globe,
   HeartHandshake,
+  Loader,
   Lock,
   MinusCircle,
   Paperclip,
@@ -32,6 +34,7 @@ import {
   User,
   UserPlus,
   Users,
+  XCircle,
   Youtube,
 } from "lucide-react";
 import {
@@ -91,7 +94,7 @@ type CampaignFormData = {
   reason: string;
   fundraisingFor: string;
   currency: string;
-  goal: string;
+  goal: number;
   duration: string;
   video: string;
   documents: File[];
@@ -100,26 +103,20 @@ type CampaignFormData = {
   story: string;
 };
 
+// S = Small, M = Medium, L = Large content length options
+const tabs = ["S", "M", "L"];
+
 export default function CreateCampaignPage() {
+  const [aiInstruction, setAiInstruction] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState(1);
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("S");
+  const [isLoading, setIsLoading] = useState(false);
+
   const router = useRouter();
-
-  // Replace this with your actual authentication logic
-  const isAuthenticated = false; // e.g., get from context or cookies
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace("/signin");
-    }
-  }, [isAuthenticated, router]);
-
-  if (!isAuthenticated) {
-    return null; // Or a loading spinner
-  }
 
   const [formData, setFormData] = useState<CampaignFormData>({
     title: "",
@@ -128,7 +125,7 @@ export default function CreateCampaignPage() {
     reason: "",
     fundraisingFor: "",
     currency: "",
-    goal: "",
+    goal: 0,
     duration: "",
     video: "",
     documents: [],
@@ -146,7 +143,7 @@ export default function CreateCampaignPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleFieldChange = (field: keyof CampaignFormData, value: string) => {
+  const handleFieldChange = (field: keyof CampaignFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -155,21 +152,53 @@ export default function CreateCampaignPage() {
     files: FileList | null
   ) => {
     if (!files) return;
+    const selectedFiles = Array.from(files);
+    setFormData((prev) => {
+      const existing = prev[field];
+      const combined = [...existing, ...selectedFiles];
+      const limited =
+        field === "images" ? combined.slice(0, 5) : combined.slice(0, 3);
+      return { ...prev, [field]: limited };
+    });
+  };
+
+  const handleRemoveImage = (index: number) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: Array.from(files),
+      images: prev.images.filter((_, i) => i !== index),
     }));
   };
 
-  const handleSuggestStory = async () => {
-    const exampleSuggestions = [
-      "I'm raising funds to support a vital cause that's close to my heart...",
-      "Help me make a difference in my community through this fundraiser...",
-      "Your contribution will help us achieve a life-changing goal for someone in need...",
-    ];
+  const handleRemoveDocument = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      documents: prev.documents.filter((_, i) => i !== index),
+    }));
+  };
 
-    setSuggestions(exampleSuggestions);
-    setShowSuggestions(true);
+  // No-op: old handler not used, logic will move to modal in future
+
+  const generateAiSuggestion = async () => {
+    const prompt = aiInstruction.trim();
+    const length =
+      activeTab === "S" ? "short" : activeTab === "M" ? "medium" : "long";
+
+    if (!prompt) return;
+
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, length }),
+      });
+      const data = await res.json();
+      setAiInstruction(data.generated || "No suggestion generated.");
+    } catch (error) {
+      setAiInstruction("Error generating suggestion. Try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = async () => {
@@ -204,6 +233,11 @@ export default function CreateCampaignPage() {
     } else {
       setStep((prev) => prev + 1);
     }
+  };
+
+  const handleAiDone = () => {
+    setFormData((prev) => ({ ...prev, story: aiInstruction }));
+    setShowAiModal(false);
   };
 
   return (
@@ -418,13 +452,14 @@ export default function CreateCampaignPage() {
               <Target color="#5F8555" size={32} />
               <section>
                 <input
-                  type="text"
+                  type="number"
+                  inputMode="numeric"
                   id="goal"
                   name="goal"
                   placeholder="Your goal"
                   value={formData.goal}
-                  onChange={(e) => handleFieldChange("goal", e.target.value)}
-                  className="w-full bg-transparent font-medium text-lg md:text-3xl text-[#5F8555] placeholder:text-[#5F8555] outline-none"
+                  onChange={(e) => handleFieldChange("goal", +e.target.value)}
+                  className="w-full bg-transparent font-medium text-lg md:text-3xl text-[#5F8555] placeholder:text-[#5F8555] outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
                 <p className="font-normal text-xs md:text-base text-[#5F8555]">
                   Please enter target amount
@@ -483,7 +518,7 @@ export default function CreateCampaignPage() {
 
             <div className="flex flex-col gap-1">
               <p className="font-medium text-2xl text-[#104901] flex gap-2 items-end">
-                Documents
+                More photos
                 <span className="font-normal text-base text-[#5F8555]">
                   Add additional images to your campaign gallery
                 </span>
@@ -515,13 +550,20 @@ export default function CreateCampaignPage() {
                   formData.images.map((file, index) => (
                     <div
                       key={index}
-                      className="bg-[#E5ECDE] rounded-2xl overflow-hidden flex items-center justify-center"
+                      className="relative bg-[#E5ECDE] rounded-2xl overflow-hidden flex items-center justify-center"
                     >
                       <img
                         src={URL.createObjectURL(file)}
                         alt={`preview-${index}`}
                         className="object-cover w-full h-[120px]"
                       />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(index)}
+                        className="absolute top-2 right-2 bg-red-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center"
+                      >
+                        ×
+                      </button>
                     </div>
                   ))
                 ) : (
@@ -542,7 +584,7 @@ export default function CreateCampaignPage() {
 
             <div className="flex flex-col gap-1">
               <p className="font-medium text-2xl text-[#104901] flex gap-2 items-end">
-                More photos
+                Documents
                 <span className="font-normal text-base text-[#5F8555]">
                   Add supporting documents
                 </span>
@@ -576,12 +618,19 @@ export default function CreateCampaignPage() {
                   formData.documents.map((file, index) => (
                     <div
                       key={index}
-                      className="bg-[#E5ECDE] px-4 py-3 rounded-2xl flex items-center gap-2 text-[#5F8555] text-sm"
+                      className="relative bg-[#E5ECDE] px-4 py-3 rounded-2xl flex items-center gap-2 text-[#5F8555] text-sm"
                     >
                       <Paperclip size={20} />
                       {file.name.length > 30
                         ? file.name.slice(0, 30) + "..."
                         : file.name}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDocument(index)}
+                        className="absolute top-2 right-2 bg-red-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center"
+                      >
+                        ×
+                      </button>
                     </div>
                   ))
                 ) : (
@@ -608,7 +657,6 @@ export default function CreateCampaignPage() {
             <p className="mb-4 font-semibold text-[28px] text-[#104901]">
               Campaign story
             </p>
-
             <div className="bg-[#E5ECDE] w-full h-[300px] rounded-xl pt-3 relative">
               <div className="flex gap-3 px-4">
                 <PenTool size={32} color="#5F8555" className="rotate-180" />
@@ -619,7 +667,6 @@ export default function CreateCampaignPage() {
                     onChange={(e) => handleFieldChange("story", e.target.value)}
                     className="bg-transparent md:w-[1000px] w-full h-10 font-medium text-[28xl] text-[#5F8555] placeholder:font-medium placeholder:text-[28xl] placeholder:text-[#5F8555] outline-none"
                   ></textarea>
-
                   <span className="font-normal text-base text-[#5F8555]">
                     Tell the world what your campaign is about and why you think
                     they should support you
@@ -627,30 +674,87 @@ export default function CreateCampaignPage() {
                 </section>
               </div>
               <button
-                onClick={handleSuggestStory}
+                type="button"
+                onClick={() => setShowAiModal(true)}
                 className="absolute bottom-0 w-full bg-[#5F8555] py-3 px-4 flex gap-2 items-center font-normal text-xl text-[#D9D9D9] rounded-b-xl"
               >
                 <Airplay />
                 <p>Suggest with AI</p>
               </button>
             </div>
-            {showSuggestions && suggestions.length > 0 && (
-              <div className="mt-4 space-y-3">
-                <p className="font-semibold text-[#104901] text-lg">
-                  Suggested stories:
-                </p>
-                {suggestions.map((s, index) => (
-                  <div
-                    key={index}
-                    onClick={() => {
-                      handleFieldChange("story", s);
-                      setShowSuggestions(false);
-                    }}
-                    className="cursor-pointer bg-[#F0F5EB] p-4 rounded-lg text-[#5F8555] hover:bg-[#E5ECDE]"
-                  >
-                    {s}
+            {/* Modal for AI suggestion */}
+            {showAiModal && (
+              <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+                <div className="bg-[#E5ECDE] rounded-xl p-6 w-[600px] max-w-full shadow-lg space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div className="flex gap-2 items-start">
+                      <Loader size={32} color="#5F8555" />
+                      <section>
+                        <h2 className="text-[#5F8555] text-3xl font-medium">
+                          Suggest description
+                        </h2>
+                        <p className="text-[#5F8555] text-base">
+                          Generate a description for your fundraiser with AI
+                        </p>
+                      </section>
+                    </div>
+                    <button
+                      className="text-[#5F8555] text-xl"
+                      onClick={() => setShowAiModal(false)}
+                    >
+                      <XCircle />
+                    </button>
                   </div>
-                ))}
+                  <div className="space-y-3">
+                    <label className="text-[#5F8555] text-xl font-medium">
+                      Length
+                    </label>
+                    <div className="bg-[#D9D9D9] w-fit flex gap-2 p-1 rounded-xl my-2">
+                      {tabs.map((tab) => (
+                        <Button
+                          key={tab}
+                          className={`bg-transparent font-medium text-2xl text-[#5F8555] border-none ${
+                            activeTab === tab
+                              ? "text-[#5F8555] bg-white rounded-md"
+                              : ""
+                          }`}
+                          variant={activeTab === tab ? "default" : "ghost"}
+                          onClick={() => setActiveTab(tab)}
+                        >
+                          {tab}
+                        </Button>
+                      ))}
+                    </div>
+                    <label className="text-[#5F8555] text-xl font-medium">
+                      Additional instructions
+                    </label>
+                    <textarea
+                      className="w-full bg-[#F2F1E9] rounded border-[#C0BFC4] p-5 text-[#5F8555] placeholder:text-[#B3B3B3] outline-none h-28"
+                      rows={3}
+                      value={aiInstruction}
+                      onChange={(e) => setAiInstruction(e.target.value)}
+                      placeholder="For example, you can tell Chain AI your name, what cause you support, who will benefit from your fundraiser, or even how the funds will be used, etc."
+                    ></textarea>
+                    <div className="flex justify-between">
+                      <Button
+                        className="w-fit h-14 bg-[#104901] text-white text-2xl font-semibold py-2"
+                        onClick={generateAiSuggestion}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Generating..." : "Generate"}
+                        {!isLoading && <ChevronsRight className="ml-2" />}
+                      </Button>
+                      {aiInstruction && (
+                        <Button
+                          onClick={handleAiDone}
+                          className="w-fit h-14 bg-[#104901] text-white text-2xl font-semibold py-2"
+                        >
+                          Done <Check />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

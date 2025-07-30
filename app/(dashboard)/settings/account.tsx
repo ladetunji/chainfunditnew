@@ -1,13 +1,84 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { ArrowUp, UserCheck } from "lucide-react";
 import { FaFacebook, FaInstagram, FaLinkedinIn, FaTiktok, FaTwitter, FaYoutube } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 type Props = {};
 
 const Account = (props: Props) => {
   const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [form, setForm] = useState({
+    fullName: "",
+    bio: "",
+    instagram: "",
+    facebook: "",
+    linkedin: "",
+    twitter: "",
+    tiktok: "",
+    youtube: "",
+    avatar: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    fetch("/api/user/profile", { method: "GET" })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.user) {
+          setForm({
+            fullName: data.user.fullName || "",
+            bio: data.user.bio || "",
+            instagram: data.user.instagram || "",
+            facebook: data.user.facebook || "",
+            linkedin: data.user.linkedin || "",
+            twitter: data.user.twitter || "",
+            tiktok: data.user.tiktok || "",
+            youtube: data.user.youtube || "",
+            avatar: data.user.avatar || "",
+          });
+          setPreview(data.user.avatar || null);
+        }
+      });
+  }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+        setForm(f => ({ ...f, avatar: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update profile");
+      toast.success("Profile updated!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update profile");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="">
       <h4 className="font-semibold text-3xl text-[#104901]">Your profile</h4>
@@ -15,28 +86,27 @@ const Account = (props: Props) => {
         Choose how you are displayed on the frontend of the website.
       </p>
 
-      <form action="" className="mt-8">
+      <form className="mt-8" onSubmit={handleSubmit}>
         <div className="flex gap-10">
           <section className="flex flex-col">
-            <label
-              htmlFor=""
-              className="font-normal text-xl text-[#104901] mb-2"
-            >
+            <label className="font-normal text-xl text-[#104901] mb-2">
               Name
             </label>
             <input
               type="text"
+              name="fullName"
+              value={form.fullName}
+              onChange={handleChange}
               placeholder="Tolulope Smith"
               className="w-[385px] py-[10px] mb-3 px-5 rounded-lg border border-[#D9D9DC] outline-none placeholder:font-medium placeholder:text-2xl placeholder:text-[#1E1E1E]"
             />
-            <label
-              htmlFor=""
-              className="font-normal text-xl text-[#104901] mb-2"
-            >
+            <label className="font-normal text-xl text-[#104901] mb-2">
               Bio
             </label>
-            <input
-              type="text"
+            <textarea
+              name="bio"
+              value={form.bio}
+              onChange={handleChange}
               placeholder="Share a little about your background and interests"
               className="w-[385px] py-[10px] mb-3 px-5 rounded-lg border border-[#D9D9DC] outline-none placeholder:font-medium placeholder:text-sm placeholder:text-[#ADADAD]"
             />
@@ -49,7 +119,7 @@ const Account = (props: Props) => {
               accept="image/*"
               className="hidden"
               ref={inputRef}
-              // onChange={handleFileChange}
+              onChange={handleFileChange}
             />
             <label
               htmlFor="profile-image-upload"
@@ -65,7 +135,7 @@ const Account = (props: Props) => {
                 <span className="sr-only">Upload profile image</span>
               )}
             </label>
-            <section className="w-4 md:w-[33px] h-4 md:h-[33px] bg-[#104901] rounded-full flex items-center justify-center text-white absolute left-7 md:left-16 bottom-0 md:bottom-16">
+            <section className="w-4 md:w-[33px] h-4 md:h-[33px] bg-[#104901] rounded-full flex items-center justify-center text-white absolute left-7 md:left-16 bottom-0 md:bottom-20">
               <ArrowUp />
             </section>
           </div>
@@ -77,21 +147,42 @@ const Account = (props: Props) => {
               <FaInstagram size={36} />
               <section className="bg-[#D9D9D9] w-fit flex gap-2 items-center pl-5 pr-1 py-1 rounded-lg">
                 <span className="font-medium text-xl text-[#2C2C2C]">instagram.com/</span>
-                <input type="text" placeholder="username" className="w-[145px] rounded-[6px] px-3 py-2 outline-none placeholder:font-medium placeholder:text-xl placeholder:text-[#ADADAD]" />
+                <input
+                  type="text"
+                  name="instagram"
+                  value={form.instagram}
+                  onChange={handleChange}
+                  placeholder="username"
+                  className="w-[145px] rounded-[6px] px-3 py-2 outline-none placeholder:font-medium placeholder:text-xl placeholder:text-[#ADADAD]"
+                />
               </section>
             </li>
             <li className="flex gap-3 items-center">
               <FaFacebook size={36} />
               <section className="bg-[#D9D9D9] w-fit flex gap-2 items-center pl-5 pr-1 py-1 rounded-lg">
                 <span className="font-medium text-xl text-[#2C2C2C]">facebook.com/</span>
-                <input type="text" placeholder="username" className="w-[145px] rounded-[6px] px-3 py-2 outline-none placeholder:font-medium placeholder:text-xl placeholder:text-[#ADADAD]" />
+                <input
+                  type="text"
+                  name="facebook"
+                  value={form.facebook}
+                  onChange={handleChange}
+                  placeholder="username"
+                  className="w-[145px] rounded-[6px] px-3 py-2 outline-none placeholder:font-medium placeholder:text-xl placeholder:text-[#ADADAD]"
+                />
               </section>
             </li>
             <li className="flex gap-3 items-center">
               <FaLinkedinIn size={36} />
               <section className="bg-[#D9D9D9] w-fit flex gap-2 items-center pl-5 pr-1 py-1 rounded-lg">
                 <span className="font-medium text-xl text-[#2C2C2C]">linkedin.com/</span>
-                <input type="text" placeholder="in/username" className="w-[145px] rounded-[6px] px-3 py-2 outline-none placeholder:font-medium placeholder:text-xl placeholder:text-[#ADADAD]" />
+                <input
+                  type="text"
+                  name="linkedin"
+                  value={form.linkedin}
+                  onChange={handleChange}
+                  placeholder="in/username"
+                  className="w-[145px] rounded-[6px] px-3 py-2 outline-none placeholder:font-medium placeholder:text-xl placeholder:text-[#ADADAD]"
+                />
               </section>
             </li>
           </ul>
@@ -100,26 +191,53 @@ const Account = (props: Props) => {
               <FaTwitter size={36} />
               <section className="bg-[#D9D9D9] w-fit flex gap-2 items-center pl-5 pr-1 py-1 rounded-lg">
                 <span className="font-medium text-xl text-[#2C2C2C]">x.com/</span>
-                <input type="text" placeholder="username" className="w-[145px] rounded-[6px] px-3 py-2 outline-none placeholder:font-medium placeholder:text-xl placeholder:text-[#ADADAD]" />
+                <input
+                  type="text"
+                  name="twitter"
+                  value={form.twitter}
+                  onChange={handleChange}
+                  placeholder="username"
+                  className="w-[145px] rounded-[6px] px-3 py-2 outline-none placeholder:font-medium placeholder:text-xl placeholder:text-[#ADADAD]"
+                />
               </section>
             </li>
             <li className="flex gap-3 items-center">
               <FaTiktok size={36} />
               <section className="bg-[#D9D9D9] w-fit flex gap-2 items-center pl-5 pr-1 py-1 rounded-lg">
                 <span className="font-medium text-xl text-[#2C2C2C]">tiktok.com/@</span>
-                <input type="text" placeholder="username" className="w-[145px] rounded-[6px] px-3 py-2 outline-none placeholder:font-medium placeholder:text-xl placeholder:text-[#ADADAD]" />
+                <input
+                  type="text"
+                  name="tiktok"
+                  value={form.tiktok}
+                  onChange={handleChange}
+                  placeholder="username"
+                  className="w-[145px] rounded-[6px] px-3 py-2 outline-none placeholder:font-medium placeholder:text-xl placeholder:text-[#ADADAD]"
+                />
               </section>
             </li>
             <li className="flex gap-3 items-center">
               <FaYoutube size={36} />
               <section className="bg-[#D9D9D9] w-fit flex gap-2 items-center pl-5 pr-1 py-1 rounded-lg">
                 <span className="font-medium text-xl text-[#2C2C2C]">youtube.com/@</span>
-                <input type="text" placeholder="in/username" className="w-[145px] rounded-[6px] px-3 py-2 outline-none placeholder:font-medium placeholder:text-xl placeholder:text-[#ADADAD]" />
+                <input
+                  type="text"
+                  name="youtube"
+                  value={form.youtube}
+                  onChange={handleChange}
+                  placeholder="username"
+                  className="w-[145px] rounded-[6px] px-3 py-2 outline-none placeholder:font-medium placeholder:text-xl placeholder:text-[#ADADAD]"
+                />
               </section>
             </li>
           </ul>
         </div>
-        <Button className="w-[240px] my-7 font-semibold text-2xl flex justify-between h-14">Save changes <UserCheck /></Button>
+        <Button
+          className="w-[240px] my-7 font-semibold text-2xl flex justify-between h-14"
+          type="submit"
+          disabled={isLoading}
+        >
+          {isLoading ? "Saving..." : "Save changes"} <UserCheck />
+        </Button>
       </form>
     </div>
   );
