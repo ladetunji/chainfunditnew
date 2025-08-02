@@ -14,11 +14,11 @@ export const campaigns = pgTable('campaigns', {
   coverImageUrl: varchar('cover_image_url', { length: 255 }),
   galleryImages: text('gallery_images'), // JSON stringified array
   documents: text('documents'), // JSON stringified array
-  goalAmount: decimal('goal_amount', { precision: 10, scale: 2 }).notNull(), // from numeric input
-  currency: varchar('currency', { length: 3 }).notNull(), // USD, GBP, NGN
-  minimumDonation: decimal('minimum_donation', { precision: 10, scale: 2 }).notNull(),
+  goalAmount: decimal('goal_amount', { precision: 15, scale: 2 }).notNull(), // Increased precision for larger amounts
+  currency: varchar('currency', { length: 50 }).notNull(), // Increased length for longer currency names
+  minimumDonation: decimal('minimum_donation', { precision: 15, scale: 2 }).notNull(),
   chainerCommissionRate: decimal('chainer_commission_rate', { precision: 3, scale: 1 }).notNull(), // 1.0-10.0
-  currentAmount: decimal('current_amount', { precision: 10, scale: 2 }).default('0').notNull(),
+  currentAmount: decimal('current_amount', { precision: 15, scale: 2 }).default('0').notNull(),
   status: varchar('status', { length: 20 }).default('active').notNull(), // active, paused, goal_reached, closed
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),

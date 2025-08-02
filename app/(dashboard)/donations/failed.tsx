@@ -4,7 +4,7 @@ type Props = {}
 
 const FailedDonations = (props: Props) => {
   return (
-    <div>FailedDonations</div>
+    <div className='2xl:container 2xl:mx-auto'>FailedDonations</div>
   )
 }
 

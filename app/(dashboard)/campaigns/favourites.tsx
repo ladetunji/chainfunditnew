@@ -4,7 +4,7 @@ type Props = {}
 
 const Favourites = (props: Props) => {
   return (
-    <div>Favourites</div>
+    <div className='2xl:container 2xl:mx-auto'>Favourites</div>
   )
 }
 

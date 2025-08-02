@@ -80,7 +80,7 @@ const Account = (props: Props) => {
   };
 
   return (
-    <div className="">
+    <div className=" 2xl:container 2xl:mx-auto">
       <h4 className="font-semibold text-3xl text-[#104901]">Your profile</h4>
       <p className="font-normal text-xl text-[#104901]">
         Choose how you are displayed on the frontend of the website.

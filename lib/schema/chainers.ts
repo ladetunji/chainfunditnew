@@ -6,8 +6,8 @@ export const chainers = pgTable('chainers', {
   userId: uuid('user_id').notNull(),
   campaignId: uuid('campaign_id').notNull(),
   referralCode: varchar('referral_code', { length: 50 }).notNull().unique(),
-  commissionDestination: varchar('commission_destination', { length: 20 }).default('keep').notNull(), // keep, donate_back, donate_other
-  charityChoiceId: uuid('charity_choice_id'), // if donate_other, which charity
+  commissionDestination: varchar('commission_destination', { length: 20 }).default('keep').notNull(),
+  charityChoiceId: uuid('charity_choice_id'), 
   totalRaised: decimal('total_raised', { precision: 10, scale: 2 }).default('0').notNull(),
   totalReferrals: integer('total_referrals').default(0).notNull(),
   clicks: integer('clicks').default(0).notNull(),

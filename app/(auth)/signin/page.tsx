@@ -4,7 +4,7 @@ import { Suspense } from "react";
 
 export default function LoginPage() {
   return (
-    <div className="w-full h-[calc(100vh-190px)] flex flex-col justify-between px-3">
+    <div className="w-full h-[calc(100vh-190px)] flex flex-col gap-5 px-3">
       <div className="flex flex-col items-center justify-center">
         <Image
           src="/images/logo.svg"

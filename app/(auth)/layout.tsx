@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 type Props = {};
 
@@ -114,9 +115,9 @@ function Carousel() {
 
 const layout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="w-full flex gap-5 md:p-5 p-2 font-source h-screen overflow-y-hidden">
+    <div className="w-full flex gap-5 md:p-5 p-2 font-source h-screen overflow-y-hidden 2xl:container 2xl:mx-auto">
       <div
-        className="w-full md:w-2/5 flex flex-col gap-2 items-center justify-between"
+        className="w-full md:w-2/5 flex flex-col gap-2 items-center"
         style={{
           background:
             "linear-gradient(180deg, #F2F1E9 80%, #FFF 85%, #F2F1E9 100%)",
@@ -161,15 +162,21 @@ const layout = ({ children }: { children: React.ReactNode }) => {
           </ul>
           <div className="text-center md:text-left">
             <p className="font-source font-semibold text-xs md:text-sm text-black">
-              Over 100 Chainfunders can't be wrong
+              Over 100 Chainfunders can&apos;t be wrong
             </p>
             <span className="font-light text-xs md:text-sm text-black">
               Start fundraising today!
             </span>
           </div>
         </div>
+        <p className="text-center text-sm text-gray-600">
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" className="text-blue-600 hover:text-blue-800">
+            Sign up
+          </Link>
+        </p>
       </div>
-
+{/* right */}
       <div className="md:w-3/5 relative hidden lg:block">
         <Carousel />
       </div>

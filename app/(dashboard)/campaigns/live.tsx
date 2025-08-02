@@ -23,7 +23,7 @@ const LiveCampaigns = ({ campaigns }: Props) => {
 
   if (isEmpty) {
     return (
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 2xl:container 2xl:mx-auto">
         <section className="relative w-fit">
           <Image src="/images/frame.png" alt="" width={232} height={216} />
           <section
@@ -51,7 +51,7 @@ const LiveCampaigns = ({ campaigns }: Props) => {
   }
 
   return (
-    <div className="flex flex-col gap-6 font-source">
+    <div className="flex flex-col gap-6 font-source 2xl:container 2xl:mx-auto">
       {campaigns.map((campaign) => (
         <div
           key={campaign.id}

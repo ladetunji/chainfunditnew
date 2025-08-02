@@ -5,7 +5,7 @@ type Props = {};
 
 const ReceivedDonations = (props: Props) => {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 2xl:container 2xl:mx-auto">
       <section className="relative w-fit">
         <Image src="/images/frame.png" alt="" width={232} height={216} />
         <section

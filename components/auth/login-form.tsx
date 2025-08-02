@@ -121,7 +121,12 @@ export function LoginForm({
           </Button>
         </div>
       </div>
-      <p className="text-center text-sm font-normal text-[#104901] mt-4">Don't have an account? <Link href='/signup' className="font-medium text-base underline">Sign up</Link></p>
+      <p className="text-center text-sm text-gray-600">
+        Don&apos;t have an account?{" "}
+        <Link href="/signup" className="text-blue-600 hover:text-blue-800">
+          Sign up
+        </Link>
+      </p>
       <p className="text-center text-sm font-normal text-[#104901] mt-4">
         By continuing with Google, Apple, Email or Phone number, you agree to
         Chainfundit <span className="font-bold">Terms of Service</span> as well

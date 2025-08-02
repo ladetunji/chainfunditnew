@@ -1,3 +1,7 @@
 import { VisuallyHidden } from "radix-ui";
 
-export default () => <VisuallyHidden.Root />;
+const VisuallyHiddenComponent = () => <VisuallyHidden.Root />;
+
+VisuallyHiddenComponent.displayName = "VisuallyHidden";
+
+export default VisuallyHiddenComponent;

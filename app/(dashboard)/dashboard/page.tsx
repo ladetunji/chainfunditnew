@@ -43,7 +43,7 @@ export default function DashboardPage() {
   if (!profileChecked) return null;
 
   return (
-    <div className="w-full">
+    <div className="w-full 2xl:container 2xl:mx-auto">
       {/* Welcome Modal */}
       <Dialog open={showWelcome} onOpenChange={setShowWelcome}>
         <DialogContent className='w-[80%] max-w-md md:max-w-xl bg-[url("/images/piggy-bank.png")] bg-cover h-[400px] md:h-[600px] px-4 md:px-10 bg-no-repeat rounded-none outline-none font-source'>

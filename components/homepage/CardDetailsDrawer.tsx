@@ -5,7 +5,6 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerClose,
-  DrawerTitle,
 } from "@/components/ui/drawer";
 import {
   ArrowLeft,
@@ -19,7 +18,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { VisuallyHidden } from "radix-ui";
 
 interface CardDetails {
   title: string;
@@ -165,7 +163,7 @@ const CardDetailsDrawer: React.FC<CardDetailsDrawerProps> = ({
                 </li>
                 <li className="capitalize">- liked campaigns (yea/nae)</li>
                 <li className="capitalize">- add chained campaigns</li>
-                <li className="capitalize">- retool "blank screen"</li>
+                <li className="capitalize">- retool &quot;blank screen&quot;</li>
                 <li className="capitalize">- forgot password flow</li>
               </ul>
               <p className="font-semibold text-lg text-black uppercase">

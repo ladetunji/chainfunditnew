@@ -1,7 +1,4 @@
-import Image from "next/image";
-import "./globals.css";
-
-import React from "react";
+import type { ReactNode } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Main from '@/components/homepage/Main'
 import Partners from '@/components/homepage/Partners'
@@ -10,20 +7,16 @@ import CustomerStories from '@/components/homepage/CustomerStories'
 import FAQs from '@/components/homepage/faqs'
 import Footer from "@/components/layout/Footer";
 
-type Props = {};
-
-const page = (props: Props) => {
+export default function HomePage() {
   return (
-    <div className="">
+    <main className="min-h-screen">
       <Navbar />
       <Hero />
-      <Partners />
       <Main />
+      <Partners />
       <CustomerStories />
       <FAQs />
       <Footer />
-    </div>
+    </main>
   );
-};
-
-export default page;
+}

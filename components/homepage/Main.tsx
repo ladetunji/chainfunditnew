@@ -23,7 +23,7 @@ const Main = (props: Props) => {
     "/images/secure.png", // Image 3: secure payments
   ];
 
-  const [currentImage, setCurrentImage] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [openCard, setOpenCard] = useState<number | null>(null);
 
   const cardDetails = [
@@ -79,11 +79,11 @@ const Main = (props: Props) => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentImage((prev) => (prev + 1) % images.length);
-    }, 4000); // change every 4 seconds
+      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [images.length]);
 
   return (
     <div className="my-6">

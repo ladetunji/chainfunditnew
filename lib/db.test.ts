@@ -1,4 +1,4 @@
-require('dotenv').config();
+import 'dotenv/config';
 import { db } from './db';
 
 describe('Database Connection', () => {

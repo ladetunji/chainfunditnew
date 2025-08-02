@@ -4,7 +4,7 @@ type Props = {}
 
 const page = (props: Props) => {
   return (
-    <div>page</div>
+    <div className=' 2xl:container 2xl:mx-auto'>page</div>
   )
 }
 

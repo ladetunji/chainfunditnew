@@ -47,7 +47,7 @@ export default function CampaignsPage() {
   const [activeTab, setActiveTab] = useState("Live");
 
   return (
-    <div className="w-full flex flex-col gap-5 font-source">
+    <div className="w-full flex flex-col gap-5 font-source 2xl:container 2xl:mx-auto">
       <h2 className="font-semibold text-6xl text-black">Campaigns</h2>
       {/* Tabs */}
       <ul className="w-fit bg-[#E5ECDE] flex gap-4 font-medium text-[28px] text-[#757575] p-1">

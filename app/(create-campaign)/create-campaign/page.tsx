@@ -36,6 +36,11 @@ import {
   Users,
   XCircle,
   Youtube,
+  Facebook,
+  Instagram,
+  Twitter,
+  Linkedin,
+  ExternalLink,
 } from "lucide-react";
 import {
   Select,
@@ -47,6 +52,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { LuImage } from "react-icons/lu";
+import Image from "next/image";
 
 const reasons = [
   { text: "Business", icon: <Briefcase /> },
@@ -113,6 +119,8 @@ export default function CreateCampaignPage() {
   const [step, setStep] = useState(1);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showAiModal, setShowAiModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [createdCampaign, setCreatedCampaign] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("S");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -189,11 +197,16 @@ export default function CreateCampaignPage() {
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({ prompt, length }),
       });
+
       const data = await res.json();
-      setAiInstruction(data.generated || "No suggestion generated.");
+      const story =
+        data.choices?.[0]?.message?.content ?? "No suggestion generated.";
+      setAiInstruction(story);
     } catch (error) {
       setAiInstruction("Error generating suggestion. Try again.");
     } finally {
@@ -202,6 +215,7 @@ export default function CreateCampaignPage() {
   };
 
   const handleSubmit = async () => {
+    setIsLoading(true);
     const payload = new FormData();
     Object.entries(formData).forEach(([key, value]) => {
       if (key === "images" || key === "documents") {
@@ -218,11 +232,22 @@ export default function CreateCampaignPage() {
         method: "POST",
         body: payload,
       });
-      if (!res.ok) throw new Error("Failed to create campaign");
+
       const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Campaign creation failed:", data);
+        throw new Error(data.error || "Failed to create campaign");
+      }
+
       console.log("Success:", data);
+      setCreatedCampaign(data.data);
+      setShowSuccessModal(true);
     } catch (err) {
-      console.error(err);
+      console.error("Error creating campaign:", err);
+      // TODO: Show error message to user
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -238,6 +263,44 @@ export default function CreateCampaignPage() {
   const handleAiDone = () => {
     setFormData((prev) => ({ ...prev, story: aiInstruction }));
     setShowAiModal(false);
+  };
+
+  const handleViewCampaign = () => {
+    if (createdCampaign?.id) {
+      router.push(`/campaigns/${createdCampaign.id}`);
+    }
+  };
+
+  const handleShareCampaign = (platform: string) => {
+    const campaignUrl = `chainfund.it/${createdCampaign?.id || "l0rea12"}`;
+    const shareText = `Check out my campaign: ${formData.title}`;
+
+    let shareUrl = "";
+    switch (platform) {
+      case "facebook":
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+          campaignUrl
+        )}`;
+        break;
+      case "twitter":
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+          shareText
+        )}&url=${encodeURIComponent(campaignUrl)}`;
+        break;
+      case "linkedin":
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+          campaignUrl
+        )}`;
+        break;
+      case "instagram":
+        // Instagram doesn't support direct sharing via URL, copy to clipboard
+        navigator.clipboard.writeText(`${shareText} ${campaignUrl}`);
+        return;
+    }
+
+    if (shareUrl) {
+      window.open(shareUrl, "_blank");
+    }
   };
 
   return (
@@ -271,7 +334,7 @@ export default function CreateCampaignPage() {
                     <span className="sr-only">Upload profile image</span>
                   )}
                 </label>
-                <section className="w-8 md:w-[56px] h-8 md:h-[56px] bg-[#104901] flex items-center justify-center text-white absolute right-[118px] md:right-[160px] bottom-6 md:bottom-11">
+                <section className="w-8 md:w-[56px] h-8 md:h-[56px] bg-[#104901] flex items-center justify-center text-white absolute right-[118px] md:right-[160px] 2xl:right-[200px] bottom-6 md:bottom-11">
                   <Plus className="md:text-4xl text-lg" size={36} />
                 </section>
               </div>
@@ -552,9 +615,11 @@ export default function CreateCampaignPage() {
                       key={index}
                       className="relative bg-[#E5ECDE] rounded-2xl overflow-hidden flex items-center justify-center"
                     >
-                      <img
+                      <Image
                         src={URL.createObjectURL(file)}
                         alt={`preview-${index}`}
+                        width={200}
+                        height={120}
                         className="object-cover w-full h-[120px]"
                       />
                       <button
@@ -665,7 +730,7 @@ export default function CreateCampaignPage() {
                     placeholder="Add description"
                     value={formData.story}
                     onChange={(e) => handleFieldChange("story", e.target.value)}
-                    className="bg-transparent md:w-[1000px] w-full h-10 font-medium text-[28xl] text-[#5F8555] placeholder:font-medium placeholder:text-[28xl] placeholder:text-[#5F8555] outline-none"
+                    className="bg-transparent md:w-[1000px] w-full h-[200px] font-medium text-[28xl] text-[#5F8555] placeholder:font-medium placeholder:text-[28xl] placeholder:text-[#5F8555] outline-none"
                   ></textarea>
                   <span className="font-normal text-base text-[#5F8555]">
                     Tell the world what your campaign is about and why you think
@@ -779,11 +844,86 @@ export default function CreateCampaignPage() {
             type="button"
             onClick={nextStep}
             className="bg-[#104901] flex justify-between items-center font-semibold text-2xl px-6 py-3 h-14 hover:bg-transparent"
+            disabled={isLoading}
           >
-            {isFinalStep ? "Submit" : "Next"} <ChevronsRight />
+            {isLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                Creating...
+              </>
+            ) : (
+              <>
+                {isFinalStep ? "Submit" : "Next"} <ChevronsRight />
+              </>
+            )}
           </Button>
         </div>
       </form>
+
+      {/* Success Modal */}
+      {showSuccessModal && createdCampaign && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 font-manrope">
+          <div
+            className="bg-[#F5F5F5] p-8 w-[600px] max-w-full shadow-lg space-y-6"
+            style={{ boxShadow: "0px 0px 70px 0px #00000033" }}
+          >
+            <div className="text-left">
+              <h2 className="text-[#104901] text-3xl font-semibold mb-4">
+                Campaign created successfully
+              </h2>
+              <p className="text-[#104901] text-xl mb-6">
+                Share your campaign online and on social media to gain traction
+                and drive you towards your goal.
+              </p>
+            </div>
+
+            {/* Campaign Link Button */}
+            <div
+              className="bg-[#104901] p-4 flex items-center justify-between text-white cursor-pointer hover:bg-[#0a3a01] transition-colors"
+              onClick={handleViewCampaign}
+            >
+              <span className="font-medium">
+                chainfund.it/{createdCampaign.id || "l0rea12"}
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="font-medium">VIEW</span>
+                <ExternalLink size={20} />
+              </div>
+            </div>
+
+            {/* Share Section */}
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600 font-medium">Share campaign</span>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleShareCampaign("facebook")}
+                  className="w-10 h-10 border-2 border-[#104901] rounded-full flex items-center justify-center text-[#104901] hover:bg-[#104901] hover:text-white transition-colors"
+                >
+                  <Facebook size={20} />
+                </button>
+                <button
+                  onClick={() => handleShareCampaign("instagram")}
+                  className="w-10 h-10 border-2 border-[#104901] rounded-full flex items-center justify-center text-[#104901] hover:bg-[#104901] hover:text-white transition-colors"
+                >
+                  <Instagram size={20} />
+                </button>
+                <button
+                  onClick={() => handleShareCampaign("twitter")}
+                  className="w-10 h-10 border-2 border-[#104901] rounded-full flex items-center justify-center text-[#104901] hover:bg-[#104901] hover:text-white transition-colors"
+                >
+                  <Twitter size={20} />
+                </button>
+                <button
+                  onClick={() => handleShareCampaign("linkedin")}
+                  className="w-10 h-10 border-2 border-[#104901] rounded-full flex items-center justify-center text-[#104901] hover:bg-[#104901] hover:text-white transition-colors"
+                >
+                  <Linkedin size={20} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,40 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 export async function POST(req: NextRequest) {
+  const { prompt, length } = await req.json();
+
   try {
-    const { prompt, length } = await req.json();
-    if (!prompt || !length) {
-      return NextResponse.json({ error: "Missing prompt or length" }, { status: 400 });
-    }
-
-    const wordLimit = length === "short" ? 50 : length === "medium" ? 100 : 200;
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      temperature: 0.7,
-      max_tokens: 500,
-      messages: [
-        {
-          role: "system",
-          content: `You are a helpful assistant that writes inspiring campaign stories for fundraising.`,
-        },
-        {
-          role: "user",
-          content: `Write a ${length} fundraiser story (max ${wordLimit} words) about: ${prompt}`,
-        },
-      ],
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "http://localhost:3000",
+        "X-Title": "chainfundit-campaign",
+      },
+      body: JSON.stringify({
+        model: "openrouter/horizon-alpha",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a helpful assistant that helps users write compelling fundraising campaign stories.",
+          },
+          {
+            role: "user",
+            content: `Write a ${length} fundraising campaign story based on this prompt: ${prompt}`,
+          },
+        ],
+      }),
     });
-    console.log("OpenAI response:", completion);
 
-    const generated = completion.choices[0]?.message?.content;
-    return NextResponse.json({ generated });
+    const data = await response.json();
+    console.log("🔍 OpenRouter response:", JSON.stringify(data, null, 2));
+
+    return NextResponse.json(data);
   } catch (err) {
-    console.error("Error generating story:", err);
-    return NextResponse.json({ error: "Failed to generate content" }, { status: 500 });
+    console.error("❌ OpenRouter error:", err);
+    return NextResponse.json({ error: "Failed to fetch story" }, { status: 500 });
   }
 }

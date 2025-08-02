@@ -10,6 +10,7 @@ import { parseCookies } from 'nookies';
 import { useSearchParams } from 'next/navigation';
 import { toast } from "sonner";
 import { Suspense } from 'react';
+import Link from 'next/link';
 
 export default function PhonePageWrapper() {
   return (
@@ -119,6 +120,12 @@ function PhonePage() {
                 >
                   Skip
                 </Button>
+                <p className="text-center text-sm text-gray-600">
+                  Don&apos;t have an account?{" "}
+                  <Link href="/signup" className="text-blue-600 hover:text-blue-800">
+                    Sign up
+                  </Link>
+                </p>
               </div>
               {/* {error && <p className="text-center text-red-500">{error}</p>} */}
             </form>
