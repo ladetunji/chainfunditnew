@@ -53,6 +53,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { LuImage } from "react-icons/lu";
 import Image from "next/image";
+import { shortenLink } from "@/lib/shorten-link";
 
 const reasons = [
   { text: "Business", icon: <Briefcase /> },
@@ -241,7 +242,17 @@ export default function CreateCampaignPage() {
       }
 
       console.log("Success:", data);
-      setCreatedCampaign(data.data);
+      const campaignUrl = `${window.location.origin}/campaigns/${data.data.id}`;
+      let shortUrl = null;
+      try {
+        shortUrl = await shortenLink(campaignUrl);
+      } catch (e) {
+        shortUrl = null;
+      }
+      setCreatedCampaign({
+        ...data.data,
+        shortUrl: shortUrl || campaignUrl,
+      });
       setShowSuccessModal(true);
     } catch (err) {
       console.error("Error creating campaign:", err);
@@ -272,7 +283,7 @@ export default function CreateCampaignPage() {
   };
 
   const handleShareCampaign = (platform: string) => {
-    const campaignUrl = `chainfund.it/${createdCampaign?.id || "l0rea12"}`;
+    const campaignUrl = createdCampaign?.shortUrl || `chainfund.it/${createdCampaign?.id || "l0rea12"}`;
     const shareText = `Check out my campaign: ${formData.title}`;
 
     let shareUrl = "";
@@ -883,7 +894,7 @@ export default function CreateCampaignPage() {
               onClick={handleViewCampaign}
             >
               <span className="font-medium">
-                chainfund.it/{createdCampaign.id || "l0rea12"}
+                {createdCampaign.shortUrl || `chainfund.it/${createdCampaign.id || "l0rea12"}`}
               </span>
               <div className="flex items-center gap-2">
                 <span className="font-medium">VIEW</span>

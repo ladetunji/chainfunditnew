@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 // List of protected routes (add more as needed)
 const protectedRoutes = [
-  "/dashboard",
+  "/dashboard/:path*",
   "/create-campaign",
-  "/settings",
+  "/settings/:path*",
   // add other protected routes here
 ];
 
@@ -31,5 +31,5 @@ export function middleware(request: NextRequest) {
 
 // Optionally, limit middleware to only certain paths for performance
 export const config = {
-  matcher: ["/dashboard/:path*", "/create-campaign", "/settings/:path*"],
+  matcher: [...protectedRoutes],
 };
