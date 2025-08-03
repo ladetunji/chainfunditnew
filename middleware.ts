@@ -9,7 +9,7 @@ const protectedRoutes = [
 ];
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, search, hash } = request.nextUrl;
 
   // Check if the route is protected
   const isProtected = protectedRoutes.some((route) =>
@@ -21,7 +21,7 @@ export function middleware(request: NextRequest) {
     if (!token) {
       // Redirect to signin, preserving the original destination
       const signinUrl = new URL("/signin", request.url);
-      signinUrl.searchParams.set("redirect", pathname);
+      signinUrl.searchParams.set("redirect", pathname + search + hash);
       return NextResponse.redirect(signinUrl);
     }
   }

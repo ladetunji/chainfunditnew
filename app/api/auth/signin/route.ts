@@ -25,6 +25,11 @@ export async function POST(request: NextRequest) {
       if (!email) {
         return NextResponse.json({ success: false, error: 'Email is required' }, { status: 400 });
       }
+      // Check if user exists
+      const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
+      if (!existingUser || existingUser.length === 0) {
+        return NextResponse.json({ success: false, error: 'No account found with this email. Please sign up first.' }, { status: 404 });
+      }
       const generatedOtp = generateOtp();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
       // Store OTP in DB
@@ -54,6 +59,11 @@ export async function POST(request: NextRequest) {
     if (action === 'request_phone_otp') {
       if (!phone) {
         return NextResponse.json({ success: false, error: 'Phone number is required' }, { status: 400 });
+      }
+      // Check if user exists by phone
+      const existingUser = await db.select().from(users).where(eq(users.phone, phone)).limit(1);
+      if (!existingUser || existingUser.length === 0) {
+        return NextResponse.json({ success: false, error: 'No account found with this phone number. Please sign up first.' }, { status: 404 });
       }
       // Check if Twilio environment variables are set
       if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_WHATSAPP_FROM) {

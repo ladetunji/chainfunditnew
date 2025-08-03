@@ -70,3 +70,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const email = await getUserFromRequest(request);
+    if (!email) {
+      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+    }
+    const { hasSeenWelcomeModal } = await request.json();
+    if (typeof hasSeenWelcomeModal !== 'boolean') {
+      return NextResponse.json({ success: false, error: 'Invalid value for hasSeenWelcomeModal' }, { status: 400 });
+    }
+    const updateResult = await db.update(users)
+      .set({ hasSeenWelcomeModal, updatedAt: new Date() })
+      .where(eq(users.email, email))
+      .returning();
+    if (!updateResult.length) {
+      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, user: updateResult[0] });
+  } catch (error) {
+    console.error('Profile PATCH error:', error);
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+  }
+}

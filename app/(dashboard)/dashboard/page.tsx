@@ -27,7 +27,7 @@ export default function DashboardPage() {
       try {
         const res = await fetch('/api/user/profile', { method: 'GET' });
         const data = await res.json();
-        if (data.success && data.user && !data.user.hasCompletedProfile) {
+        if (data.success && data.user && !data.user.hasCompletedProfile && !data.user.hasSeenWelcomeModal) {
           setShowWelcome(true);
         }
       } catch {
@@ -41,6 +41,19 @@ export default function DashboardPage() {
   }, []);
 
   if (!profileChecked) return null;
+
+  // When closing the welcome modal, mark as seen in backend
+  const handleCloseWelcome = async () => {
+    setShowWelcome(false);
+    setShowCompleteProfile(true);
+    try {
+      await fetch('/api/user/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hasSeenWelcomeModal: true }),
+      });
+    } catch {}
+  };
 
   return (
     <div className="w-full 2xl:container 2xl:mx-auto">
@@ -66,10 +79,7 @@ export default function DashboardPage() {
           <DialogFooter className="flex items-end">
             <Button
               className="w-full h-14 md:h-[72px] font-sans font-semibold text-lg md:text-2xl flex justify-between items-center"
-              onClick={() => {
-                setShowWelcome(false);
-                setShowCompleteProfile(true);
-              }}
+              onClick={handleCloseWelcome}
             >
               Complete your profile
               <ArrowRight />
