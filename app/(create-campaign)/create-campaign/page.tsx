@@ -904,31 +904,31 @@ export default function CreateCampaignPage() {
 
             {/* Share Section */}
             <div className="flex items-center justify-between">
-              <span className="text-gray-600 font-medium">Share campaign</span>
+              <span className="text-[#104901] text-2xl font-medium">Share campaign</span>
               <div className="flex gap-3">
                 <button
                   onClick={() => handleShareCampaign("facebook")}
-                  className="w-10 h-10 border-2 border-[#104901] rounded-full flex items-center justify-center text-[#104901] hover:bg-[#104901] hover:text-white transition-colors"
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-[#104901] hover:bg-[#104901] hover:text-white transition-colors"
                 >
-                  <Facebook size={20} />
+                  <Facebook size={32} strokeWidth={1.5} />
                 </button>
                 <button
                   onClick={() => handleShareCampaign("instagram")}
-                  className="w-10 h-10 border-2 border-[#104901] rounded-full flex items-center justify-center text-[#104901] hover:bg-[#104901] hover:text-white transition-colors"
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-[#104901] hover:bg-[#104901] hover:text-white transition-colors"
                 >
-                  <Instagram size={20} />
+                  <Instagram size={32} strokeWidth={1.5} />
                 </button>
                 <button
                   onClick={() => handleShareCampaign("twitter")}
-                  className="w-10 h-10 border-2 border-[#104901] rounded-full flex items-center justify-center text-[#104901] hover:bg-[#104901] hover:text-white transition-colors"
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-[#104901] hover:bg-[#104901] hover:text-white transition-colors"
                 >
-                  <Twitter size={20} />
+                  <Twitter size={32} strokeWidth={1.5} />
                 </button>
                 <button
                   onClick={() => handleShareCampaign("linkedin")}
-                  className="w-10 h-10 border-2 border-[#104901] rounded-full flex items-center justify-center text-[#104901] hover:bg-[#104901] hover:text-white transition-colors"
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-[#104901] hover:bg-[#104901] hover:text-white transition-colors"
                 >
-                  <Linkedin size={20} />
+                  <Linkedin size={32} strokeWidth={1.5} />
                 </button>
               </div>
             </div>

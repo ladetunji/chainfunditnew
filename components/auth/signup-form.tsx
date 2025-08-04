@@ -48,6 +48,11 @@ export function SignupForm({
     } catch (err: any) {
       setError(err.message || "Failed to send OTP");
       toast.error(err.message || "Failed to send OTP");
+      if (err.message && err.message.toLowerCase().includes("already exists")) {
+        setTimeout(() => {
+          window.location.href = "/signin";
+        }, 2000);
+      }
     } finally {
       setIsLoading(false);
     }
