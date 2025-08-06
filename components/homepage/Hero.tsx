@@ -4,15 +4,14 @@ import React from "react";
 import { ArrowRight, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 type Props = {};
 
 const Hero = (props: Props) => {
-  const router = useRouter();
-
   const handleCreateCampaign = () => {
-    router.push("/create-campaign");
+    // Use Link instead of router.push for better compatibility
+    window.location.href = "/create-campaign";
   };
 
   return (

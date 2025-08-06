@@ -1,8 +1,6 @@
 import React from "react";
 import Navbar from "@/components/dashboard/Navbar";
 import Sidebar from "@/components/dashboard/Sidebar";
-import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
 
 type Props = {};
 

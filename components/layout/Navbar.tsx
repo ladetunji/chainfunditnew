@@ -4,16 +4,15 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 
 type Props = {};
 
 const Navbar = (props: Props) => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const router = useRouter();
 
   const handleCreateCampaign = () => {
-    router.push("/create-campaign");
+    // Use window.location for better compatibility with Next.js 15
+    window.location.href = "/create-campaign";
   };
 
   return (
