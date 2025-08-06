@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { ArrowRight, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
