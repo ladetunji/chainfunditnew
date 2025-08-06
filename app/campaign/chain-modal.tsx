@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { X, Link, Copy, Facebook, Instagram, Twitter, Linkedin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useShortenLink } from "@/hooks/use-shorten-link";
 
 interface Campaign {
   id: string;
@@ -17,45 +16,23 @@ interface Campaign {
 interface ChainModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  campaign?: Campaign;
-  referralCode?: string;
+  campaign?: Campaign | null;
 }
 
-const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign, referralCode }) => {
+const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign }) => {
   const [step, setStep] = useState<"form" | "success">("form");
   const [whyChain, setWhyChain] = useState("");
   const [proceedsOption, setProceedsOption] = useState("give-back");
   const [copied, setCopied] = useState(false);
-  const [campaignUrl, setCampaignUrl] = useState("");
-  const { shortenLink, isLoading } = useShortenLink();
-
-  useEffect(() => {
-    if (campaign && open) {
-      const longUrl = `${window.location.origin}/campaign/${campaign.id}${referralCode ? `?ref=${referralCode}` : ''}`;
-      
-      // If campaign already has a short URL, use it with referral code
-      if (campaign.shortUrl) {
-        const baseShortUrl = campaign.shortUrl;
-        setCampaignUrl(referralCode ? `${baseShortUrl}?ref=${referralCode}` : baseShortUrl);
-      } else {
-        // Otherwise, try to shorten the URL
-        shortenLink(longUrl).then((shortUrl) => {
-          setCampaignUrl(shortUrl || longUrl);
-        });
-      }
-    }
-  }, [campaign, open, shortenLink, referralCode]);
 
   const handleChainCampaign = () => {
     setStep("success");
   };
 
   const handleCopyLink = () => {
-    if (campaignUrl) {
-      navigator.clipboard.writeText(campaignUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+    navigator.clipboard.writeText("chainfund.it/d1R3lly?ref=t3mfl1k");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleClose = () => {
@@ -158,11 +135,10 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign, r
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <span className="font-mono text-[#104901] font-medium">
-                    {isLoading ? "Generating link..." : campaignUrl}
+                    chainfund.it/d1R3lly?ref=t3mfl1k
                   </span>
                   <Button
                     onClick={handleCopyLink}
-                    disabled={!campaignUrl || isLoading}
                     variant="outline"
                     size="sm"
                     className="text-[#104901] border-[#104901] hover:bg-[#104901] hover:text-white"

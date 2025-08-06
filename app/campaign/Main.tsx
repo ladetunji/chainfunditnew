@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +16,6 @@ import CTA from "./cta";
 import ChainModal from "./chain-modal";
 import DonateModal from "./donate-modal";
 import ShareModal from "./share-modal";
-import { useAuth } from "@/hooks/use-auth";
 
 interface CampaignData {
   id: string;
@@ -53,195 +52,218 @@ interface CampaignData {
 
 interface MainProps {
   campaignId: string;
-  initialCampaignData: CampaignData | null;
 }
 
-const Main: React.FC<MainProps> = ({ campaignId, initialCampaignData }) => {
-  const { user } = useAuth();
-  const [campaign, setCampaign] = useState<CampaignData | null>(initialCampaignData || null);
+const images = [
+  "/images/story-1.png",
+  "/images/thumbnail1.png",
+  "/images/thumbnail2.png",
+  "/images/thumbnail3.png",
+  "/images/thumbnail4.png",
+  "/images/thumbnail5.png",
+];
+
+const donors = [
+  {
+    image: "/images/donor1.png",
+    name: "Angela Bassett",
+    amount: "₦125,000",
+  },
+  {
+    image: "/images/donor2.png",
+    name: "Alexander Iwobi",
+    amount: "₦120,000",
+  },
+  {
+    image: "/images/donor3.png",
+    name: "Chichi Onwuegbo",
+    amount: "₦100,000",
+  },
+  {
+    image: "/images/donor4.png",
+    name: "Kareem Kapoor",
+    amount: "₦100,000",
+  },
+  {
+    image: "/images/donor5.png",
+    name: "Sergio Texeira",
+    amount: "₦80,000",
+  },
+  {
+    image: "/images/donor6.png",
+    name: "Ruslev Mikhailsky",
+    amount: "₦50,000",
+  },
+];
+
+const chainers = [
+  {
+    image: "/images/donor1.png",
+    name: "Angela Bassett",
+    numberOfDonations: 20,
+    amount: "₦125,000",
+  },
+  {
+    image: "/images/donor6.png",
+    name: "Ruslev Mikhailsky",
+    numberOfDonations: 12,
+    amount: "₦250,000",
+  },
+  {
+    image: "/images/donor2.png",
+    name: "Alexander Iwobi",
+    numberOfDonations: 6,
+    amount: "₦150,000",
+  },
+];
+
+const comments = [
+  {
+    id: 1,
+    image: "/images/donor1.png",
+    name: "Angela Bassett",
+    dontation: "₦20,000",
+    time: "32 minutes ago",
+    comment:
+      "This is such a cool cause! Hope you and your kids get the best flat available in Knightsbridge.",
+    creator: {
+      name: "Donald Chopra",
+      comment: "Thank you so much Angie!",
+      time: "22 minutes ago",
+    },
+  },
+  {
+    id: 2,
+    image: "/images/donor1.png",
+    name: "Angela Bassett",
+    dontation: "₦20,000",
+    time: "32 minutes ago",
+    comment: "Let’s effing goooooo!",
+    creator: {
+      name: "Donald Chopra",
+      comment: "Thank you so much Angie!",
+      time: "22 minutes ago",
+    },
+  },
+  {
+    id: 3,
+    image: "/images/donor1.png",
+    name: "Angela Bassett",
+    dontation: "₦20,000",
+    time: "32 minutes ago",
+    comment: "God will make a way for you and your family Donald.",
+    creator: {
+      name: "Donald Chopra",
+      comment: "Thank you so much Angie!",
+      time: "22 minutes ago",
+    },
+  },
+];
+
+const Main = ({ campaignId }: MainProps) => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [activeTab, setActiveTab] = useState("why-support");
   const [chainModalOpen, setChainModalOpen] = useState(false);
   const [donateModalOpen, setDonateModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [loading, setLoading] = useState(!initialCampaignData);
+  const [campaign, setCampaign] = useState<CampaignData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch campaign data if not provided initially
-  useEffect(() => {
-    if (!initialCampaignData && campaignId) {
-      const fetchCampaign = async () => {
-        try {
-          setLoading(true);
-          setError(null);
-          const response = await fetch(`/api/campaigns/${campaignId}`);
-          if (!response.ok) {
-            throw new Error('Failed to fetch campaign');
-          }
-          const result = await response.json();
-          if (!result.success) {
-            throw new Error(result.error || 'Failed to fetch campaign');
-          }
-          setCampaign(result.data);
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to fetch campaign');
-          console.error('Error fetching campaign:', err);
-        } finally {
-          setLoading(false);
+  // Fetch campaign data
+  React.useEffect(() => {
+    const fetchCampaign = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        console.log('Fetching campaign with ID:', campaignId);
+        const response = await fetch(`/api/campaigns/${campaignId}`);
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch campaign: ${response.status}`);
         }
-      };
+        const result = await response.json();
+        console.log('API response:', result);
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to fetch campaign');
+        }
+        setCampaign(result.data);
+      } catch (err) {
+        console.error('Error fetching campaign:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch campaign');
+        
+        // Fallback to dummy data for testing
+        console.log('Using fallback dummy data');
+        const dummyCampaign: CampaignData = {
+          id: campaignId,
+          title: "Support the Thomases' move into a new flat",
+          subtitle: "A young London caregiver's family needs your help at a better life.",
+          description: "A little girl lost her teddy bear while visiting Glacier National Park in Montana. One year later, a family friend visiting the park spotted the bear, and now it is reunited with its owner. TODAY's Hoda Kotb has your Morning Boost.",
+          reason: "Family",
+          fundraisingFor: "Thomas family",
+          duration: "30 days",
+          videoUrl: "https://example.com/video.mp4",
+          coverImageUrl: "/images/story-1.png",
+          galleryImages: [
+            "/images/thumbnail1.png",
+            "/images/thumbnail2.png", 
+            "/images/thumbnail3.png",
+            "/images/thumbnail4.png",
+            "/images/thumbnail5.png"
+          ],
+          documents: [],
+          goalAmount: 3000000,
+          currency: "NGN",
+          minimumDonation: 1000,
+          chainerCommissionRate: 5.0,
+          currentAmount: 1192000,
+          status: "active",
+          isActive: true,
+          createdAt: "2024-01-15",
+          updatedAt: "2024-01-15",
+          creatorId: "dummy-creator-id",
+          creatorName: "Donald Chopra",
+          creatorAvatar: "/images/avatar-7.png",
+          stats: {
+            totalDonations: 35,
+            totalAmount: 1192000,
+            uniqueDonors: 28,
+            progressPercentage: 40,
+          },
+        };
+        setCampaign(dummyCampaign);
+        setError(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (campaignId) {
       fetchCampaign();
     }
-  }, [campaignId, initialCampaignData]);
+  }, [campaignId]);
 
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-lg">Loading campaign...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state
-  if (error || !campaign) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Campaign Not Found</h2>
-          <p className="text-gray-600 mb-4">{error || 'This campaign could not be loaded.'}</p>
-          <Button onClick={() => window.history.back()}>Go Back</Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Use campaign data for images
-  const images = campaign.galleryImages.length > 0 
-    ? [campaign.coverImageUrl, ...campaign.galleryImages].filter(Boolean) as string[]
-    : ["/images/story-1.png", "/images/thumbnail1.png", "/images/thumbnail2.png", "/images/thumbnail3.png", "/images/thumbnail4.png", "/images/thumbnail5.png"];
-
-  // Mock data for now - these would come from API calls
-  const donors = [
-    {
-      image: "/images/donor1.png",
-      name: "Angela Bassett",
-      amount: `${campaign.currency}125,000`,
-    },
-    {
-      image: "/images/donor2.png",
-      name: "Alexander Iwobi",
-      amount: `${campaign.currency}120,000`,
-    },
-    {
-      image: "/images/donor3.png",
-      name: "Chichi Onwuegbo",
-      amount: `${campaign.currency}100,000`,
-    },
-    {
-      image: "/images/donor4.png",
-      name: "Kareem Kapoor",
-      amount: `${campaign.currency}100,000`,
-    },
-    {
-      image: "/images/donor5.png",
-      name: "Sergio Texeira",
-      amount: `${campaign.currency}80,000`,
-    },
-    {
-      image: "/images/donor6.png",
-      name: "Ruslev Mikhailsky",
-      amount: `${campaign.currency}50,000`,
-    },
-  ];
-
-  const chainers = [
-    {
-      image: "/images/donor1.png",
-      name: "Angela Bassett",
-      numberOfDonations: 20,
-      amount: `${campaign.currency}125,000`,
-    },
-    {
-      image: "/images/donor6.png",
-      name: "Ruslev Mikhailsky",
-      numberOfDonations: 12,
-      amount: `${campaign.currency}250,000`,
-    },
-    {
-      image: "/images/donor2.png",
-      name: "Alexander Iwobi",
-      numberOfDonations: 6,
-      amount: `${campaign.currency}150,000`,
-    },
-  ];
-
-  const comments = [
-    {
-      id: 1,
-      image: "/images/donor1.png",
-      name: "Angela Bassett",
-      dontation: `${campaign.currency}20,000`,
-      time: "32 minutes ago",
-      comment:
-        "This is such a cool cause! Hope you and your kids get the best flat available in Knightsbridge.",
-      creator: {
-        name: campaign.creatorName,
-        comment: "Thank you so much Angie!",
-        time: "22 minutes ago",
-      },
-    },
-  ];
-
-  const handleLike = async () => {
-    if (!user) {
-      // TODO: Show login modal or redirect to login
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // TODO: Implement like/unlike API call
-      setIsLiked(!isLiked);
-    } catch (error) {
-      console.error('Error toggling like:', error);
-    } finally {
-      setLoading(false);
+  // Use campaign data or fallback to mock data
+  const campaignData = campaign || {
+    title: "Support the Thomases' move into a new flat",
+    subtitle: "A young London caregiver's family needs your help at a better life.",
+    description: "A little girl lost her teddy bear while visiting Glacier National Park in Montana. One year later, a family friend visiting the park spotted the bear, and now it is reunited with its owner. TODAY's Hoda Kotb has your Morning Boost.",
+    reason: "Family",
+    fundraisingFor: "Thomas family",
+    creatorName: "Donald Chopra",
+    goalAmount: 3000000,
+    currentAmount: 1192000,
+    currency: "NGN",
+    stats: {
+      totalDonations: 35,
+      uniqueDonors: 28,
+      progressPercentage: 40,
     }
   };
 
-  const handleDonate = () => {
-    if (!user) {
-      // TODO: Show login modal or redirect to login
-      return;
-    }
-    setDonateModalOpen(true);
-  };
-
-  const handleChain = () => {
-    if (!user) {
-      // TODO: Show login modal or redirect to login
-      return;
-    }
-    setChainModalOpen(true);
-  };
-
-  const handleShare = () => {
-    setShareModalOpen(true);
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: campaign.currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const raised = campaignData.currentAmount;
+  const goal = campaignData.goalAmount;
+  const percent = Math.min(100, Math.round((raised / goal) * 100));
 
   return (
     <div className="max-w-[1440px] bg-[url('/images/logo-bg.svg')] bg-[length:60%] md:bg-[length:30%] md:h-full bg-no-repeat bg-right-bottom mx-auto mt-16 md:mt-28 h-full p-5 md:p-12 font-source">
@@ -250,10 +272,11 @@ const Main: React.FC<MainProps> = ({ campaignId, initialCampaignData }) => {
         <div className="w-full md:w-3/5">
           <div className="flex flex-col gap-2">
             <h1 className="md:text-4xl text-2xl font-semibold text-black">
-              {campaign.title}
+              Support the Thomases’ move into a new flat
             </h1>
             <p className="font-normal text-base md:text-2xl text-black">
-              {campaign.subtitle}
+              A young London caregiver’s family needs your help at a better
+              life.
             </p>
           </div>
           {/* Main Image */}
@@ -294,9 +317,9 @@ const Main: React.FC<MainProps> = ({ campaignId, initialCampaignData }) => {
 
           <p className="font-medium text-2xl text-[#757575] md:my-1 my-3">
             Organised by{" "}
-            <span className="font-semibold text-[#104901]">{campaign.creatorName}</span>{" "}
+            <span className="font-semibold text-[#104901]">{campaignData.creatorName}</span>{" "}
             for the{" "}
-            <span className="font-semibold text-[#104901]">{campaign.fundraisingFor}</span>
+            <span className="font-semibold text-[#104901]">{campaignData.fundraisingFor}</span>
           </p>
           <div className="flex md:flex-row flex-col gap-2 justify-between md:items-center pb-5 border-b border-[#ADADAD]">
             <section className="flex gap-2 items-center">
@@ -304,7 +327,7 @@ const Main: React.FC<MainProps> = ({ campaignId, initialCampaignData }) => {
                 Category:
               </p>
               <span className="font-medium text-sm md:text-xl text-[#104901]">
-                {campaign.reason}
+                {campaignData.reason}
               </span>
             </section>
 
@@ -333,10 +356,10 @@ const Main: React.FC<MainProps> = ({ campaignId, initialCampaignData }) => {
 
           <section className="flex justify-between items-center mt-5">
             <p className="text-xl md:text-3xl font-medium my-1 text-black">
-              {formatCurrency(campaign.currentAmount)} raised
+              ₦{raised.toLocaleString()} raised
             </p>
             <p className="font-medium text-lg md:text-2xl text-[#757575]">
-              {campaign.stats.progressPercentage}% of {formatCurrency(campaign.goalAmount)} goal
+              {percent}% of ₦{goal.toLocaleString()} goal
             </p>
           </section>
           {/* Progress bar */}
@@ -344,17 +367,17 @@ const Main: React.FC<MainProps> = ({ campaignId, initialCampaignData }) => {
             <div
               className="bg-[#104901] h-full transition-all duration-500"
               style={{
-                width: `${campaign.stats.progressPercentage}%`,
+                width: `${percent}%`,
               }}
             ></div>
           </div>
           <section className="flex justify-between items-center">
             <p className="text-lg text-[#868686] flex gap-1 items-center">
               <Users size={20} />
-              {campaign.stats.uniqueDonors} donors
+              {campaignData.stats.uniqueDonors} donors
             </p>
             <p className="text-lg text-[#868686] flex gap-1 items-center">
-              <LinkIcon size={20} /> {chainers.length} chains
+              <LinkIcon size={20} /> 2 chains
             </p>
           </section>
 
@@ -391,98 +414,274 @@ const Main: React.FC<MainProps> = ({ campaignId, initialCampaignData }) => {
             {activeTab === "why-support" && (
               <div className="bg-[#F2F1E9] border-x border-b border-[#C0BFC4] font-normal text-sm md:text-xl text-[#104901] p-3 md:p-6 space-y-4">
                 <p className="">
-                  {campaign.description}
+                  A little girl lost her teddy bear while visiting Glacier
+                  National Park in Montana. One year later, a family friend
+                  visiting the park spotted the bear, and now it is reunited
+                  with its owner. TODAY's Hoda Kotb has your Morning Boost.
                 </p>
 
                 <div className="space-y-2">
                   <p className="flex items-start gap-2">
                     <span className="">»</span>
                     <span>
-                      {campaign.reason}
+                      Subscribe to TODAY:{" "}
+                      <a
+                        href="http://on.today.com/SubscribeToTODAY"
+                        className="underline hover:text-[#0A3A0A]"
+                      >
+                        http://on.today.com/SubscribeToTODAY
+                      </a>
                     </span>
                   </p>
+                  <p className="flex items-start gap-2">
+                    <span className="">»</span>
+                    <span>
+                      Watch the latest from TODAY:{" "}
+                      <a
+                        href="http://bit.ly/LatestTODAY"
+                        className="underline hover:text-[#0A3A0A]"
+                      >
+                        http://bit.ly/LatestTODAY
+                      </a>
+                    </span>
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="mb-2">About: TODAY</h3>
+                  <p className="">
+                    About: TODAY brings you the latest headlines and expert tips
+                    on money, health and parenting. We wake up every morning to
+                    give you and your family all you need to start your day. If
+                    it matters to you, it matters to us. We are in the people
+                    business. Subscribe to our channel for exclusive TODAY
+                    archival footage & our original web series.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="mb-2">Connect with TODAY Online!</h3>
+                  <div className="space-y-1">
+                    <p>
+                      Visit TODAY's Website:{" "}
+                      <a
+                        href="http://on.today.com/ReadTODAY"
+                        className="underline hover:text-[#0A3A0A]"
+                      >
+                        http://on.today.com/ReadTODAY
+                      </a>
+                    </p>
+                    <p>
+                      Find TODAY on Facebook:{" "}
+                      <a
+                        href="http://on.today.com/LikeTODAY"
+                        className="underline hover:text-[#0A3A0A]"
+                      >
+                        http://on.today.com/LikeTODAY
+                      </a>
+                    </p>
+                    <p>
+                      Follow TODAY on Twitter:{" "}
+                      <a
+                        href="http://on.today.com/FollowTODAY"
+                        className="underline hover:text-[#0A3A0A]"
+                      >
+                        http://on.today.com/FollowTODAY
+                      </a>
+                    </p>
+                    <p>
+                      Follow TODAY on Instagram:{" "}
+                      <a
+                        href="http://on.today.com/InstaTODAY"
+                        className="underline hover:text-[#0A3A0A]"
+                      >
+                        http://on.today.com/InstaTODAY
+                      </a>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-4">
+                  <p className="">#NationalParks #GoodNews #TODAYShow</p>
                 </div>
               </div>
             )}
 
             {activeTab === "updates" && (
-              <div className="bg-[#F2F1E9] border-x border-b border-[#C0BFC4] font-normal text-sm md:text-xl text-[#104901] p-3 md:p-6 space-y-4">
-                <div className="space-y-4">
-                  <div className="border-l-4 border-[#104901] pl-4">
-                    <h3 className="font-semibold text-lg">Campaign Update</h3>
-                    <p className="text-sm text-gray-600">2 days ago</p>
-                    <p>Thank you to everyone who has supported this campaign so far! We're making great progress towards our goal.</p>
-                  </div>
-                </div>
+              <div className="bg-[#F2F1E9] border-x border-b border-[#C0BFC4] font-normal text-sm md:text-xl text-[#104901] p-3 md:p-6">
+                <p className="">No updates available yet.</p>
               </div>
             )}
           </div>
+
+          {/* top donors */}
+          <section>
+            <h3 className="text-3xl font-semibold text-black mb-4">
+              Top Donors
+            </h3>
+            <div className="grid md:grid-cols-6 grid-cols-3 gap-3">
+              {donors.map((donor, index) => (
+                <div key={index} className="flex flex-col items-center">
+                  <div className="relative w-20 h-20 border-2 border-white rounded-3xl overflow-hidden">
+                    <Image
+                      src={donor.image}
+                      alt={donor.name}
+                      fill
+                      style={{ objectFit: "cover" }}
+                    />
+                  </div>
+                  <p className="font-normal text-base text-black">{donor.name}</p>
+                  <p className="font-medium text-sm text-[#757575]">
+                    {donor.amount}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="my-5 py-5 border-y border-[#ADADAD]">
+            <h3 className="text-3xl font-semibold text-black mb-4">
+              Top Chainers
+            </h3>
+            <div className="flex gap-8">
+              {chainers.map((chainer, index) => (
+                <div key={index} className="flex flex-col items-center">
+                  <div className="relative w-20 h-20 border-2 border-white rounded-3xl overflow-hidden">
+                    <Image
+                      src={chainer.image}
+                      alt={chainer.name}
+                      fill
+                      style={{ objectFit: "cover" }}
+                    />
+                  </div>
+                  <p className="font-normal text-lg text-black">
+                    {chainer.name}
+                  </p>
+                  <p className="font-medium text-base text-[#5F8555]">
+                    {chainer.numberOfDonations} donations
+                  </p>
+                  <p className="font-medium text-base text-[#757575]">
+                    {chainer.amount}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
         </div>
 
-        {/* Right Side */}
-        <div className="w-full md:w-2/5 space-y-6">
-          {/* CTA Section */}
-          <div className="bg-[#F2F1E9] p-6 rounded-lg">
-            <h2 className="font-semibold text-2xl text-[#104901] mb-4">
-              Support this campaign
-            </h2>
-            <div className="space-y-4">
-              <Button
-                onClick={handleDonate}
-                className="w-full bg-[#104901] text-white hover:bg-[#0a3a0a] h-12 text-lg"
-              >
-                Donate Now
-              </Button>
-              <Button
-                onClick={handleChain}
-                variant="outline"
-                className="w-full border-[#104901] text-[#104901] hover:bg-[#104901] hover:text-white h-12 text-lg"
-              >
-                Chain this campaign
-              </Button>
-              <Button
-                onClick={handleShare}
-                variant="outline"
-                className="w-full border-[#104901] text-[#104901] hover:bg-[#104901] hover:text-white h-12 text-lg"
-              >
-                Share campaign
-              </Button>
-              <Button
-                onClick={handleLike}
-                disabled={loading}
-                variant="outline"
-                className={`w-full border-[#104901] text-[#104901] hover:bg-[#104901] hover:text-white h-12 text-lg ${
-                  isLiked ? 'bg-[#104901] text-white' : ''
-                }`}
-              >
-                <Heart size={20} className="mr-2" />
-                {isLiked ? 'Liked' : 'Like'}
-              </Button>
-            </div>
-          </div>
+        {/* Right side */}
+        <div className="w-full md:w-2/5 space-y-10">
+          <div className="mb-5 py-3 px-2 bg-[#E7EDE6] rounded-2xl">
+            <section className="w-full flex gap-3 mb-5">
+                          <Button
+              className="w-1/2 h-12 px-4 py-2 font-semibold text-[28px] text-[#474553] rounded-lg border-2 border-[#E7C9A5]"
+              style={{
+                background:
+                  "linear-gradient(180deg, #FFFAD2 0%, #FFAF69 100%)",
+              }}
+              onClick={() => setDonateModalOpen(true)}
+            >
+              Donate
+            </Button>
+                              <Button
+                  className="w-1/2 h-12 px-4 py-2 font-semibold text-[28px] text-[#474553] rounded-lg border-2 border-[#E7C9A5]"
+                  style={{
+                    background:
+                      "linear-gradient(360deg, #FFFAD2 0%, #FFD4AE 100%)",
+                  }}
+                  onClick={() => setShareModalOpen(true)}
+                >
+                  Share
+                </Button>
+            </section>
+            <section className="bg-white space-y-3 px-5 py-6 rounded-2xl">
+              <p className="font-semibold text-xl text-[#5F8555]">
+                Fundraising is more fun with friends! Invite others with your
+                own custom link.
+              </p>
+              <span className="font-normal text-base text-[#5F8555]">
+                Click the button below to join other chainers, bring in
+                referrals, and get recognition for your efforts!
+              </span>
 
-          {/* Recent Donors */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-3xl text-[#104901]">
-              Recent donors
-            </h3>
-            <ul className="space-y-3">
-              {donors.slice(0, 3).map((donor, index) => (
-                <li key={index} className="flex gap-3 items-center">
-                  <Image src={donor.image} alt="" width={40} height={40} />
-                  <section>
-                    <p className="font-normal text-xl text-[#5F8555]">
-                      {donor.name}
-                    </p>
-                    <p className="font-medium text-xl text-black">
-                      {donor.amount} •{" "}
-                      <span className="font-normal text-lg text-[#5F8555]">
-                        Recent donation
-                      </span>{" "}
-                    </p>
-                  </section>
-                </li>
-              ))}
+              <section className="flex justify-between gap-4">
+                <ul className="flex">
+                  <li>
+                    <Image
+                      src="/images/donor1.png"
+                      alt=""
+                      width={56}
+                      height={56}
+                      className="border-2 border-white"
+                    />
+                  </li>
+                  <li className="-ml-4">
+                    <Image
+                      src="/images/donor6.png"
+                      alt=""
+                      width={56}
+                      height={56}
+                      className=""
+                    />
+                  </li>
+                  <li className="w-14 h-14 bg-[#E7EDE6] flex justify-center items-center rounded-2xl border-2 border-white -ml-4 font-semibold text-[28px] text-[#104901]">
+                    +1
+                  </li>
+                </ul>
+
+                <Button className="h-12" onClick={() => setChainModalOpen(true)}>
+                  Chain Campaign <LinkIcon />
+                </Button>
+              </section>
+            </section>
+            <ul className="my-5 py-3 px-2 bg-white space-y-3 border border-[#C0BFC4] rounded-2xl">
+              <li className="flex gap-3 items-center">
+                <Image src="/images/donor1.png" alt="" width={64} height={64} />
+                <section>
+                  <p className="font-normal text-xl text-[#5F8555]">
+                    Angela Bassett
+                  </p>
+                  <p className="font-medium text-xl text-black">
+                    ₦20,000 •{" "}
+                    <span className="font-normal text-lg text-[#5F8555]">
+                      Recent donation
+                    </span>{" "}
+                  </p>
+                </section>
+              </li>
+              <li className="flex gap-3 items-center">
+                <Image
+                  src="/images/logo-bg.svg"
+                  alt=""
+                  width={64}
+                  height={64}
+                />
+                <section>
+                  <p className="font-normal text-xl text-[#5F8555]">
+                    Anonymous
+                  </p>
+                  <p className="font-medium text-xl text-black">
+                    ₦10,000 •{" "}
+                    <span className="font-normal text-lg text-[#5F8555]">
+                      Recent donation
+                    </span>{" "}
+                  </p>
+                </section>
+              </li>
+              <li className="flex gap-3 items-center">
+                <Image src="/images/donor4.png" alt="" width={64} height={64} />
+                <section>
+                  <p className="font-normal text-xl text-[#5F8555]">
+                    Kareem Kapoor
+                  </p>
+                  <p className="font-medium text-xl text-black">
+                    ₦100,000 •{" "}
+                    <span className="font-normal text-lg text-[#5F8555]">
+                      Recent donation
+                    </span>{" "}
+                  </p>
+                </section>
+              </li>
             </ul>
             <section className="flex justify-center">
               <Button
@@ -560,25 +759,13 @@ const Main: React.FC<MainProps> = ({ campaignId, initialCampaignData }) => {
             </section>
           </div>
         </div>
-      </div>
-      <CTA />
-      <ChainModal 
-        open={chainModalOpen} 
-        onOpenChange={setChainModalOpen} 
-        campaign={campaign}
-      />
-      <DonateModal 
-        open={donateModalOpen} 
-        onOpenChange={setDonateModalOpen} 
-        campaign={campaign}
-      />
-      <ShareModal 
-        open={shareModalOpen} 
-        onOpenChange={setShareModalOpen} 
-        campaign={campaign}
-      />
-    </div>
-  );
+             </div>
+       <CTA />
+       <ChainModal open={chainModalOpen} onOpenChange={setChainModalOpen} campaign={campaign} />
+       <DonateModal open={donateModalOpen} onOpenChange={setDonateModalOpen} />
+       <ShareModal open={shareModalOpen} onOpenChange={setShareModalOpen} />
+     </div>
+   );
 };
 
 export default Main;

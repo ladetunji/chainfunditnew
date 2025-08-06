@@ -13,14 +13,10 @@ const page = async ({ params }: PageProps) => {
   
   console.log('Campaign page accessed with ID:', id);
 
-  // For now, let's not fetch from the backend API to isolate the issue
-  // We'll let the client-side components handle the data fetching
-  const campaignData = null;
-
   return (
     <div className='h-full'>
       <Navbar />
-      <Main campaignId={id} initialCampaignData={campaignData} />
+      <Main campaignId={id} />
       <Cards campaignId={id} />
       <Footer />
     </div>
