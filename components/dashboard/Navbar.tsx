@@ -13,7 +13,7 @@ const Navbar = (props: Props) => {
   return (
     <nav className="px-2 md:px-10 py-3 md:py-5 flex flex-col md:flex-row justify-between items-center font-source border-b border-[#C0BFC4] w-full">
       <div className="flex w-full md:w-auto justify-between items-center">
-        <section className="flex gap-1 items-center">
+        <Link href="/" className="flex gap-1 items-center">
           <Image
             src="/images/logo.svg"
             alt="Chainfundit Logo"
@@ -21,7 +21,7 @@ const Navbar = (props: Props) => {
             height={30}
           />
           <p className="font-semibold text-xl text-[#104901]">Chainfundit</p>
-        </section>
+        </Link>
         {/* Hamburger for mobile */}
         <button
           className="md:hidden flex flex-col gap-1 focus:outline-none"
@@ -61,13 +61,15 @@ const Navbar = (props: Props) => {
         </Button>
         <Search color="#757575" size={24} />
         <Bell color="#757575" size={24} />
-        <Image
-          src="/images/user.png"
-          alt="User"
-          width={32}
-          height={32}
-          className="md:w-[48px] md:h-[48px] w-8 h-8"
-        />
+        <Link href="/settings">
+          <Image
+            src="/images/user.png"
+            alt="User"
+            width={32}
+            height={32}
+            className="w-8 h-8"
+          />
+        </Link>
       </section>
       {/* Mobile menu */}
       {menuOpen && (
@@ -99,13 +101,15 @@ const Navbar = (props: Props) => {
             <div className="flex gap-3 items-center justify-center">
               <Search color="#757575" size={24} />
               <Bell color="#757575" size={24} />
-              <Image
-                src="/images/user.png"
-                alt="User"
-                width={32}
-                height={32}
-                className="w-8 h-8"
-              />
+              <Link href="/settings">
+                <Image
+                  src="/images/user.png"
+                  alt="User"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8"
+                />
+              </Link>
             </div>
           </div>
         </div>

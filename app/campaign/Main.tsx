@@ -122,7 +122,7 @@ const comments = [
     id: 1,
     image: "/images/donor1.png",
     name: "Angela Bassett",
-    dontation: "₦20,000",
+    donation: "₦20,000",
     time: "32 minutes ago",
     comment:
       "This is such a cool cause! Hope you and your kids get the best flat available in Knightsbridge.",
@@ -136,7 +136,7 @@ const comments = [
     id: 2,
     image: "/images/donor1.png",
     name: "Angela Bassett",
-    dontation: "₦20,000",
+    donation: "₦20,000",
     time: "32 minutes ago",
     comment: "Let’s effing goooooo!",
     creator: {
@@ -149,7 +149,7 @@ const comments = [
     id: 3,
     image: "/images/donor1.png",
     name: "Angela Bassett",
-    dontation: "₦20,000",
+    donation: "₦20,000",
     time: "32 minutes ago",
     comment: "God will make a way for you and your family Donald.",
     creator: {
@@ -176,29 +176,30 @@ const Main = ({ campaignId }: MainProps) => {
       try {
         setLoading(true);
         setError(null);
-        console.log('Fetching campaign with ID:', campaignId);
+        console.log("Fetching campaign with ID:", campaignId);
         const response = await fetch(`/api/campaigns/${campaignId}`);
-        console.log('Response status:', response.status);
+        console.log("Response status:", response.status);
         if (!response.ok) {
           throw new Error(`Failed to fetch campaign: ${response.status}`);
         }
         const result = await response.json();
-        console.log('API response:', result);
+        console.log("API response:", result);
         if (!result.success) {
-          throw new Error(result.error || 'Failed to fetch campaign');
+          throw new Error(result.error || "Failed to fetch campaign");
         }
         setCampaign(result.data);
       } catch (err) {
-        console.error('Error fetching campaign:', err);
-        setError(err instanceof Error ? err.message : 'Failed to fetch campaign');
-        
-        // Fallback to dummy data for testing
-        console.log('Using fallback dummy data');
+        console.error("Error fetching campaign:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch campaign"
+        );
         const dummyCampaign: CampaignData = {
           id: campaignId,
           title: "Support the Thomases' move into a new flat",
-          subtitle: "A young London caregiver's family needs your help at a better life.",
-          description: "A little girl lost her teddy bear while visiting Glacier National Park in Montana. One year later, a family friend visiting the park spotted the bear, and now it is reunited with its owner. TODAY's Hoda Kotb has your Morning Boost.",
+          subtitle:
+            "A young London caregiver's family needs your help at a better life.",
+          description:
+            "A little girl lost her teddy bear while visiting Glacier National Park in Montana. One year later, a family friend visiting the park spotted the bear, and now it is reunited with its owner. TODAY's Hoda Kotb has your Morning Boost.",
           reason: "Family",
           fundraisingFor: "Thomas family",
           duration: "30 days",
@@ -206,10 +207,10 @@ const Main = ({ campaignId }: MainProps) => {
           coverImageUrl: "/images/story-1.png",
           galleryImages: [
             "/images/thumbnail1.png",
-            "/images/thumbnail2.png", 
+            "/images/thumbnail2.png",
             "/images/thumbnail3.png",
             "/images/thumbnail4.png",
-            "/images/thumbnail5.png"
+            "/images/thumbnail5.png",
           ],
           documents: [],
           goalAmount: 3000000,
@@ -246,8 +247,10 @@ const Main = ({ campaignId }: MainProps) => {
   // Use campaign data or fallback to mock data
   const campaignData = campaign || {
     title: "Support the Thomases' move into a new flat",
-    subtitle: "A young London caregiver's family needs your help at a better life.",
-    description: "A little girl lost her teddy bear while visiting Glacier National Park in Montana. One year later, a family friend visiting the park spotted the bear, and now it is reunited with its owner. TODAY's Hoda Kotb has your Morning Boost.",
+    subtitle:
+      "A young London caregiver's family needs your help at a better life.",
+    description:
+      "A little girl lost her teddy bear while visiting Glacier National Park in Montana. One year later, a family friend visiting the park spotted the bear, and now it is reunited with its owner. TODAY's Hoda Kotb has your Morning Boost.",
     reason: "Family",
     fundraisingFor: "Thomas family",
     creatorName: "Donald Chopra",
@@ -258,7 +261,7 @@ const Main = ({ campaignId }: MainProps) => {
       totalDonations: 35,
       uniqueDonors: 28,
       progressPercentage: 40,
-    }
+    },
   };
 
   const raised = campaignData.currentAmount;
@@ -266,10 +269,10 @@ const Main = ({ campaignId }: MainProps) => {
   const percent = Math.min(100, Math.round((raised / goal) * 100));
 
   return (
-    <div className="max-w-[1440px] bg-[url('/images/logo-bg.svg')] bg-[length:60%] md:bg-[length:30%] md:h-full bg-no-repeat bg-right-bottom mx-auto mt-16 md:mt-28 h-full p-5 md:p-12 font-source">
+    <div className="max-w-[1440px] bg-[url('/images/logo-bg.svg')] bg-[length:60%] md:bg-[length:30%] md:h-full bg-no-repeat bg-right-bottom mx-auto mt-16 md:mt-22 h-full p-5 md:p-12 font-source">
       <div className="flex md:flex-row md:gap-5 flex-col">
         {/* Left Side */}
-        <div className="w-full md:w-3/5">
+        <div className="w-full md:w-3/4">
           <div className="flex flex-col gap-2">
             <h1 className="md:text-4xl text-2xl font-semibold text-black">
               Support the Thomases’ move into a new flat
@@ -281,13 +284,13 @@ const Main = ({ campaignId }: MainProps) => {
           </div>
           {/* Main Image */}
           <div className="w-full flex mb-4 mt-10">
-            <div className="relative w-[866px] overflow-hidden">
+            <div className="relative md:w-[900px] md:h-[600px] overflow-hidden">
               <Image
                 src={images[selectedImage]}
                 alt={`Gallery image ${selectedImage + 1}`}
                 style={{ objectFit: "cover" }}
-                width={866}
-                height={560}
+                width={900}
+                height={600}
                 priority
               />
             </div>
@@ -298,7 +301,7 @@ const Main = ({ campaignId }: MainProps) => {
               <button
                 key={img}
                 onClick={() => setSelectedImage(idx)}
-                className={`relative md:w-[131px] w-[60px] md:h-[84px] h-[60px] border-2 ${
+                className={`relative md:w-[137px] w-[60px] md:h-[84px] h-[60px] border-2 ${
                   selectedImage === idx
                     ? "border-[#104901]"
                     : "border-transparent"
@@ -317,9 +320,13 @@ const Main = ({ campaignId }: MainProps) => {
 
           <p className="font-medium text-2xl text-[#757575] md:my-1 my-3">
             Organised by{" "}
-            <span className="font-semibold text-[#104901]">{campaignData.creatorName}</span>{" "}
+            <span className="font-semibold text-[#104901]">
+              {campaignData.creatorName}
+            </span>{" "}
             for the{" "}
-            <span className="font-semibold text-[#104901]">{campaignData.fundraisingFor}</span>
+            <span className="font-semibold text-[#104901]">
+              {campaignData.fundraisingFor}
+            </span>
           </p>
           <div className="flex md:flex-row flex-col gap-2 justify-between md:items-center pb-5 border-b border-[#ADADAD]">
             <section className="flex gap-2 items-center">
@@ -530,7 +537,9 @@ const Main = ({ campaignId }: MainProps) => {
                       style={{ objectFit: "cover" }}
                     />
                   </div>
-                  <p className="font-normal text-base text-black">{donor.name}</p>
+                  <p className="font-normal text-base text-black">
+                    {donor.name}
+                  </p>
                   <p className="font-medium text-sm text-[#757575]">
                     {donor.amount}
                   </p>
@@ -570,29 +579,29 @@ const Main = ({ campaignId }: MainProps) => {
         </div>
 
         {/* Right side */}
-        <div className="w-full md:w-2/5 space-y-10">
+        <div className="w-full md:w-1/4 space-y-10">
           <div className="mb-5 py-3 px-2 bg-[#E7EDE6] rounded-2xl">
             <section className="w-full flex gap-3 mb-5">
-                          <Button
-              className="w-1/2 h-12 px-4 py-2 font-semibold text-[28px] text-[#474553] rounded-lg border-2 border-[#E7C9A5]"
-              style={{
-                background:
-                  "linear-gradient(180deg, #FFFAD2 0%, #FFAF69 100%)",
-              }}
-              onClick={() => setDonateModalOpen(true)}
-            >
-              Donate
-            </Button>
-                              <Button
-                  className="w-1/2 h-12 px-4 py-2 font-semibold text-[28px] text-[#474553] rounded-lg border-2 border-[#E7C9A5]"
-                  style={{
-                    background:
-                      "linear-gradient(360deg, #FFFAD2 0%, #FFD4AE 100%)",
-                  }}
-                  onClick={() => setShareModalOpen(true)}
-                >
-                  Share
-                </Button>
+              <Button
+                className="w-1/2 h-12 px-4 py-2 font-semibold text-[28px] text-[#474553] rounded-lg border-2 border-[#E7C9A5]"
+                style={{
+                  background:
+                    "linear-gradient(180deg, #FFFAD2 0%, #FFAF69 100%)",
+                }}
+                onClick={() => setDonateModalOpen(true)}
+              >
+                Donate
+              </Button>
+              <Button
+                className="w-1/2 h-12 px-4 py-2 font-semibold text-[28px] text-[#474553] rounded-lg border-2 border-[#E7C9A5]"
+                style={{
+                  background:
+                    "linear-gradient(360deg, #FFFAD2 0%, #FFD4AE 100%)",
+                }}
+                onClick={() => setShareModalOpen(true)}
+              >
+                Share
+              </Button>
             </section>
             <section className="bg-white space-y-3 px-5 py-6 rounded-2xl">
               <p className="font-semibold text-xl text-[#5F8555]">
@@ -610,8 +619,8 @@ const Main = ({ campaignId }: MainProps) => {
                     <Image
                       src="/images/donor1.png"
                       alt=""
-                      width={56}
-                      height={56}
+                      width={40}
+                      height={40}
                       className="border-2 border-white"
                     />
                   </li>
@@ -619,17 +628,20 @@ const Main = ({ campaignId }: MainProps) => {
                     <Image
                       src="/images/donor6.png"
                       alt=""
-                      width={56}
-                      height={56}
+                      width={40}
+                      height={40}
                       className=""
                     />
                   </li>
-                  <li className="w-14 h-14 bg-[#E7EDE6] flex justify-center items-center rounded-2xl border-2 border-white -ml-4 font-semibold text-[28px] text-[#104901]">
+                  <li className="w-10 h-10 bg-[#E7EDE6] flex justify-center items-center rounded-2xl border-2 border-white -ml-4 font-semibold text-[28px] text-[#104901]">
                     +1
                   </li>
                 </ul>
 
-                <Button className="h-12" onClick={() => setChainModalOpen(true)}>
+                <Button
+                  className="h-12"
+                  onClick={() => setChainModalOpen(true)}
+                >
                   Chain Campaign <LinkIcon />
                 </Button>
               </section>
@@ -693,35 +705,36 @@ const Main = ({ campaignId }: MainProps) => {
             </section>
           </div>
 
+          {/* comments */}
           <div className="space-y-3">
             <h3 className="font-semibold text-3xl text-[#104901]">
               Top Comments
             </h3>
             {comments.map((comment) => (
               <div className="" key={comment.id}>
-                <section className="bg-[#F2F1E9] w-full p-5 space-y-3 rounded-t-xl">
-                  <section className="flex gap-3 items-start">
-                    <Image src={comment.image} alt="" width={40} height={40} />
+                <section className="bg-[#F2F1E9] w-full p-3 space-y-3 rounded-t-xl">
+                  <section className="flex gap-2 items-start">
+                    <Image src={comment.image} alt="" width={36} height={36} />
                     <section className="space-y-2">
-                      <p className="font-semibold text-lg text-[#104901]">
+                      <p className="font-semibold text-base text-[#104901]">
                         {comment.name}{" "}
                         <span className="font-normal">made a donation of </span>{" "}
-                        {comment.dontation}
+                        {comment.donation}
                       </p>
-                      <p className="font-name text-base text-[#104901]">
+                      <p className="font-name text-xs text-[#104901]">
                         {comment.time}
                       </p>
-                      <p className="font-normal text-2xl text-[#104901]">
+                      <p className="font-normal text-xl text-[#104901]">
                         {comment.comment}
                       </p>
-                      <div className="flex justify-between gap-5 items-center">
-                        <section className="flex gap-2 items-center font-normal text-base text-[#104901]">
+                      <div className="flex justify-between gap-3 items-center">
+                        <section className="flex gap-2 items-center font-normal text-sm text-[#104901]">
                           <Heart color="black" size={20} /> Like
                         </section>
-                        <section className="flex gap-2 items-center font-normal text-base text-[#104901]">
+                        <section className="flex gap-2 items-center font-normal text-sm text-[#104901]">
                           <MessageSquare color="black" size={20} /> Comment
                         </section>
-                        <section className="flex gap-2 items-center font-normal text-base text-[#104901]">
+                        <section className="flex gap-2 items-center font-normal text-sm text-[#104901]">
                           <Send color="black" size={20} /> Share
                         </section>
                       </div>
@@ -738,9 +751,9 @@ const Main = ({ campaignId }: MainProps) => {
                           others
                         </p>
                       </section>
-                      <p className="font-semibold text-lg text-[#104901] flex gap-2 items-center">
+                      <p className="font-semibold text-base text-[#104901] flex gap-2 items-center">
                         {comment.creator.name}
-                        <span className="font-normal text-[#104901]">
+                        <span className="font-normal text-sm text-[#104901]">
                           {comment.creator.comment}
                         </span>
                       </p>
@@ -759,13 +772,17 @@ const Main = ({ campaignId }: MainProps) => {
             </section>
           </div>
         </div>
-             </div>
-       <CTA />
-       <ChainModal open={chainModalOpen} onOpenChange={setChainModalOpen} campaign={campaign} />
-       <DonateModal open={donateModalOpen} onOpenChange={setDonateModalOpen} />
-       <ShareModal open={shareModalOpen} onOpenChange={setShareModalOpen} />
-     </div>
-   );
+      </div>
+      <CTA />
+      <ChainModal
+        open={chainModalOpen}
+        onOpenChange={setChainModalOpen}
+        campaign={campaign}
+      />
+      <DonateModal open={donateModalOpen} onOpenChange={setDonateModalOpen} />
+      <ShareModal open={shareModalOpen} onOpenChange={setShareModalOpen} />
+    </div>
+  );
 };
 
 export default Main;

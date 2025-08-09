@@ -187,13 +187,13 @@ const Cards = ({ campaignId }: CardsProps) => {
 
   return (
     <div className="p-4 md:p-12 w-full h-fit flex flex-col gap-5 my-5 bg-[#F2F1E9]">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 md:gap-0">
+      <div className="flex flex-row justify-between items-start md:items-center gap-4">
         <section className="flex flex-col gap-2 md:gap-3">
-          <p className="font-source font-semibold text-2xl md:text-3xl text-black">
+          <p className="font-source font-semibold text-base md:text-3xl text-black">
             Many more ways to support others and create life-changing
             experiences.
           </p>
-          <span className="font-source font-normal text-base text-black">
+          <span className="font-source font-normal text-xs md:text-base text-black">
             Find campaigns and causes you love, close to you or around the
             world.
           </span>

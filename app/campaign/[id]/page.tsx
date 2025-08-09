@@ -11,7 +11,6 @@ interface PageProps {
 const page = async ({ params }: PageProps) => {
   const { id } = await params;
   
-  console.log('Campaign page accessed with ID:', id);
 
   return (
     <div className='h-full'>

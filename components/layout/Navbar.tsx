@@ -18,7 +18,7 @@ const Navbar = (props: Props) => {
   return (
     <nav className="fixed top-0 left-0 z-50 w-full bg-white shadow font-source px-4 py-4 md:px-12 md:py-10">
       <div className="flex justify-between items-center">
-        <section className="flex gap-1 items-center">
+        <Link href='/' className="flex gap-1 items-center">
           <Image
             src="/images/logo.svg"
             alt="Chainfundit Logo"
@@ -26,7 +26,7 @@ const Navbar = (props: Props) => {
             height={30}
           />
           <p className="font-semibold text-xl text-[#104901]">Chainfundit</p>
-        </section>
+        </Link>
         {/* Hamburger for mobile */}
         <button
           className="md:hidden flex flex-col gap-1 focus:outline-none"

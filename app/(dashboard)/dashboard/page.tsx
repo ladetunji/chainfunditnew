@@ -12,7 +12,15 @@ import {
 import { Button } from "@/components/ui/button";
 import CompleteProfile from "../complete-profile";
 import Image from "next/image";
-import { ArrowRight, TrendingUp, Users, DollarSign, Share2, Calendar, Eye } from "lucide-react";
+import {
+  ArrowRight,
+  TrendingUp,
+  Users,
+  DollarSign,
+  Share2,
+  Calendar,
+  Eye,
+} from "lucide-react";
 
 interface DashboardStats {
   totalCampaigns: number;
@@ -55,14 +63,21 @@ export default function DashboardPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const formRef = useRef<HTMLFormElement>(null) as React.RefObject<HTMLFormElement>;
+  const formRef = useRef<HTMLFormElement>(
+    null
+  ) as React.RefObject<HTMLFormElement>;
 
   useEffect(() => {
     async function checkProfile() {
       try {
-        const res = await fetch('/api/user/profile', { method: 'GET' });
+        const res = await fetch("/api/user/profile", { method: "GET" });
         const data = await res.json();
-        if (data.success && data.user && !data.user.hasCompletedProfile && !data.user.hasSeenWelcomeModal) {
+        if (
+          data.success &&
+          data.user &&
+          !data.user.hasCompletedProfile &&
+          !data.user.hasSeenWelcomeModal
+        ) {
           setShowWelcome(true);
         }
       } catch {
@@ -78,30 +93,29 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadDashboardData() {
       if (!profileChecked) return;
-      
+
       try {
         setLoading(true);
-        
+
         // Load dashboard stats
-        const statsRes = await fetch('/api/dashboard/stats');
+        const statsRes = await fetch("/api/dashboard/stats");
         const statsData = await statsRes.json();
         if (statsData.success) {
           setStats(statsData.stats);
         }
 
         // Load user campaigns
-        const campaignsRes = await fetch('/api/dashboard/campaigns');
+        const campaignsRes = await fetch("/api/dashboard/campaigns");
         const campaignsData = await campaignsRes.json();
         if (campaignsData.success) {
           setCampaigns(campaignsData.campaigns);
         }
       } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        console.error("Error loading dashboard data:", error);
       } finally {
         setLoading(false);
       }
     }
-
     loadDashboardData();
   }, [profileChecked]);
 
@@ -125,31 +139,59 @@ export default function DashboardPage() {
     setShowWelcome(false);
     setShowCompleteProfile(true);
     try {
-      await fetch('/api/user/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch("/api/user/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hasSeenWelcomeModal: true }),
       });
     } catch {}
   };
 
   const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency || 'USD',
+    const currencyMap: Record<string, string> = {
+      // ISO Codes
+      USD: "USD",
+      GBP: "GBP",
+      NGN: "NGN",
+      EUR: "EUR",
+      CAD: "CAD",
+
+      // Names
+      "BRITISH POUND": "GBP",
+      "US DOLLAR": "USD",
+      NAIRA: "NGN",
+      EURO: "EUR",
+      "CANADIAN DOLLAR": "CAD",
+      POUND: "GBP",
+
+      // Symbols
+      "£": "GBP",
+      $: "USD",
+      "₦": "NGN",
+      "€": "EUR",
+      C$: "CAD",
+    };
+
+    const normalizedCurrency = (currency || "").trim().toUpperCase();
+
+    const code = currencyMap[normalizedCurrency] || "USD";
+
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: code,
     }).format(amount);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   return (
-    <div className="w-full 2xl:container 2xl:mx-auto p-6">
+    <div className="w-full 2xl:container 2xl:mx-auto p-6 h-fit">
       {/* Welcome Modal */}
       <Dialog open={showWelcome} onOpenChange={setShowWelcome}>
         <DialogContent className='w-[80%] max-w-md md:max-w-xl bg-[url("/images/piggy-bank.png")] bg-cover h-[400px] md:h-[600px] px-4 md:px-10 bg-no-repeat rounded-none outline-none font-source'>
@@ -163,7 +205,13 @@ export default function DashboardPage() {
               ></div>
             </div>
             <DialogTitle className="flex gap-2 items-center">
-              <Image src="/images/logo.svg" alt="" width={24} height={24} className="md:w-8 md:h-8" />
+              <Image
+                src="/images/logo.svg"
+                alt=""
+                width={24}
+                height={24}
+                className="md:w-8 md:h-8"
+              />
               <p className="font-semibold text-2xl md:text-4xl text-[#104901]">
                 Welcome to Chainfundit
               </p>
@@ -213,8 +261,10 @@ export default function DashboardPage() {
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-          <p className="text-gray-600">Welcome back! Here's what's happening with your campaigns.</p>
+          <h1 className="text-3xl font-bold text-[#104901] mb-2">Dashboard</h1>
+          <p className="text-[#104901]">
+            Welcome back! Here's what's happening with your campaigns.
+          </p>
         </div>
 
         {/* Stats Cards */}
@@ -223,8 +273,12 @@ export default function DashboardPage() {
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Campaigns</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalCampaigns}</p>
+                  <p className="text-sm font-medium text-[#104901]">
+                    Total Campaigns
+                  </p>
+                  <p className="text-2xl font-bold text-[#104901]">
+                    {stats.totalCampaigns}
+                  </p>
                 </div>
                 <div className="p-2 bg-blue-100 rounded-lg">
                   <TrendingUp className="h-6 w-6 text-blue-600" />
@@ -235,8 +289,12 @@ export default function DashboardPage() {
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Active Campaigns</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.activeCampaigns}</p>
+                  <p className="text-sm font-medium text-[#104901]">
+                    Active Campaigns
+                  </p>
+                  <p className="text-2xl font-bold text-[#104901]">
+                    {stats.activeCampaigns}
+                  </p>
                 </div>
                 <div className="p-2 bg-green-100 rounded-lg">
                   <Calendar className="h-6 w-6 text-green-600" />
@@ -247,8 +305,12 @@ export default function DashboardPage() {
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Donations</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalDonations, 'USD')}</p>
+                  <p className="text-sm font-medium text-[#104901]">
+                    Total Donations
+                  </p>
+                  <p className="text-2xl font-bold text-[#104901]">
+                    {formatCurrency(stats.totalDonations, "USD")}
+                  </p>
                 </div>
                 <div className="p-2 bg-yellow-100 rounded-lg">
                   <DollarSign className="h-6 w-6 text-yellow-600" />
@@ -259,8 +321,12 @@ export default function DashboardPage() {
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Total Donors</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalDonors}</p>
+                  <p className="text-sm font-medium text-[#104901]">
+                    Total Donors
+                  </p>
+                  <p className="text-2xl font-bold text-[#104901]">
+                    {stats.totalDonors}
+                  </p>
                 </div>
                 <div className="p-2 bg-purple-100 rounded-lg">
                   <Users className="h-6 w-6 text-purple-600" />
@@ -274,10 +340,12 @@ export default function DashboardPage() {
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="p-6 border-b">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">Recent Campaigns</h2>
-              <Button 
-                variant="outline" 
-                onClick={() => router.push('/campaigns')}
+              <h2 className="text-xl font-semibold text-[#104901]">
+                Recent Campaigns
+              </h2>
+              <Button
+                variant="outline"
+                onClick={() => router.push("/campaigns")}
                 className="text-[#104901] border-[#104901] hover:bg-[#104901] hover:text-white"
               >
                 View All
@@ -286,9 +354,12 @@ export default function DashboardPage() {
           </div>
           <div className="p-6">
             {campaigns.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="space-y-6">
                 {campaigns.slice(0, 6).map((campaign) => (
-                  <div key={campaign.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                  <div
+                    key={campaign.id}
+                    className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+                  >
                     <div className="relative h-48 bg-gray-200">
                       {campaign.coverImageUrl && (
                         <Image
@@ -300,18 +371,26 @@ export default function DashboardPage() {
                       )}
                     </div>
                     <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 mb-2">{campaign.title}</h3>
+                      <h3 className="font-semibold text-[#104901] mb-2">
+                        {campaign.title}
+                      </h3>
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Raised</span>
+                          <span className="text-[#104901]">Raised</span>
                           <span className="font-medium">
-                            {formatCurrency(campaign.currentAmount, campaign.currency)}
+                            {formatCurrency(
+                              campaign.currentAmount,
+                              campaign.currency
+                            )}
                           </span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-600">Goal</span>
+                          <span className="text-[#104901]">Goal</span>
                           <span className="font-medium">
-                            {formatCurrency(campaign.goalAmount, campaign.currency)}
+                            {formatCurrency(
+                              campaign.goalAmount,
+                              campaign.currency
+                            )}
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
@@ -340,10 +419,14 @@ export default function DashboardPage() {
             ) : (
               <div className="text-center py-12">
                 <Share2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns yet</h3>
-                <p className="text-gray-600 mb-4">Start your first fundraising campaign to make a difference.</p>
-                <Button 
-                  onClick={() => router.push('/create-campaign')}
+                <h3 className="text-lg font-medium text-[#104901] mb-2">
+                  No campaigns yet
+                </h3>
+                <p className="text-[#104901] mb-4">
+                  Start your first fundraising campaign to make a difference.
+                </p>
+                <Button
+                  onClick={() => router.push("/create-campaign")}
                   className="bg-[#104901] text-white"
                 >
                   Create Campaign
@@ -358,10 +441,12 @@ export default function DashboardPage() {
           <div className="bg-white rounded-lg shadow-sm border">
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">Recent Donations</h2>
-                <Button 
-                  variant="outline" 
-                  onClick={() => router.push('/donations')}
+                <h2 className="text-xl font-semibold text-[#104901]">
+                  Recent Donations
+                </h2>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push("/donations")}
                   className="text-[#104901] border-[#104901] hover:bg-[#104901] hover:text-white"
                 >
                   View All
@@ -371,7 +456,10 @@ export default function DashboardPage() {
             <div className="p-6">
               <div className="space-y-4">
                 {stats.recentDonations.map((donation) => (
-                  <div key={donation.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div
+                    key={donation.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
                     <div className="flex items-center space-x-4">
                       <div className="w-10 h-10 bg-[#104901] rounded-full flex items-center justify-center">
                         <span className="text-white font-semibold">
@@ -379,18 +467,26 @@ export default function DashboardPage() {
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{donation.donorName}</p>
-                        <p className="text-sm text-gray-600">{donation.campaignTitle}</p>
+                        <p className="font-medium text-[#104901]">
+                          {donation.donorName}
+                        </p>
+                        <p className="text-sm text-[#104901]">
+                          {donation.campaignTitle}
+                        </p>
                         {donation.message && (
-                          <p className="text-sm text-gray-500 mt-1">"{donation.message}"</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            "{donation.message}"
+                          </p>
                         )}
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-gray-900">
+                      <p className="font-semibold text-[#104901]">
                         {formatCurrency(donation.amount, donation.currency)}
                       </p>
-                      <p className="text-sm text-gray-500">{formatDate(donation.createdAt)}</p>
+                      <p className="text-sm text-gray-500">
+                        {formatDate(donation.createdAt)}
+                      </p>
                     </div>
                   </div>
                 ))}

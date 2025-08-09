@@ -54,6 +54,7 @@ import { Button } from "@/components/ui/button";
 import { LuImage } from "react-icons/lu";
 import Image from "next/image";
 import { useShortenLink } from "@/hooks/use-shorten-link";
+import { toast } from "sonner";
 
 const reasons = [
   { text: "Business", icon: <Briefcase /> },
@@ -79,11 +80,11 @@ const persons = [
 ];
 
 const currencies = [
-  { text: "British Pound", icon: <PoundSterling /> },
-  { text: "US Dollar", icon: <DollarSign /> },
-  { text: "Nigerian Naira", icon: "₦" },
-  { text: "Euro", icon: <Euro /> },
-  { text: "Canadian Dollar", icon: "C$" },
+  { code: "GBP", text: "British Pound", icon: <PoundSterling /> },
+  { code: "USD", text: "US Dollar", icon: <DollarSign /> },
+  { code: "NGN", text: "Nigerian Naira", icon: "₦" },
+  { code: "EUR", text: "Euro", icon: <Euro /> },
+  { code: "CAD", text: "Canadian Dollar", icon: "C$" },
 ];
 
 const duration = [
@@ -119,7 +120,6 @@ export default function CreateCampaignPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState(1);
   const { shortenLink } = useShortenLink();
-  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showAiModal, setShowAiModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdCampaign, setCreatedCampaign] = useState<any>(null);
@@ -127,6 +127,14 @@ export default function CreateCampaignPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
+  // Currency options with ISO codes
+  const currencies = [
+    { code: "GBP", text: "British Pound", icon: <PoundSterling /> },
+    { code: "USD", text: "US Dollar", icon: <DollarSign /> },
+    { code: "NGN", text: "Nigerian Naira", icon: "₦" },
+    { code: "EUR", text: "Euro", icon: <Euro /> },
+    { code: "CAD", text: "Canadian Dollar", icon: "C$" },
+  ];
 
   const [formData, setFormData] = useState<CampaignFormData>({
     title: "",
@@ -154,7 +162,11 @@ export default function CreateCampaignPage() {
   };
 
   const handleFieldChange = (field: keyof CampaignFormData, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === "currency") {
+      setFormData((prev) => ({ ...prev, currency: value })); // store code directly
+    } else {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
   };
 
   const handleSelectFile = (
@@ -217,11 +229,16 @@ export default function CreateCampaignPage() {
   const handleSubmit = async () => {
     setIsLoading(true);
     const payload = new FormData();
+
     Object.entries(formData).forEach(([key, value]) => {
       if (key === "images" || key === "documents") {
         (value as File[]).forEach((file) => payload.append(key, file));
-      } else if (key === "coverImage" && value) {
-        payload.append("coverImage", value as File);
+      } else if (key === "coverImage") {
+        if (value) {
+          payload.append("coverImage", value as File);
+        } else {
+          payload.append("coverImage", new Blob(), "placeholder.jpg");
+        }
       } else {
         payload.append(key, value as string);
       }
@@ -255,7 +272,11 @@ export default function CreateCampaignPage() {
       setShowSuccessModal(true);
     } catch (err) {
       console.error("Error creating campaign:", err);
-      // TODO: Show error message to user
+      if (err instanceof Error) {
+        toast.error(err.message || "Failed to create campaign");
+      } else {
+        toast.error("Failed to create campaign");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -282,7 +303,9 @@ export default function CreateCampaignPage() {
   };
 
   const handleShareCampaign = (platform: string) => {
-    const campaignUrl = createdCampaign?.shortUrl || `chainfund.it/${createdCampaign?.id || "l0rea12"}`;
+    const campaignUrl =
+      createdCampaign?.shortUrl ||
+      `chainfund.it/${createdCampaign?.id || "l0rea12"}`;
     const shareText = `Check out my campaign: ${formData.title}`;
 
     let shareUrl = "";
@@ -446,10 +469,10 @@ export default function CreateCampaignPage() {
                       key={reason.text}
                       type="button"
                       onClick={() => handleFieldChange("reason", reason.text)}
-                      className={`px-4 py-3 flex gap-2 items-center rounded-xl text-2xl text-[#5F8555] bg-[#E5ECDE] cursor-pointer ${
+                      className={`px-4 py-3 flex gap-2 items-center rounded-xl text-2xl text-[#5F8555] cursor-pointer ${
                         formData.reason === reason.text
-                          ? "ring-2 ring-[#5F8555]"
-                          : ""
+                          ? "ring-2 ring-[#5F8555] bg-[#104901] text-white"
+                          : "bg-[#E5ECDE]"
                       }`}
                     >
                       {reason.icon}
@@ -473,10 +496,10 @@ export default function CreateCampaignPage() {
                       onClick={() =>
                         handleFieldChange("fundraisingFor", person.text)
                       }
-                      className={`px-4 py-3 flex gap-2 items-center rounded-xl text-2xl text-[#5F8555] bg-[#E5ECDE] cursor-pointer ${
+                      className={`px-4 py-3 flex gap-2 items-center rounded-xl text-2xl text-[#5F8555] cursor-pointer ${
                         formData.fundraisingFor === person.text
-                          ? "ring-2 ring-[#5F8555]"
-                          : ""
+                          ? "ring-2 ring-[#5F8555] bg-[#104901] text-white"
+                          : "bg-[#E5ECDE]"
                       }`}
                     >
                       {person.icon}
@@ -506,13 +529,13 @@ export default function CreateCampaignPage() {
               <div className="flex gap-4 md:flex-row flex-col">
                 {currencies.map((currency) => (
                   <button
-                    key={currency.text}
+                    key={currency.code}
                     type="button"
-                    onClick={() => handleFieldChange("currency", currency.text)}
-                    className={`px-4 py-3 flex gap-2 items-center rounded-xl text-2xl text-[#5F8555] bg-[#E5ECDE] cursor-pointer ${
-                      formData.currency === currency.text
-                        ? "ring-2 ring-[#5F8555]"
-                        : ""
+                    onClick={() => handleFieldChange("currency", currency.code)}
+                    className={`px-4 py-3 flex gap-2 items-center rounded-xl text-2xl text-[#5F8555] cursor-pointer ${
+                      formData.currency === currency.code
+                        ? "ring-2 ring-[#5F8555] bg-[#104901] text-white"
+                        : "bg-[#E5ECDE]"
                     }`}
                   >
                     {currency.icon} {currency.text}
@@ -523,13 +546,36 @@ export default function CreateCampaignPage() {
 
             <div className="bg-[#E5ECDE] flex gap-2 w-full py-3 px-4 rounded-xl">
               <Target color="#5F8555" size={32} />
+              {formData.currency && (
+                <span className="font-medium text-lg md:text-3xl text-[#5F8555]">
+                  {{
+                    GBP: "£",
+                    USD: "$",
+                    NGN: "₦",
+                    EUR: "€",
+                    CAD: "C$",
+                  }[formData.currency] || ""}
+                </span>
+              )}
               <section>
                 <input
                   type="number"
                   inputMode="numeric"
                   id="goal"
                   name="goal"
-                  placeholder="Your goal"
+                  placeholder={
+                    formData.currency
+                      ? `${
+                          {
+                            GBP: "£",
+                            USD: "$",
+                            NGN: "₦",
+                            EUR: "€",
+                            CAD: "C$",
+                          }[formData.currency]
+                        } Your goal`
+                      : "Your goal"
+                  }
                   value={formData.goal}
                   onChange={(e) => handleFieldChange("goal", +e.target.value)}
                   className="w-full bg-transparent font-medium text-lg md:text-3xl text-[#5F8555] placeholder:text-[#5F8555] outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -539,7 +585,6 @@ export default function CreateCampaignPage() {
                 </p>
               </section>
             </div>
-
             <section>
               <p className="mb-4 font-semibold text-[28px] text-[#104901]">
                 Campaign duration
@@ -550,10 +595,10 @@ export default function CreateCampaignPage() {
                     key={time.text}
                     type="button"
                     onClick={() => handleFieldChange("duration", time.text)}
-                    className={`px-4 py-3 flex gap-2 items-center rounded-xl text-2xl text-[#5F8555] bg-[#E5ECDE] cursor-pointer ${
+                    className={`px-4 py-3 flex gap-2 items-center rounded-xl text-2xl text-[#5F8555] cursor-pointer ${
                       formData.duration === time.text
-                        ? "ring-2 ring-[#5F8555]"
-                        : ""
+                        ? "ring-2 ring-[#5F8555] bg-[#104901] text-white"
+                        : "bg-[#E5ECDE]"
                     }`}
                   >
                     {time.icon} {time.text}
@@ -898,7 +943,8 @@ export default function CreateCampaignPage() {
               onClick={handleViewCampaign}
             >
               <span className="font-medium">
-                {createdCampaign.shortUrl || `chainfund.it/${createdCampaign.id || "l0rea12"}`}
+                {createdCampaign.shortUrl ||
+                  `chainfund.it/${createdCampaign.id || "l0rea12"}`}
               </span>
               <div className="flex items-center gap-2">
                 <span className="font-medium">VIEW</span>
@@ -908,7 +954,9 @@ export default function CreateCampaignPage() {
 
             {/* Share Section */}
             <div className="flex items-center justify-between">
-              <span className="text-[#104901] text-2xl font-medium">Share campaign</span>
+              <span className="text-[#104901] text-2xl font-medium">
+                Share campaign
+              </span>
               <div className="flex gap-3">
                 <button
                   onClick={() => handleShareCampaign("facebook")}

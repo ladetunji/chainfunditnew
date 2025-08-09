@@ -12,9 +12,9 @@ const Navbar = (props: Props) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <nav className="fixed top-0 left-0 z-50 w-full bg-white shadow font-source px-4 py-4 md:px-12 md:py-10">
+    <nav className="fixed top-0 left-0 z-50 w-full bg-white shadow font-source px-4 py-4 md:px-12 md:py-6">
       <div className="flex justify-between items-center">
-        <section className="flex gap-1 items-center">
+        <Link href="/" className="flex gap-1 items-center">
           <Image
             src="/images/logo.svg"
             alt="Chainfundit Logo"
@@ -22,7 +22,7 @@ const Navbar = (props: Props) => {
             height={30}
           />
           <p className="font-semibold text-xl text-[#104901]">Chainfundit</p>
-        </section>
+        </Link>
         {/* Hamburger for mobile */}
         <button
           className="md:hidden flex flex-col gap-1 focus:outline-none"
@@ -58,13 +58,15 @@ const Navbar = (props: Props) => {
           </Link>
           <Search color="#757575" size={24} />
           <Bell color="#757575" size={24} />
-          <Image
-            src="/images/user.png"
-            alt="User"
-            width={32}
-            height={32}
-            className="w-8 h-8"
-          />
+          <Link href="/settings">
+            <Image
+              src="/images/user.png"
+              alt="User"
+              width={32}
+              height={32}
+              className="w-8 h-8"
+            />
+          </Link>
         </section>
       </div>
       {/* Mobile menu */}
@@ -102,13 +104,15 @@ const Navbar = (props: Props) => {
               <Search color="#757575" size={24} />
               <Bell color="#757575" size={24} />
             </div>
-            <Image
-              src="/images/user.png"
-              alt="User"
-              width={32}
-              height={32}
-              className="md:w-[48px] md:h-[48px] w-8 h-8"
-            />
+            <Link href="/settings">
+              <Image
+                src="/images/user.png"
+                alt="User"
+                width={32}
+                height={32}
+                className="w-8 h-8"
+              />
+            </Link>
           </div>
         </div>
       )}
