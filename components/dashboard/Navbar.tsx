@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 import { Bell, Search } from "lucide-react";
+import UserAvatar from "@/components/ui/user-avatar";
 
 type Props = {};
 
@@ -62,13 +63,7 @@ const Navbar = (props: Props) => {
         <Search color="#757575" size={24} />
         <Bell color="#757575" size={24} />
         <Link href="/settings">
-          <Image
-            src="/images/user.png"
-            alt="User"
-            width={32}
-            height={32}
-            className="w-8 h-8"
-          />
+          <UserAvatar size={32} className="w-8 h-8" />
         </Link>
       </section>
       {/* Mobile menu */}
@@ -102,13 +97,7 @@ const Navbar = (props: Props) => {
               <Search color="#757575" size={24} />
               <Bell color="#757575" size={24} />
               <Link href="/settings">
-                <Image
-                  src="/images/user.png"
-                  alt="User"
-                  width={32}
-                  height={32}
-                  className="w-8 h-8"
-                />
+                <UserAvatar size={32} className="w-8 h-8" />
               </Link>
             </div>
           </div>

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import CardDetailsDrawer from "@/components/homepage/CardDetailsDrawer";
+import CampaignCreatorAvatar from "@/components/ui/campaign-creator-avatar";
 
 const cardDetails = [
   {
@@ -26,14 +27,14 @@ const cardDetails = [
     timeLeft: "5 days left",
     avatar: "/images/avatar-7.png",
     creator: "Adebola Ajani",
-    createdFor: "Ajegunle Children’s Charity",
+    createdFor: "Ajegunle Children's Charity",
     percentage: "40%",
     total: "₦3,000,000 total",
     donors: 64,
   },
   {
     id: "2",
-    title: "Let’s Help Get Jeffrey off the Streets",
+    title: "Let's Help Get Jeffrey off the Streets",
     description:
       "Jeffrey has been a recognisable face in Brunswick village. This campaign is dedicated to helping him find a home and a new start. Your support can change a life.",
     raised: "$121,500 raised",
@@ -43,104 +44,99 @@ const cardDetails = [
     timeLeft: "12 days left",
     avatar: "/images/avatar-7.png",
     creator: "Adebola Ajani",
-    createdFor: "Ajegunle Children’s Charity",
+    createdFor: "Ajegunle Children's Charity",
     percentage: "93%",
     total: "₦3,000,000 total",
     donors: 64,
   },
   {
     id: "3",
-    title: "Support Kamala’s Tuition at West End Primary",
+    title: "Support Kamala's Tuition at Westfield",
     description:
-      "Kamala, our first daughter, won a part-scholarship to attend West End Primary. Help us cover the remaining tuition and give her the education she deserves!",
-    raised: "£2,000 raised",
+      "Kamala, our first daughter won a part-scholarship to Westfield College. We need your help to cover the remaining tuition fees and ensure her education continues.",
+    raised: "₦12,035,000 raised",
     image: "/images/card-img3.png",
-    extra: "Goal: £5,000. 40% funded. Every bit helps Kamala stay in school!",
-    date: "June 4, 2025",
-    timeLeft: "7 days left",
+    extra: "Goal: ₦20,000,000. Every donation brings us closer to Kamala's dream.",
+    date: "May 15, 2025",
+    timeLeft: "8 days left",
     avatar: "/images/avatar-7.png",
     creator: "Adebola Ajani",
-    createdFor: "Ajegunle Children’s Charity",
-    percentage: "13%",
-    total: "₦3,000,000 total",
-    donors: 64,
-  },
-  {
-    id: "4",
-    title: "91 Days of Kindness Challenge",
-    description:
-      "Nigeria is a nation built on resilience, unity, and a love for community. This campaign aims to spread kindness across the country, one act at a time. Join us in making a difference!",
-    raised: "₦1,201,000 raised",
-    image: "/images/card-img1.png",
-    extra: "Goal: ₦2,000,000. Over 500 acts of kindness completed so far!",
-    date: "March 24, 2025",
-    timeLeft: "5 days left",
-    avatar: "/images/avatar-7.png",
-    creator: "Adebola Ajani",
-    createdFor: "Ajegunle Children’s Charity",
-    percentage: "40%",
-    total: "₦3,000,000 total",
-    donors: 64,
-  },
-  {
-    id: "5",
-    title: "Support Kamala’s Tuition at West End Primary",
-    description:
-      "Kamala, our first daughter, won a part-scholarship to attend West End Primary. Help us cover the remaining tuition and give her the education she deserves!",
-    raised: "£2,000 raised",
-    image: "/images/card-img3.png",
-    extra: "Goal: £5,000. 40% funded. Every bit helps Kamala stay in school!",
-    date: "June 4, 2025",
-    timeLeft: "7 days left",
-    avatar: "/images/avatar-7.png",
-    creator: "Adebola Ajani",
-    createdFor: "Ajegunle Children’s Charity",
-    percentage: "13%",
+    createdFor: "Ajegunle Children's Charity",
+    percentage: "60%",
     total: "₦3,000,000 total",
     donors: 64,
   },
 ];
 
-interface CardsProps {
-  campaignId: string;
-}
-
-const Cards = ({ campaignId }: CardsProps) => {
-  const [openCard, setOpenCard] = useState<number | null>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+const Cards = ({ campaignId }: { campaignId: string }) => {
+  const [selectedCard, setSelectedCard] = useState<any>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [relatedCampaigns, setRelatedCampaigns] = useState(cardDetails);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Fetch related campaigns
   React.useEffect(() => {
     const fetchRelatedCampaigns = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        setError(null);
         const response = await fetch('/api/campaigns?limit=5');
-        if (!response.ok) {
-          throw new Error('Failed to fetch related campaigns');
-        }
         const result = await response.json();
+        
         if (result.success && result.data.length > 0) {
-          // Transform API data to match cardDetails format
-          const transformedCampaigns = result.data.map((campaign: any) => ({
-            id: campaign.id,
-            title: campaign.title,
-            description: campaign.description,
-            raised: `${campaign.currency}${campaign.currentAmount.toLocaleString()} raised`,
-            image: campaign.coverImageUrl || "/images/card-img1.png",
-            extra: `Goal: ${campaign.currency}${campaign.goalAmount.toLocaleString()}. ${Math.round((campaign.currentAmount / campaign.goalAmount) * 100)}% funded!`,
-            date: new Date(campaign.createdAt).toLocaleDateString(),
-            timeLeft: "5 days left", // This would need to be calculated
-            avatar: campaign.creatorAvatar || "/images/avatar-7.png",
-            creator: campaign.creatorName,
-            createdFor: campaign.fundraisingFor,
-            percentage: `${Math.round((campaign.currentAmount / campaign.goalAmount) * 100)}%`,
-            total: `${campaign.currency}${campaign.goalAmount.toLocaleString()} total`,
-            donors: campaign.stats?.uniqueDonors || 0,
-          }));
+                     // Transform API data to match cardDetails format
+           const transformedCampaigns = result.data.map((campaign: any) => {
+             // Format currency symbol
+             const getCurrencySymbol = (currency: string) => {
+               switch (currency.toUpperCase()) {
+                 case 'USD': return '$';
+                 case 'CAD': return 'C$';
+                 case 'EUR': return '€';
+                 case 'GBP': return '£';
+                 case 'NGN': return '₦';
+                 case 'JPY': return '¥';
+                 case 'AUD': return 'A$';
+                 case 'CHF': return 'CHF';
+                 case 'CNY': return '¥';
+                 case 'INR': return '₹';
+                 default: return currency;
+               }
+             };
+             
+             const currencySymbol = getCurrencySymbol(campaign.currency);
+             
+                            // Get the first image from gallery or use cover image as fallback
+               const getImageUrl = () => {
+                 if (campaign.galleryImages && campaign.galleryImages.length > 0) {
+                   const firstImage = campaign.galleryImages[0];
+                   // Check if it's a valid image path (not an upload path that might not exist)
+                   if (firstImage && !firstImage.startsWith('/uploads/')) {
+                     return firstImage;
+                   }
+                 }
+                 return campaign.coverImageUrl && !campaign.coverImageUrl.startsWith('/uploads/') 
+                   ? campaign.coverImageUrl 
+                   : "/images/card-img1.png";
+               };
+               
+               return {
+                 id: campaign.id,
+                 title: campaign.title,
+                 description: campaign.description,
+                 raised: `${currencySymbol}${campaign.currentAmount.toLocaleString()} raised`,
+                 image: getImageUrl(),
+                 extra: `Goal: ${currencySymbol}${campaign.goalAmount.toLocaleString()}. ${Math.round((campaign.currentAmount / campaign.goalAmount) * 100)}% funded!`,
+                 date: new Date(campaign.createdAt).toLocaleDateString(),
+                 timeLeft: "5 days left", // This would need to be calculated
+                 avatar: campaign.creatorAvatar || "/images/avatar-7.png",
+                 creator: campaign.creatorName,
+                 createdFor: campaign.fundraisingFor,
+                 percentage: `${Math.round((campaign.currentAmount / campaign.goalAmount) * 100)}%`,
+                 total: `${currencySymbol}${campaign.goalAmount.toLocaleString()} total`,
+                 donors: campaign.stats?.uniqueDonors || 0,
+               };
+           });
           setRelatedCampaigns(transformedCampaigns);
         }
       } catch (err) {
@@ -173,131 +169,114 @@ const Cards = ({ campaignId }: CardsProps) => {
     }
   };
 
-  const handlePreviousCard = () => {
-    if (openCard !== null && openCard > 0) {
-      setOpenCard(openCard - 1);
-    }
-  };
-
-  const handleNextCard = () => {
-    if (openCard !== null && openCard < cardDetails.length - 1) {
-      setOpenCard(openCard + 1);
-    }
+  const handleCardClick = (card: any) => {
+    setSelectedCard(card);
+    setIsDrawerOpen(true);
   };
 
   return (
-    <div className="p-4 md:p-12 w-full h-fit flex flex-col gap-5 my-5 bg-[#F2F1E9]">
-      <div className="flex flex-row justify-between items-start md:items-center gap-4">
-        <section className="flex flex-col gap-2 md:gap-3">
-          <p className="font-source font-semibold text-base md:text-3xl text-black">
-            Many more ways to support others and create life-changing
-            experiences.
-          </p>
-          <span className="font-source font-normal text-xs md:text-base text-black">
-            Find campaigns and causes you love, close to you or around the
-            world.
-          </span>
-        </section>
-
-        {/* Navigation Buttons */}
+    <div className="w-full">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="font-semibold text-2xl md:text-3xl text-black">
+          Related campaigns
+        </h2>
         <div className="flex gap-2">
-          <Button
+          <button
             onClick={scrollLeft}
-            className="w-12 h-12 bg-[#104901] border-2 border-[#0F4201] rounded-none"
+            className="w-10 h-10 bg-white border border-[#D9D9D9] rounded-full flex items-center justify-center hover:bg-gray-50"
           >
-            <ArrowLeft size={32} />
-          </Button>
-          <Button
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
             onClick={scrollRight}
-            className="w-12 h-12 bg-[#104901] border-2 border-[#0F4201] rounded-none"
+            className="w-10 h-10 bg-white border border-[#D9D9D9] rounded-full flex items-center justify-center hover:bg-gray-50"
           >
-            <ArrowRight size={32} />
-          </Button>
+            <ChevronRight className="h-5 w-5" />
+          </button>
         </div>
       </div>
 
-      <section className="flex justify-between items-center">
-        <Select>
-          <SelectTrigger className="w-full md:w-[250px] h-12 md:h-14 px-4 md:px-6 font-source font-normal text-base text-black border-2 border-[#0F4201] rounded-none">
-            <SelectValue placeholder="Happening worldwide" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem
-              value="live campaigns"
-              className="capitalize cursor-pointer"
-            >
-              live campaigns anywhere (worldwide)
-            </SelectItem>
-            <SelectItem
-              value="need momentum"
-              className="capitalize cursor-pointer"
-            >
-              need momentum (campaigns between 0-10%)
-            </SelectItem>
-            <SelectItem
-              value="close to target"
-              className="capitalize cursor-pointer"
-            >
-              close to target (campaigns above 90%)
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </section>
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#104901]"></div>
+        </div>
+      )}
 
-      {/* Scrollable Cards Container */}
+      {error && (
+        <div className="text-center py-8">
+          <p className="text-red-600 mb-4">Error loading related campaigns: {error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-[#104901] text-white rounded-lg hover:bg-[#0a3a01]"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
+
       <div
         ref={scrollContainerRef}
-        className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        className="flex gap-4 overflow-x-auto scrollbar-hide pb-4"
       >
-        {relatedCampaigns.map((card, idx) => (
-          <section
-            key={idx}
-            className="min-w-[300px] md:min-w-[350px] p-2 flex flex-col gap-2 cursor-pointer hover:shadow-lg transition-shadow"
-            onClick={() => setOpenCard(idx)}
+        {relatedCampaigns.map((card) => (
+          <div
+            key={card.id}
+            className="min-w-[300px] md:min-w-[400px] bg-white border border-[#D9D9D9] rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+            onClick={() => handleCardClick(card)}
           >
-            <Image
-              src={card.image}
-              alt={card.title}
-              width={400}
-              height={300}
-              className="w-full h-40 md:h-60 object-cover"
-            />
-            <p className="font-source font-medium text-lg md:text-xl text-black">
-              {card.title}
-            </p>
-            <span className="font-source font-normal text-sm md:text-base text-black">
-              {card.description.slice(0, 60)}...
-            </span>
-            <span className="font-medium text-base md:text-lg text-black">
-              {card.raised}
-            </span>
-            <div className="w-full bg-[#FBFBFB] h-2">
-              <div
-                className="bg-[#104901] h-full transition-all duration-500"
-                style={{
-                  width: card.percentage
-                    ? card.percentage
-                    : idx === 0
-                    ? "60%"
-                    : idx === 1
-                    ? "93%"
-                    : "13%",
-                }}
-              ></div>
+            <div className="relative">
+              <Image
+                src={card.image}
+                alt={card.title}
+                width={400}
+                height={200}
+                className="w-full h-48 object-cover"
+              />
+              <div className="absolute top-4 left-4">
+                <span className="bg-[#104901] text-white px-3 py-1 rounded-full text-sm font-medium">
+                  {card.percentage}
+                </span>
+              </div>
             </div>
-          </section>
+            <div className="p-4">
+              <h3 className="font-semibold text-lg text-black mb-2 line-clamp-2">
+                {card.title}
+              </h3>
+              <p className="text-sm text-[#757575] mb-3 line-clamp-2">
+                {card.description}
+              </p>
+              <div className="flex items-center gap-2 mb-3">
+                <CampaignCreatorAvatar
+                  creatorName={card.creator}
+                  creatorAvatar={card.avatar}
+                  size={24}
+                />
+                <span className="text-sm text-[#757575]">
+                  by {card.creator}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-semibold text-lg text-black">
+                  {card.raised}
+                </span>
+                <span className="text-sm text-[#757575]">
+                  {card.donors} donors
+                </span>
+              </div>
+            </div>
+          </div>
         ))}
-        <CardDetailsDrawer
-          open={openCard !== null}
-          onOpenChange={(open) => !open && setOpenCard(null)}
-          card={openCard !== null ? relatedCampaigns[openCard] : null}
-          currentIndex={openCard !== null ? openCard : 0}
-          totalCards={relatedCampaigns.length}
-          onPrevious={handlePreviousCard}
-          onNext={handleNextCard}
-        />
       </div>
+
+      <CardDetailsDrawer
+        card={selectedCard}
+        open={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        currentIndex={0}
+        totalCards={relatedCampaigns.length}
+        onPrevious={() => {}}
+        onNext={() => {}}
+      />
     </div>
   );
 };

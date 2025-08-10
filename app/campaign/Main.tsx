@@ -246,16 +246,14 @@ const Main = ({ campaignId }: MainProps) => {
 
   // Use campaign data or fallback to mock data
   const campaignData = campaign || {
-    title: "Support the Thomases' move into a new flat",
-    subtitle:
-      "A young London caregiver's family needs your help at a better life.",
-    description:
-      "A little girl lost her teddy bear while visiting Glacier National Park in Montana. One year later, a family friend visiting the park spotted the bear, and now it is reunited with its owner. TODAY's Hoda Kotb has your Morning Boost.",
-    reason: "Family",
-    fundraisingFor: "Thomas family",
-    creatorName: "Donald Chopra",
+    title: "91 Days of Kindness Challenge",
+    subtitle: "Spreading kindness across Nigeria, one act at a time",
+    description: "Nigeria is a nation built on resilience, unity, and a love for community. This campaign aims to spread kindness across the country, one act at a time. Join us in making a difference! We believe that small acts of kindness can create a ripple effect that transforms communities and brings people together.",
+    reason: "Community Development",
+    fundraisingFor: "Ajegunle Children's Charity",
+    creatorName: "Adebola Ajani",
     goalAmount: 3000000,
-    currentAmount: 1192000,
+    currentAmount: 1201000,
     currency: "NGN",
     stats: {
       totalDonations: 35,
@@ -268,6 +266,11 @@ const Main = ({ campaignId }: MainProps) => {
   const goal = campaignData.goalAmount;
   const percent = Math.min(100, Math.round((raised / goal) * 100));
 
+  // Use campaign images if available, otherwise fallback to default images
+  const campaignImages = campaign?.galleryImages && campaign.galleryImages.length > 0 
+    ? campaign.galleryImages 
+    : images;
+
   return (
     <div className="max-w-[1440px] bg-[url('/images/logo-bg.svg')] bg-[length:60%] md:bg-[length:30%] md:h-full bg-no-repeat bg-right-bottom mx-auto mt-16 md:mt-22 h-full p-5 md:p-12 font-source">
       <div className="flex md:flex-row md:gap-5 flex-col">
@@ -275,18 +278,17 @@ const Main = ({ campaignId }: MainProps) => {
         <div className="w-full md:w-3/4">
           <div className="flex flex-col gap-2">
             <h1 className="md:text-4xl text-2xl font-semibold text-black">
-              Support the Thomases’ move into a new flat
+              {campaignData.title}
             </h1>
             <p className="font-normal text-base md:text-2xl text-black">
-              A young London caregiver’s family needs your help at a better
-              life.
+              {campaignData.subtitle}
             </p>
           </div>
           {/* Main Image */}
           <div className="w-full flex mb-4 mt-10">
             <div className="relative md:w-[900px] md:h-[600px] overflow-hidden">
               <Image
-                src={images[selectedImage]}
+                src={campaignImages[selectedImage]}
                 alt={`Gallery image ${selectedImage + 1}`}
                 style={{ objectFit: "cover" }}
                 width={900}
@@ -297,7 +299,7 @@ const Main = ({ campaignId }: MainProps) => {
           </div>
           {/* Thumbnails */}
           <div className="flex gap-4 overflow-x-auto">
-            {images.map((img, idx) => (
+            {campaignImages.map((img, idx) => (
               <button
                 key={img}
                 onClick={() => setSelectedImage(idx)}
@@ -421,10 +423,7 @@ const Main = ({ campaignId }: MainProps) => {
             {activeTab === "why-support" && (
               <div className="bg-[#F2F1E9] border-x border-b border-[#C0BFC4] font-normal text-sm md:text-xl text-[#104901] p-3 md:p-6 space-y-4">
                 <p className="">
-                  A little girl lost her teddy bear while visiting Glacier
-                  National Park in Montana. One year later, a family friend
-                  visiting the park spotted the bear, and now it is reunited
-                  with its owner. TODAY's Hoda Kotb has your Morning Boost.
+                  {campaignData.description}
                 </p>
 
                 <div className="space-y-2">

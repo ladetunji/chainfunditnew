@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface Campaign {
   id: string;
@@ -77,7 +77,7 @@ export function useCampaigns() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCampaigns = async (filters?: {
+  const fetchCampaigns = useCallback(async (filters?: {
     status?: string;
     reason?: string;
     creatorId?: string;
@@ -85,6 +85,7 @@ export function useCampaigns() {
     offset?: number;
   }) => {
     try {
+      console.log('useCampaigns: fetchCampaigns - Starting fetch');
       setLoading(true);
       setError(null);
 
@@ -95,23 +96,32 @@ export function useCampaigns() {
       if (filters?.limit) params.append('limit', filters.limit.toString());
       if (filters?.offset) params.append('offset', filters.offset.toString());
 
-      const response = await fetch(`/api/campaigns?${params}`);
+      const url = `/api/campaigns?${params}`;
+      console.log('useCampaigns: fetchCampaigns - Fetching URL:', url);
+
+      const response = await fetch(url);
+      console.log('useCampaigns: fetchCampaigns - Response status:', response.status);
+
       const data = await response.json();
+      console.log('useCampaigns: fetchCampaigns - Response data:', data);
 
       if (data.success) {
+        console.log('useCampaigns: fetchCampaigns - Setting campaigns:', data.data.length);
         setCampaigns(data.data);
       } else {
+        console.log('useCampaigns: fetchCampaigns - API error:', data.error);
         setError(data.error || 'Failed to load campaigns');
       }
     } catch (error) {
-      console.error('Error fetching campaigns:', error);
+      console.error('useCampaigns: fetchCampaigns - Error:', error);
       setError('Failed to load campaigns');
     } finally {
+      console.log('useCampaigns: fetchCampaigns - Setting loading to false');
       setLoading(false);
     }
-  };
+  }, []);
 
-  const createCampaign = async (formData: CampaignFormData): Promise<Campaign | null> => {
+  const createCampaign = useCallback(async (formData: CampaignFormData): Promise<Campaign | null> => {
     try {
       setLoading(true);
       setError(null);
@@ -146,9 +156,9 @@ export function useCampaigns() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const updateCampaign = async (campaignId: string, updates: Partial<Campaign>): Promise<Campaign | null> => {
+  const updateCampaign = useCallback(async (campaignId: string, updates: Partial<Campaign>): Promise<Campaign | null> => {
     try {
       setLoading(true);
       setError(null);
@@ -180,9 +190,9 @@ export function useCampaigns() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const deleteCampaign = async (campaignId: string): Promise<boolean> => {
+  const deleteCampaign = useCallback(async (campaignId: string): Promise<boolean> => {
     try {
       setLoading(true);
       setError(null);
@@ -208,11 +218,11 @@ export function useCampaigns() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchCampaigns();
-  }, []);
+  }, [fetchCampaigns]);
 
   return {
     campaigns,
@@ -230,7 +240,7 @@ export function useCampaign(campaignId: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCampaign = async () => {
+  const fetchCampaign = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -249,13 +259,13 @@ export function useCampaign(campaignId: string) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [campaignId]);
 
   useEffect(() => {
     if (campaignId) {
       fetchCampaign();
     }
-  }, [campaignId]);
+  }, [campaignId, fetchCampaign]);
 
   return {
     campaign,
@@ -270,7 +280,7 @@ export function useCampaignUpdates(campaignId: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchUpdates = async () => {
+  const fetchUpdates = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -289,9 +299,9 @@ export function useCampaignUpdates(campaignId: string) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [campaignId]);
 
-  const createUpdate = async (updateData: { title: string; content: string; mediaUrl?: string }): Promise<CampaignUpdate | null> => {
+  const createUpdate = useCallback(async (updateData: { title: string; content: string; mediaUrl?: string }): Promise<CampaignUpdate | null> => {
     try {
       setLoading(true);
       setError(null);
@@ -321,13 +331,13 @@ export function useCampaignUpdates(campaignId: string) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [campaignId]);
 
   useEffect(() => {
     if (campaignId) {
       fetchUpdates();
     }
-  }, [campaignId]);
+  }, [campaignId, fetchUpdates]);
 
   return {
     updates,
@@ -349,7 +359,7 @@ export function useCampaignComments(campaignId: string) {
     totalPages: 0,
   });
 
-  const fetchComments = async (page: number = 1) => {
+  const fetchComments = useCallback(async (page: number = 1) => {
     try {
       setLoading(true);
       setError(null);
@@ -369,9 +379,9 @@ export function useCampaignComments(campaignId: string) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [campaignId]);
 
-  const createComment = async (content: string): Promise<CampaignComment | null> => {
+  const createComment = useCallback(async (content: string): Promise<CampaignComment | null> => {
     try {
       setLoading(true);
       setError(null);
@@ -401,13 +411,13 @@ export function useCampaignComments(campaignId: string) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [campaignId]);
 
   useEffect(() => {
     if (campaignId) {
       fetchComments();
     }
-  }, [campaignId]);
+  }, [campaignId, fetchComments]);
 
   return {
     comments,

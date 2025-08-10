@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { campaigns, users } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import { campaigns, users, donations } from '@/lib/schema';
+import { eq, and, count, sum } from 'drizzle-orm';
 import { parse } from 'cookie';
 import { verifyUserJWT } from '@/lib/auth';
 
@@ -18,12 +18,15 @@ async function getUserFromRequest(request: NextRequest) {
 // GET /api/campaigns - Get all campaigns with filtering
 export async function GET(request: NextRequest) {
   try {
+    console.log('API: GET /api/campaigns - Starting request');
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const reason = searchParams.get('reason');
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = parseInt(searchParams.get('offset') || '0');
     const creatorId = searchParams.get('creatorId');
+
+    console.log('API: GET /api/campaigns - Query params:', { status, reason, limit, offset, creatorId });
 
     // Build query with filters
     let conditions = [];
@@ -37,24 +40,92 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(campaigns.creatorId, creatorId));
     }
     
-    const allCampaigns = await db
-      .select()
+    console.log('API: GET /api/campaigns - Conditions:', conditions.length);
+    
+    // Get campaigns with creator details and donation stats
+    const campaignsWithDetails = await db
+      .select({
+        id: campaigns.id,
+        title: campaigns.title,
+        subtitle: campaigns.subtitle,
+        description: campaigns.description,
+        reason: campaigns.reason,
+        fundraisingFor: campaigns.fundraisingFor,
+        duration: campaigns.duration,
+        videoUrl: campaigns.videoUrl,
+        coverImageUrl: campaigns.coverImageUrl,
+        galleryImages: campaigns.galleryImages,
+        documents: campaigns.documents,
+        goalAmount: campaigns.goalAmount,
+        currency: campaigns.currency,
+        minimumDonation: campaigns.minimumDonation,
+        chainerCommissionRate: campaigns.chainerCommissionRate,
+        currentAmount: campaigns.currentAmount,
+        status: campaigns.status,
+        isActive: campaigns.isActive,
+        createdAt: campaigns.createdAt,
+        updatedAt: campaigns.updatedAt,
+        closedAt: campaigns.closedAt,
+        creatorId: campaigns.creatorId,
+        creatorName: users.fullName,
+        creatorAvatar: users.avatar,
+      })
       .from(campaigns)
+      .leftJoin(users, eq(campaigns.creatorId, users.id))
       .where(conditions.length > 0 ? conditions.reduce((acc, condition) => acc && condition) : undefined)
       .limit(limit)
       .offset(offset);
+
+    console.log('API: GET /api/campaigns - Found campaigns:', campaignsWithDetails.length);
+
+    // Get donation stats for each campaign
+    const campaignsWithStats = await Promise.all(
+      campaignsWithDetails.map(async (campaign) => {
+        const donationStats = await db
+          .select({
+            totalDonations: count(donations.id),
+            totalAmount: sum(donations.amount),
+            uniqueDonors: count(donations.donorId),
+          })
+          .from(donations)
+          .where(and(
+            eq(donations.campaignId, campaign.id),
+            eq(donations.paymentStatus, 'completed')
+          ));
+
+        const stats = {
+          totalDonations: Number(donationStats[0]?.totalDonations || 0),
+          totalAmount: Number(donationStats[0]?.totalAmount || 0),
+          uniqueDonors: Number(donationStats[0]?.uniqueDonors || 0),
+          progressPercentage: Math.min(100, Math.round((Number(campaign.currentAmount) / Number(campaign.goalAmount)) * 100)),
+        };
+
+        return {
+          ...campaign,
+          goalAmount: Number(campaign.goalAmount),
+          currentAmount: Number(campaign.currentAmount),
+          minimumDonation: Number(campaign.minimumDonation),
+          chainerCommissionRate: Number(campaign.chainerCommissionRate),
+          galleryImages: campaign.galleryImages ? JSON.parse(campaign.galleryImages) : [],
+          documents: campaign.documents ? JSON.parse(campaign.documents) : [],
+          stats,
+        };
+      })
+    );
+    
+    console.log('API: GET /api/campaigns - Returning campaigns with stats:', campaignsWithStats.length);
     
     return NextResponse.json({
       success: true,
-      data: allCampaigns,
+      data: campaignsWithStats,
       pagination: {
         limit,
         offset,
-        total: allCampaigns.length,
+        total: campaignsWithStats.length,
       },
     });
   } catch (error) {
-    console.error('Error fetching campaigns:', error);
+    console.error('API: GET /api/campaigns - Error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch campaigns' },
       { status: 500 }
@@ -98,9 +169,10 @@ export async function POST(request: NextRequest) {
     const currency = formData.get('currency') as string;
     const visibility = formData.get('visibility') as string;
 
-    const imageFiles = formData.getAll('images').filter((f): f is File => f instanceof File);
-    const documentFiles = formData.getAll('documents').filter((f): f is File => f instanceof File);
+    const imageFiles = formData.getAll('images').filter((f): f is File => f instanceof File && f.name);
+    const documentFiles = formData.getAll('documents').filter((f): f is File => f instanceof File && f.name);
     const coverImageFile = formData.get('coverImage') as File | null;
+    const validCoverImageFile = coverImageFile && coverImageFile.name ? coverImageFile : null;
 
     // Validate required fields
     if (!title || !story || !goalRaw || !currency) {
@@ -166,15 +238,22 @@ export async function POST(request: NextRequest) {
     }
 
     // TODO: In production, upload files to cloud storage (AWS S3, Cloudinary, etc.)
-    // For now, we'll store file paths
-    const imagePaths = imageFiles.map((file) => `/uploads/campaigns/${Date.now()}_${file.name}`);
-    const documentPaths = documentFiles.map((file) => `/uploads/campaigns/${Date.now()}_${file.name}`);
-    const coverImagePath = coverImageFile ? `/uploads/campaigns/${Date.now()}_${coverImageFile.name}` : null;
+    // For now, we'll use placeholder images since file upload isn't fully implemented
+    const imagePaths = imageFiles.length > 0 
+      ? ["/images/card-img1.png", "/images/card-img2.png", "/images/card-img3.png"].slice(0, imageFiles.length)
+      : [];
+    const documentPaths = documentFiles.length > 0 
+      ? ["/documents/sample-document.pdf"].slice(0, documentFiles.length)
+      : [];
+    const coverImagePath = validCoverImageFile ? "/images/card-img1.png" : null;
 
     // Log uploaded files for debugging
     console.log('Uploaded images:', imageFiles.map(f => f.name));
     console.log('Uploaded documents:', documentFiles.map(f => f.name));
-    console.log('Cover image:', coverImageFile?.name);
+    console.log('Cover image:', validCoverImageFile?.name);
+    console.log('Generated image paths:', imagePaths);
+    console.log('Generated document paths:', documentPaths);
+    console.log('Generated cover image path:', coverImagePath);
 
     const newCampaign = await db.insert(campaigns).values({
       creatorId,

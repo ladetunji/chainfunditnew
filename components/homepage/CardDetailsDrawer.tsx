@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useShortenLink } from "@/hooks/use-shorten-link";
+import CampaignCreatorAvatar from "@/components/ui/campaign-creator-avatar";
 
 interface CardDetails {
   title: string;
@@ -178,11 +179,10 @@ const CardDetailsDrawer: React.FC<CardDetailsDrawerProps> = ({
                 {card ? card.title : ""}
               </p>
               <section className="flex gap-3 items-center my-2">
-                <Image
-                  src={card ? card.avatar : ""}
-                  alt={card.title}
-                  width={32}
-                  height={32}
+                <CampaignCreatorAvatar
+                  creatorName={card.creator}
+                  creatorAvatar={card.avatar}
+                  size={32}
                 />
                 <p className="font-normal text-xl text-[#868686]">
                   Created by{" "}

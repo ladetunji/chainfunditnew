@@ -236,9 +236,8 @@ export default function CreateCampaignPage() {
       } else if (key === "coverImage") {
         if (value) {
           payload.append("coverImage", value as File);
-        } else {
-          payload.append("coverImage", new Blob(), "placeholder.jpg");
         }
+        // Don't append anything if no cover image is selected
       } else {
         payload.append(key, value as string);
       }

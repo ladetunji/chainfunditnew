@@ -3,17 +3,7 @@ import { Edit, Eye, Link as LinkIcon, Plus, PlusSquare, Users } from "lucide-rea
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
-
-type Campaign = {
-  id: number;
-  title: string;
-  description: string;
-  amountRaised: number;
-  goal: number;
-  donors: number;
-  chains: number;
-  image: string;
-};
+import { Campaign, transformCampaign } from "./types";
 
 type Props = {
   campaigns: Campaign[];
@@ -21,6 +11,7 @@ type Props = {
 
 const LiveCampaigns = ({ campaigns }: Props) => {
   const isEmpty = campaigns.length === 0;
+  const transformedCampaigns = campaigns.map(transformCampaign);
 
   if (isEmpty) {
     return (
@@ -55,7 +46,7 @@ const LiveCampaigns = ({ campaigns }: Props) => {
 
   return (
     <div className="flex flex-col gap-6 font-source 2xl:container 2xl:mx-auto">
-      {campaigns.map((campaign) => (
+      {transformedCampaigns.map((campaign) => (
         <div
           key={campaign.id}
           className="border border-[#D9D9D9] bg-white py-4 pl-4 pr-6 flex justify-between items-start"
