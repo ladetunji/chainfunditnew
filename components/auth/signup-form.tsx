@@ -6,11 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight } from "lucide-react";
-import { FaGoogle } from "react-icons/fa";
-import { FaFacebook } from "react-icons/fa";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { OAuthButtons } from "./oauth-buttons";
 
 export function SignupForm({
   className,
@@ -86,29 +85,9 @@ export function SignupForm({
           Continue with Email
           <ArrowRight />
         </Button>
-        <div className="flex gap-3 items-center w-full">
-          <div className="w-1/3 border-b border-[#C0BFC4]"></div>
-          <span className="relative z-10 font-medium md:text-xl text-xs text-black">
-            Or continue with
-          </span>
-          <div className="w-1/3 border-b border-[#C0BFC4]"></div>
-        </div>
-        <div className="flex gap-3 md:gap-5 w-full">
-          <Button className="w-1/2 md:w-[236px] h-12 bg-[#D9D9DC] border-[#8E8C95] text-[#474553] font-medium text-2xl" type="button" onClick={() => window.location.href = '/api/auth/[...betterauth]?provider=google'}>
-            <FaGoogle color="#474553" size={32} /> Google
-          </Button>
-          <Button className="w-1/2 md:w-[236px] h-12 bg-[#D9D9DC] border-[#8E8C95] text-[#474553] font-semibold text-2xl" type="button" onClick={() => window.location.href = '/api/auth/[...betterauth]?provider=facebook'}>
-            <FaFacebook size={24} /> Facebook
-          </Button>
-        </div>
+        <OAuthButtons mode="signup" />
       </div>
       <p className="text-center text-sm font-normal text-[#104901] mt-4">Already have an account? <Link href='/signin' className="font-medium text-base underline">Sign in</Link></p>
-
-      <p className="text-center text-sm font-normal text-[#104901] mt-4">
-        By continuing with Google, Apple, Email or Phone number, you agree to
-        Chainfundit <span className="font-bold">Terms of Service</span> as well
-        as the <span className="font-bold">Privacy Policy</span>.
-      </p>
     </form>
   );
 }

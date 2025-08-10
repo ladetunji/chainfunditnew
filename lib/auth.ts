@@ -1,6 +1,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/lib/db";
+import { users, accounts, sessions, verificationTokens } from "@/lib/schema";
+import { eq } from "drizzle-orm";
 import jwt from "jsonwebtoken";
 
 export function generateUserJWT(user: { id: string; email: string }) {
@@ -20,7 +22,7 @@ export function verifyUserJWT(token: string): { sub: string; email: string } | n
 }
 
 export const auth = betterAuth({
-  secret: process.env.BETTER_AUTH_SECRET,
+  secret: process.env.BETTER_AUTH_SECRET || "your-secret-key-change-in-production",
   database: drizzleAdapter(db, {
     provider: "pg", // PostgreSQL
   }),
@@ -52,4 +54,32 @@ export const auth = betterAuth({
     //     clientSecret: process.env.APPLE_CLIENT_SECRET!,
     // },
   ],
+  callbacks: {
+    async signIn({ user, account, profile }: any) {
+      // Handle OAuth sign-in
+      if (account?.provider === "google" || account?.provider === "facebook") {
+        // Update user profile with OAuth data
+        if (profile) {
+          await db.update(users)
+            .set({
+              fullName: profile.name || user.name || user.email?.split('@')[0] || 'User',
+              avatar: profile.picture || profile.image,
+              isVerified: true,
+              hasCompletedProfile: true,
+            })
+            .where(eq(users.id, user.id));
+        }
+      }
+      return true;
+    },
+    async session({ session, user }: any) {
+      // Add user data to session
+      if (session.user) {
+        session.user.id = user.id;
+        session.user.email = user.email;
+        session.user.name = user.name;
+      }
+      return session;
+    },
+  },
 });

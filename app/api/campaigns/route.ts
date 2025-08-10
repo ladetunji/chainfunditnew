@@ -169,8 +169,8 @@ export async function POST(request: NextRequest) {
     const currency = formData.get('currency') as string;
     const visibility = formData.get('visibility') as string;
 
-    const imageFiles = formData.getAll('images').filter((f): f is File => f instanceof File && f.name);
-    const documentFiles = formData.getAll('documents').filter((f): f is File => f instanceof File && f.name);
+    const imageFiles = formData.getAll('images').filter((f): f is File => f instanceof File && !!f.name);
+    const documentFiles = formData.getAll('documents').filter((f): f is File => f instanceof File && !!f.name);
     const coverImageFile = formData.get('coverImage') as File | null;
     const validCoverImageFile = coverImageFile && coverImageFile.name ? coverImageFile : null;
 

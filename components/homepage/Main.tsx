@@ -41,6 +41,7 @@ const Main = (props: Props) => {
 
   const cardDetails = [
     {
+      id: "kindness-challenge",
       title: "91 Days of Kindness Challenge",
       description:
         "Nigeria is a nation built on resilience, unity, and a love for community. This campaign aims to spread kindness across the country, one act at a time. Join us in making a difference!",
@@ -51,13 +52,14 @@ const Main = (props: Props) => {
       timeLeft: "5 days left",
       avatar: "/images/avatar-7.png",
       creator: "Adebola Ajani",
-      createdFor: "Ajegunle Children’s Charity",
+      createdFor: "Ajegunle Children's Charity",
       percentage: "40%",
       total: "₦3,000,000 total",
       donors: 64,
     },
     {
-      title: "Let’s Help Get Jeffrey off the Streets",
+      id: "jeffrey-streets",
+      title: "Let's Help Get Jeffrey off the Streets",
       description:
         "Jeffrey has been a recognisable face in Brunswick village. This campaign is dedicated to helping him find a home and a new start. Your support can change a life.",
       raised: "$121,500 raised",
@@ -67,13 +69,14 @@ const Main = (props: Props) => {
       timeLeft: "12 days left",
       avatar: "/images/avatar-7.png",
       creator: "Adebola Ajani",
-      createdFor: "Ajegunle Children’s Charity",
+      createdFor: "Ajegunle Children's Charity",
       percentage: "93%",
       total: "₦3,000,000 total",
       donors: 64,
     },
     {
-      title: "Support Kamala’s Tuition at West End Primary",
+      id: "kamala-tuition",
+      title: "Support Kamala's Tuition at West End Primary",
       description:
         "Kamala, our first daughter, won a part-scholarship to attend West End Primary. Help us cover the remaining tuition and give her the education she deserves!",
       raised: "£2,000 raised",
@@ -83,7 +86,7 @@ const Main = (props: Props) => {
       timeLeft: "7 days left",
       avatar: "/images/avatar-7.png",
       creator: "Adebola Ajani",
-      createdFor: "Ajegunle Children’s Charity",
+      createdFor: "Ajegunle Children's Charity",
       percentage: "13%",
       total: "₦3,000,000 total",
       donors: 64,
