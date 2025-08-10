@@ -325,7 +325,7 @@ const Main = ({ campaignId }: MainProps) => {
             <span className="font-semibold text-[#104901]">
               {campaignData.creatorName}
             </span>{" "}
-            for the{" "}
+            for {" "}
             <span className="font-semibold text-[#104901]">
               {campaignData.fundraisingFor}
             </span>
