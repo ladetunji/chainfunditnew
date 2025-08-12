@@ -49,7 +49,7 @@ function Carousel() {
 
   return (
     <div
-      className="w-full h-screen overflow-y-auto relative"
+      className="w-full relative"
       onMouseEnter={() => setIsPlaying(false)}
       onMouseLeave={() => setIsPlaying(true)}
     >

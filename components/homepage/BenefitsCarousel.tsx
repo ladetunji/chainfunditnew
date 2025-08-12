@@ -54,7 +54,7 @@ const BenefitsCarousel = () => {
   return (
     <div className="w-full md:px-12 px-4 py-10 h-[650px] overflow-hidden">
       <div className="flex md:gap-10 w-full">
-        <section className="md:w-1/2 md:block hidden h-full bg-cover bg-no-repeat relative">
+        <div className="md:w-1/2 md:block hidden h-full bg-cover bg-no-repeat relative">
           <div className="overflow-hidden" ref={emblaRef}>
             <div className="flex">
               {images.map((img, idx) => (
@@ -81,9 +81,9 @@ const BenefitsCarousel = () => {
               ))}
             </div>
           </div>
-        </section>
+        </div>
 
-        <section className="md:w-1/2 w-full h-[650px] flex flex-col mx-auto gap-10">
+        <div className="md:w-1/2 w-full h-[650px] flex flex-col mx-auto gap-10">
           <section className="flex flex-col gap-2">
             <h4 className="font-source font-semibold text-4xl text-black">
               Maximise your fundraising efforts
@@ -117,7 +117,7 @@ const BenefitsCarousel = () => {
               </li>
             ))}
           </ul>
-        </section>
+        </div>
       </div>
     </div>
   );
