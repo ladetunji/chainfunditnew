@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
-import { parseCookies } from 'nookies';
-import { useSearchParams } from 'next/navigation';
+import { parseCookies } from "nookies";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Suspense } from 'react';
-import Link from 'next/link';
+import { Suspense } from "react";
+import Link from "next/link";
 
 export default function PhonePageWrapper() {
   return (
@@ -39,30 +39,32 @@ function PhonePage() {
       if (!email) {
         try {
           const cookies = parseCookies();
-          const token = cookies['auth_token'];
+          const token = cookies["auth_token"];
           if (token) {
-            const payload = JSON.parse(atob(token.split('.')[1]));
+            const payload = JSON.parse(atob(token.split(".")[1]));
             email = payload.email;
           }
         } catch {}
       }
       // Call API to send phone OTP here
-      const res = await fetch('/api/auth/link-phone', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/auth/link-phone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: 'request_link_otp',
+          action: "request_link_otp",
           phone,
           email,
         }),
       });
       const data = await res.json();
       if (data.success) {
-        toast.success('OTP sent successfully!');
-        window.location.href = `/phone-otp?phone=${encodeURIComponent(phone)}&email=${encodeURIComponent(email)}`;
+        toast.success("OTP sent successfully!");
+        window.location.href = `/phone-otp?phone=${encodeURIComponent(
+          phone
+        )}&email=${encodeURIComponent(email)}`;
       } else {
-        toast.error(data.error || 'Failed to send OTP');
-        setError(data.error || 'Failed to send OTP');
+        toast.error(data.error || "Failed to send OTP");
+        setError(data.error || "Failed to send OTP");
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to send OTP");
@@ -85,14 +87,25 @@ function PhonePage() {
         <h2 className="font-semibold text-4xl text-[#104901] text-center">
           Link Phone number
         </h2>
-        
+
         <div className="flex justify-center w-full p-2">
           <div className="w-full max-w-lg pt-6">
-            <form className="flex flex-col gap-6 w-full pt-5" onSubmit={handleSubmit}>
+            <form
+              className="flex flex-col gap-6 w-full pt-5"
+              onSubmit={handleSubmit}
+            >
               <div className="grid gap-6">
                 <div className="grid gap-2">
-                  <Label htmlFor="phone" className="font-normal text-xl text-[#104901]">Link Phone Number</Label>
-                  <p className="text-base text-[#104901]">Link your phone number to receive notifications via SMS or WhatsApp, and verify your account with us.</p>
+                  <Label
+                    htmlFor="phone"
+                    className="font-normal text-xl text-[#104901]"
+                  >
+                    Link Phone Number
+                  </Label>
+                  <p className="text-base text-[#104901]">
+                    Link your phone number to receive notifications via SMS or
+                    WhatsApp, and verify your account with us.
+                  </p>
                   <Input
                     id="phone"
                     type="tel"
@@ -100,7 +113,7 @@ function PhonePage() {
                     className="w-[420px] md:w-full bg-white rounded-lg border border-[#D9D9DC] outline-[#104901] placeholder:text-[#767676]"
                     required
                     value={phone}
-                    onChange={e => setPhone(e.target.value)}
+                    onChange={(e) => setPhone(e.target.value)}
                     pattern="[+]?\d{1,3}[\s-]?\d{1,14}(?:x.+)?"
                   />
                 </div>
@@ -112,27 +125,21 @@ function PhonePage() {
                   Continue
                   <ArrowRight />
                 </Button>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
+                <Button
+                  type="button"
+                  variant="ghost"
                   className="w-full h-16 font-semibold text-2xl"
-                  onClick={() => window.location.href = "/dashboard"}
+                  onClick={() => (window.location.href = "/dashboard")}
                 >
                   Skip
                 </Button>
-                <p className="text-center text-sm text-gray-600">
-                  Don&apos;t have an account?{" "}
-                  <Link href="/signup" className="text-blue-600 hover:text-blue-800">
-                    Sign up
-                  </Link>
-                </p>
               </div>
               {/* {error && <p className="text-center text-red-500">{error}</p>} */}
             </form>
           </div>
         </div>
       </div>
-      
+
       <div
         className="flex gap-4 items-center px-5 py-8 w-full"
         style={{
@@ -184,4 +191,4 @@ function PhonePage() {
       </div>
     </div>
   );
-} 
+}
