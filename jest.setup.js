@@ -29,17 +29,27 @@ jest.mock('next/image', () => ({
   },
 }));
 
-// Mock environment variables
-process.env.JWT_SECRET = 'test-secret';
-process.env.BETTER_AUTH_SECRET = 'test-auth-secret';
-process.env.DUB_CO_TOKEN = 'test-dub-token';
-process.env.RESEND_API_KEY = 'test-resend-key';
-process.env.TWILIO_AUTH_TOKEN = 'test-twilio-token';
+// Mock environment variables for testing
+process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
+process.env.BETTER_AUTH_SECRET = 'test-better-auth-secret';
+process.env.JWT_SECRET = 'test-jwt-secret';
+process.env.RESEND_API_KEY = 'test-resend-api-key';
+process.env.TWILIO_ACCOUNT_SID = 'test-twilio-account-sid';
+process.env.TWILIO_AUTH_TOKEN = 'test-twilio-auth-token';
+process.env.TWILIO_WHATSAPP_FROM = 'test-twilio-whatsapp-from';
+process.env.STRIPE_SECRET_KEY = 'test-stripe-secret-key';
+process.env.STRIPE_PUBLISHABLE_KEY = 'test-stripe-publishable-key';
+process.env.PAYSTACK_SECRET_KEY = 'test-paystack-secret-key';
+process.env.CLOUDINARY_URL = 'cloudinary://test:test@test';
+process.env.OPENAI_API_KEY = 'test-openai-api-key';
+process.env.QSTASH_TOKEN = 'test-qstash-token';
+process.env.POSTHOG_KEY = 'test-posthog-key';
+process.env.SENTRY_DSN = 'test-sentry-dsn';
+process.env.DUB_CO_TOKEN = 'test-dub-co-token';
 process.env.GOOGLE_CLIENT_ID = 'test-google-client-id';
 process.env.GOOGLE_CLIENT_SECRET = 'test-google-client-secret';
-process.env.FACEBOOK_CLIENT_ID = 'test-facebook-client-id';
-process.env.FACEBOOK_CLIENT_SECRET = 'test-facebook-client-secret';
-process.env.DATABASE_URL = 'postgresql://test:test@localhost:5432/test';
+process.env.DISCORD_CLIENT_ID = 'test-discord-client-id';
+process.env.DISCORD_CLIENT_SECRET = 'test-discord-client-secret';
 
 // Mock fetch globally
 global.fetch = jest.fn();

@@ -142,6 +142,14 @@ function PhoneOtpPageInner() {
     }
   }, [otpTimer]);
 
+  // Auto-submit when OTP is complete
+  useEffect(() => {
+    if (otp.length === 6 && !isLoading) {
+      handleOtpSubmit();
+    }
+    // eslint-disable-next-line
+  }, [otp]);
+
   // Check for required data
   if (!phone || !email) {
     return (
@@ -192,14 +200,6 @@ function PhoneOtpPageInner() {
       setIsResending(false);
     }
   };
-
-  // Auto-submit when OTP is complete
-  useEffect(() => {
-    if (otp.length === 6 && !isLoading) {
-      handleOtpSubmit();
-    }
-    // eslint-disable-next-line
-  }, [otp]);
 
   const handleOtpSubmit = async () => {
     if (otp.length !== 6 || isLoading || !phone || !email) return;

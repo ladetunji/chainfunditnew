@@ -7,13 +7,11 @@ import Chains from "./chains";
 import Favourites from "./favourites";
 import Comments from "./comments";
 import { useCampaigns } from "@/hooks/use-campaigns";
-import { Loader2 } from "lucide-react";
 
 const tabs = ["Live", "Past", "Chains", "Favourites", "Comments"];
 
 export default function CampaignsPage() {
   const [activeTab, setActiveTab] = useState("Live");
-  const [timeoutError, setTimeoutError] = useState(false);
   const { campaigns, loading, error, fetchCampaigns } = useCampaigns();
 
   // Filter campaigns based on active tab
@@ -45,61 +43,6 @@ export default function CampaignsPage() {
     console.log('CampaignsPage - error:', error);
     console.log('CampaignsPage - campaigns count:', campaigns.length);
   }, [loading, error, campaigns.length]);
-
-  // Timeout mechanism to prevent infinite loading
-  useEffect(() => {
-    if (loading) {
-      const timeout = setTimeout(() => {
-        console.log('CampaignsPage - Loading timeout reached');
-        setTimeoutError(true);
-      }, 10000); // 10 seconds timeout
-
-      return () => clearTimeout(timeout);
-    } else {
-      setTimeoutError(false);
-    }
-  }, [loading]);
-
-  // Show loading state
-  if (loading && !timeoutError) {
-    return (
-      <div className="w-full flex flex-col gap-5 font-source 2xl:container 2xl:mx-auto">
-        <h2 className="font-semibold text-6xl text-black">Campaigns</h2>
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-[#104901]" />
-          <span className="ml-2 text-lg text-[#104901]">Loading campaigns...</span>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state or timeout error
-  if (error || timeoutError) {
-    return (
-      <div className="w-full flex flex-col gap-5 font-source 2xl:container 2xl:mx-auto">
-        <h2 className="font-semibold text-6xl text-black">Campaigns</h2>
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <p className="text-lg text-red-600 mb-4">
-              {timeoutError 
-                ? "Loading timeout. Please check your connection and try again." 
-                : `Error loading campaigns: ${error}`
-              }
-            </p>
-            <button 
-              onClick={() => {
-                setTimeoutError(false);
-                fetchCampaigns();
-              }}
-              className="px-4 py-2 bg-[#104901] text-white rounded-lg hover:bg-[#0a3a01]"
-            >
-              Try Again
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full flex flex-col gap-5 font-source 2xl:container 2xl:mx-auto">
