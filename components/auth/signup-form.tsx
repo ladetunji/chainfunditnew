@@ -36,17 +36,26 @@ export function SignupForm({
       });
       const contentType = res.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Unexpected response from server");
+        throw new Error("Unable to connect to our servers. Please check your internet connection and try again.");
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to send OTP");
-      toast.success("OTP sent successfully!");
+      if (!res.ok) {
+        // Map API errors to user-friendly messages
+        let userMessage = data.error;
+        if (data.error?.includes("Email is required")) {
+          userMessage = "Please enter your email address to continue.";
+        } else if (data.error?.includes("Failed to send")) {
+          userMessage = "Unable to send verification code to your email. Please check your email address and try again.";
+        }
+        throw new Error(userMessage || "Unable to send verification code. Please try again.");
+      }
+      toast.success("Verification code sent! Check your email.");
       let otpUrl = `/otp?email=${encodeURIComponent(email)}&mode=signup`;
       if (redirect) otpUrl += `&redirect=${encodeURIComponent(redirect)}`;
       window.location.href = otpUrl;
     } catch (err: any) {
-      setError(err.message || "Failed to send OTP");
-      toast.error(err.message || "Failed to send OTP");
+      setError(err.message || "Something went wrong. Please try again.");
+      toast.error(err.message || "Something went wrong. Please try again.");
       if (err.message && err.message.toLowerCase().includes("already exists")) {
         setTimeout(() => {
           window.location.href = "/signin";

@@ -58,17 +58,25 @@ function PhonePage() {
       });
       const data = await res.json();
       if (data.success) {
-        toast.success("OTP sent successfully!");
+        toast.success("Verification code sent to your WhatsApp!");
         window.location.href = `/phone-otp?phone=${encodeURIComponent(
           phone
         )}&email=${encodeURIComponent(email)}`;
       } else {
-        toast.error(data.error || "Failed to send OTP");
-        setError(data.error || "Failed to send OTP");
+        let userMessage = data.error;
+        if (data.error?.includes("Phone number is required")) {
+          userMessage = "Please enter your phone number to continue.";
+        } else if (data.error?.includes("WhatsApp OTP service not configured")) {
+          userMessage = "Phone verification is temporarily unavailable. Please contact support or try again later.";
+        } else if (data.error?.includes("Failed to send")) {
+          userMessage = "Unable to send verification code to your phone. Please check the number and try again.";
+        }
+        toast.error(userMessage || "Unable to send verification code. Please try again.");
+        setError(userMessage || "Unable to send verification code. Please try again.");
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to send OTP");
-      setError(err.message || "Failed to send OTP");
+      toast.error("Unable to connect to our servers. Please check your internet connection and try again.");
+      setError("Unable to connect to our servers. Please check your internet connection and try again.");
     } finally {
       setIsLoading(false);
     }

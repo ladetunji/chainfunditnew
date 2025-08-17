@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowRight, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -23,6 +23,26 @@ export function LoginForm({
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
 
+  // Handle error parameters from URL (e.g., OAuth failures)
+  useEffect(() => {
+    const errorParam = searchParams.get("error");
+    if (errorParam) {
+      let errorMessage = "";
+      switch (errorParam) {
+        case "oauth_failed":
+          errorMessage = "Social login failed. Please try again or use email/phone instead.";
+          break;
+        case "invalid_callback":
+          errorMessage = "Login session expired. Please try signing in again.";
+          break;
+        default:
+          errorMessage = "Something went wrong. Please try again.";
+      }
+      setError(errorMessage);
+      toast.error(errorMessage);
+    }
+  }, [searchParams]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -39,11 +59,30 @@ export function LoginForm({
       });
       const contentType = res.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Unexpected response from server");
+        throw new Error("Unable to connect to our servers. Please check your internet connection and try again.");
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to send OTP");
-      toast.success("OTP sent successfully!");
+      if (!res.ok) {
+        // Map API errors to user-friendly messages
+        let userMessage = data.error;
+        if (data.error?.includes("No account found")) {
+          userMessage = isPhone 
+            ? "No account found with this phone number. Please sign up first or try a different number."
+            : "No account found with this email. Please sign up first or check your email address.";
+        } else if (data.error?.includes("WhatsApp OTP service not configured")) {
+          userMessage = "Phone verification is temporarily unavailable. Please use email instead or contact support.";
+        } else if (data.error?.includes("Failed to send")) {
+          userMessage = isPhone
+            ? "Unable to send verification code to your phone. Please check the number and try again."
+            : "Unable to send verification code to your email. Please check your email address and try again.";
+        } else if (data.error?.includes("Email is required") || data.error?.includes("Phone number is required")) {
+          userMessage = isPhone 
+            ? "Please enter your phone number to continue."
+            : "Please enter your email address to continue.";
+        }
+        throw new Error(userMessage || "Unable to send verification code. Please try again.");
+      }
+      toast.success("Verification code sent! Check your " + (isPhone ? "WhatsApp" : "email") + ".");
       // Store identifier and type for /otp page
       if (isPhone) {
         localStorage.setItem("otp_login_type", "phone");
@@ -57,8 +96,8 @@ export function LoginForm({
       if (redirect) otpUrl += `&redirect=${encodeURIComponent(redirect)}`;
       window.location.href = otpUrl;
     } catch (err: any) {
-      setError(err.message || "Failed to send OTP");
-      toast.error(err.message || "Failed to send OTP");
+      setError(err.message || "Something went wrong. Please try again.");
+      toast.error(err.message || "Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }

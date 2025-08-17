@@ -21,7 +21,7 @@ export function OAuthButtons({
       window.location.href = url;
     } catch (error) {
       console.error(`${provider} sign-in error:`, error);
-      toast.error(`Failed to sign in with ${provider}`);
+      toast.error(`Unable to sign in with ${provider}. Please try again or use email/phone instead.`);
     }
   };
 

@@ -140,37 +140,64 @@ function OtpPageInner() {
     }
   }, [otpTimer]);
 
+  // Check for required data
+  if (!identifier || !loginType) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Missing Information</h1>
+          <p className="text-gray-600 mb-4">Unable to verify your account. Please start the sign-in process again.</p>
+          <Button onClick={() => window.location.href = "/signin"} className="bg-blue-600 hover:bg-blue-700">
+            Go to Sign In
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const [isResending, setIsResending] = useState(false);
+
   // Resend OTP handler
   const handleResendOtp = async () => {
-    if (!identifier || !loginType) {
-      toast.error("Missing identifier or sign in type.");
-      return;
-    }
-    setIsLoading(true);
+    if (isResending || !identifier || !loginType) return;
+    setIsResending(true);
     console.log('OTP Page: Resending OTP for', { identifier, loginType });
     try {
-      // Use /api/auth/login for both login and signup OTP resend
-      const payload =
-        loginType === "email"
-          ? { action: "request_email_otp", email: identifier }
-          : { action: "request_phone_otp", phone: identifier };
-      const res = await fetch("/api/auth/signin", {
+      let payload, endpoint;
+      if (loginType === "email") {
+        payload = { action: "request_email_otp", email: identifier };
+        endpoint = mode === "signup" ? "/api/auth/signup" : "/api/auth/signin";
+      } else {
+        const email = searchParams.get("email");
+        payload = { action: "request_phone_otp", phone: identifier };
+        endpoint = "/api/auth/signin";
+      }
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (data.success) {
-        setOtp("");
-        setOtpTimer(40);
-        toast.success("OTP resent!");
-      } else {
-        toast.error(data.error || "Failed to resend OTP");
+      if (!res.ok) {
+        let userMessage = data.error;
+        if (data.error?.includes("No account found")) {
+          userMessage = loginType === "phone" 
+            ? "No account found with this phone number. Please sign up first."
+            : "No account found with this email. Please sign up first.";
+        } else if (data.error?.includes("Failed to send")) {
+          userMessage = loginType === "phone"
+            ? "Unable to send verification code to your phone. Please check the number and try again."
+            : "Unable to send verification code to your email. Please check your email address and try again.";
+        }
+        throw new Error(userMessage || "Unable to resend verification code. Please try again.");
       }
+      toast.success("New verification code sent!");
+      setOtp("");
+      setOtpTimer(40);
     } catch (err: any) {
-      toast.error(err.message || "Failed to resend OTP");
+      toast.error(err.message || "Unable to resend verification code. Please try again.");
     } finally {
-      setIsLoading(false);
+      setIsResending(false);
     }
   };
 
@@ -204,11 +231,24 @@ function OtpPageInner() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Invalid OTP");
+      if (!res.ok) {
+        // Map API errors to user-friendly messages
+        let userMessage = data.error;
+        if (data.error?.includes("No OTP found") || data.error?.includes("OTP expired")) {
+          userMessage = "Verification code has expired or is invalid. Please request a new code.";
+        } else if (data.error?.includes("Invalid OTP")) {
+          userMessage = "Incorrect verification code. Please check the code and try again.";
+        } else if (data.error?.includes("already have an account")) {
+          userMessage = "An account with this email already exists. Please sign in instead.";
+        } else if (data.error?.includes("Email and OTP are required") || data.error?.includes("Phone number, email, and OTP are required")) {
+          userMessage = "Please enter the 6-digit verification code.";
+        }
+        throw new Error(userMessage || "Verification failed. Please try again.");
+      }
       // On success, clear login localStorage (if any)
       localStorage.removeItem("otp_login_type");
       localStorage.removeItem("otp_login_identifier");
-      toast.success("OTP verified! Redirecting...");
+      toast.success("Verification successful! Redirecting...");
       // Redirect logic based on mode and loginType
       if (mode === "signup" && loginType === "email") {
         if (redirect && isSafeRedirect(redirect)) {
@@ -224,8 +264,8 @@ function OtpPageInner() {
         }
       }
     } catch (err: any) {
-      setError(err.message || "Invalid OTP");
-      toast.error(err.message || "Invalid OTP");
+      setError(err.message || "Verification failed. Please try again.");
+      toast.error(err.message || "Verification failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -235,11 +275,13 @@ function OtpPageInner() {
     try {
       const text = await navigator.clipboard.readText();
       const code = text.replace(/\D/g, "").slice(0, 6);
-      console.log('OTP Page: Pasted code from clipboard:', code);
-      if (code.length === 6) setOtp(code);
-      else toast.error("Clipboard does not contain a valid 6-digit code.");
+      if (code.length === 6) {
+        setOtp(code);
+      } else {
+        toast.error("No valid 6-digit verification code found in clipboard.");
+      }
     } catch {
-      toast.error("Failed to read from clipboard.");
+      toast.error("Unable to read from clipboard. Please paste the code manually.");
     }
   };
 
@@ -288,7 +330,7 @@ function OtpPageInner() {
                       variant="secondary"
                       className="px-4 ml-2 text-white"
                       onClick={handleResendOtp}
-                      disabled={isLoading}
+                      disabled={isResending}
                     >
                       Resend OTP
                     </Button>

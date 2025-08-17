@@ -23,12 +23,12 @@ export async function POST(request: NextRequest) {
     // Handle OTP requests
     if (action === 'request_email_otp') {
       if (!email) {
-        return NextResponse.json({ success: false, error: 'Email is required' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Please enter your email address to continue.' }, { status: 400 });
       }
       // Check if user exists
       const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
       if (!existingUser || existingUser.length === 0) {
-        return NextResponse.json({ success: false, error: 'No account found with this email. Please sign up first.' }, { status: 404 });
+        return NextResponse.json({ success: false, error: 'No account found with this email. Please sign up first or check your email address.' }, { status: 404 });
       }
       const generatedOtp = generateOtp();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
@@ -52,24 +52,24 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, message: 'Email OTP sent successfully' });
       } catch (error) {
         console.error('Resend error:', error);
-        return NextResponse.json({ success: false, error: 'Failed to send email OTP' }, { status: 500 });
+        return NextResponse.json({ success: false, error: 'Unable to send verification code to your email. Please check your email address and try again.' }, { status: 500 });
       }
     }
 
     if (action === 'request_phone_otp') {
       if (!phone) {
-        return NextResponse.json({ success: false, error: 'Phone number is required' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Please enter your phone number to continue.' }, { status: 400 });
       }
       // Check if user exists by phone
       const existingUser = await db.select().from(users).where(eq(users.phone, phone)).limit(1);
       if (!existingUser || existingUser.length === 0) {
-        return NextResponse.json({ success: false, error: 'No account found with this phone number. Please sign up first.' }, { status: 404 });
+        return NextResponse.json({ success: false, error: 'No account found with this phone number. Please sign up first or try a different number.' }, { status: 404 });
       }
       // Check if Twilio environment variables are set
       if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_WHATSAPP_FROM) {
         return NextResponse.json({ 
           success: false, 
-          error: 'WhatsApp OTP service not configured. Please contact support.' 
+          error: 'Phone verification is temporarily unavailable. Please use email instead or contact support.' 
         }, { status: 503 });
       }
       const generatedOtp = generateOtp();
@@ -86,14 +86,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, message: 'WhatsApp OTP sent successfully' });
       } catch (error) {
         console.error('Twilio error:', error);
-        return NextResponse.json({ success: false, error: 'Failed to send WhatsApp OTP' }, { status: 500 });
+        return NextResponse.json({ success: false, error: 'Unable to send verification code to your phone. Please check the number and try again.' }, { status: 500 });
       }
     }
 
     // Handle OTP verification
     if (action === 'verify_email_otp') {
       if (!email || !otp) {
-        return NextResponse.json({ success: false, error: 'Email and OTP are required' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Please enter the 6-digit verification code.' }, { status: 400 });
       }
       // Find the most recent, unexpired OTP for this email
       const now = new Date();
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
         .limit(1);
       console.log('Selected email OTP record:', record);
       if (!record) {
-        return NextResponse.json({ success: false, error: 'No OTP found for this email or OTP expired/invalid' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Verification code has expired or is invalid. Please request a new code.' }, { status: 400 });
       }
       // Optionally, delete or invalidate the OTP after use
       console.log('Deleting email OTP from DB:', record.id);
@@ -116,18 +116,18 @@ export async function POST(request: NextRequest) {
 
     if (action === 'verify_phone_otp') {
       if (!phone || !otp || !email) {
-        return NextResponse.json({ success: false, error: 'Phone number, email, and OTP are required' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Please enter the 6-digit verification code.' }, { status: 400 });
       }
       const storedData = otpStore.get(phone);
       if (!storedData) {
-        return NextResponse.json({ success: false, error: 'No OTP found for this phone number' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Verification code has expired or is invalid. Please request a new code.' }, { status: 400 });
       }
       if (Date.now() > storedData.expires) {
         otpStore.delete(phone);
-        return NextResponse.json({ success: false, error: 'OTP has expired' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Verification code has expired. Please request a new code.' }, { status: 400 });
       }
       if (storedData.otp !== otp) {
-        return NextResponse.json({ success: false, error: 'Invalid OTP' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Incorrect verification code. Please check the code and try again.' }, { status: 400 });
       }
       otpStore.delete(phone);
       // Update user's phone in the database
@@ -141,6 +141,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
   } catch (error) {
     console.error('Sign in API error:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Something went wrong. Please try again.' }, { status: 500 });
   }
 } 

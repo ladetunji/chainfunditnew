@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     if (action === "request_email_otp") {
       if (!email) {
         return NextResponse.json(
-          { success: false, error: "Email is required" },
+          { success: false, error: "Please enter your email address to continue." },
           { status: 400 }
         );
       }
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error("Resend error:", error);
         return NextResponse.json(
-          { success: false, error: "Failed to send email OTP" },
+          { success: false, error: "Unable to send verification code to your email. Please check your email address and try again." },
           { status: 500 }
         );
       }
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     if (action === "verify_email_otp") {
       if (!email || !otp) {
         return NextResponse.json(
-          { success: false, error: "Email and OTP are required" },
+          { success: false, error: "Please enter the 6-digit verification code." },
           { status: 400 }
         );
       }
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           {
             success: false,
-            error: "No OTP found for this email or OTP expired/invalid",
+            error: "Verification code has expired or is invalid. Please request a new code.",
           },
           { status: 400 }
         );
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
         .limit(1);
       if (user) {
         return NextResponse.json(
-          { success: false, error: "You already have an account. Please log in." },
+          { success: false, error: "An account with this email already exists. Please sign in instead." },
           { status: 409 }
         );
       }
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Signup API error:", error);
     return NextResponse.json(
-      { success: false, error: "Internal server error" },
+      { success: false, error: "Something went wrong. Please try again." },
       { status: 500 }
     );
   }

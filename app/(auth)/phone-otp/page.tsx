@@ -99,6 +99,7 @@ function PhoneOtpPageInner() {
   const [email, setEmail] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isResending, setIsResending] = useState(false);
 
   // Always prioritize query string for phone/email
   useEffect(() => {
@@ -141,13 +142,25 @@ function PhoneOtpPageInner() {
     }
   }, [otpTimer]);
 
+  // Check for required data
+  if (!phone || !email) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Missing Information</h1>
+          <p className="text-gray-600 mb-4">Unable to verify your phone number. Please start the process again.</p>
+          <Button onClick={() => window.location.href = "/phone"} className="bg-blue-600 hover:bg-blue-700">
+            Go to Phone Verification
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   // Resend OTP handler
   const handleResendOtp = async () => {
-    if (!phone || !email) {
-      toast.error("Missing phone or email.");
-      return;
-    }
-    setIsLoading(true);
+    if (isResending || !phone || !email) return;
+    setIsResending(true);
     try {
       const res = await fetch("/api/auth/link-phone", {
         method: "POST",
@@ -159,17 +172,24 @@ function PhoneOtpPageInner() {
         }),
       });
       const data = await res.json();
-      if (data.success) {
-        setOtp("");
-        setOtpTimer(21);
-        toast.success("OTP resent!");
-      } else {
-        toast.error(data.error || "Failed to resend OTP");
+      if (!res.ok) {
+        let userMessage = data.error;
+        if (data.error?.includes("Phone number is required")) {
+          userMessage = "Please enter your phone number to continue.";
+        } else if (data.error?.includes("WhatsApp OTP service not configured")) {
+          userMessage = "Phone verification is temporarily unavailable. Please contact support or try again later.";
+        } else if (data.error?.includes("Failed to send")) {
+          userMessage = "Unable to send verification code to your phone. Please check the number and try again.";
+        }
+        throw new Error(userMessage || "Unable to resend verification code. Please try again.");
       }
+      toast.success("New verification code sent!");
+      setOtp("");
+      setOtpTimer(40);
     } catch (err: any) {
-      toast.error(err.message || "Failed to resend OTP");
+      toast.error(err.message || "Unable to resend verification code. Please try again.");
     } finally {
-      setIsLoading(false);
+      setIsResending(false);
     }
   };
 
@@ -199,16 +219,26 @@ function PhoneOtpPageInner() {
       });
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error || "Invalid OTP");
-        throw new Error(data.error || "Invalid OTP");
+        let userMessage = data.error;
+        if (data.error?.includes("No OTP found")) {
+          userMessage = "Verification code has expired or is invalid. Please request a new code.";
+        } else if (data.error?.includes("Invalid OTP")) {
+          userMessage = "Incorrect verification code. Please check the code and try again.";
+        } else if (data.error?.includes("Phone, OTP, and email are required")) {
+          userMessage = "Please enter the 6-digit verification code.";
+        } else if (data.error?.includes("User not found")) {
+          userMessage = "Account not found. Please sign in again.";
+        }
+        toast.error(userMessage || "Verification failed. Please try again.");
+        throw new Error(userMessage || "Verification failed. Please try again.");
       }
       // On success, clear localStorage
       localStorage.removeItem("link_phone_number");
       localStorage.removeItem("link_phone_email");
-      toast.success("Phone linked successfully!");
+      toast.success("Phone number linked successfully!");
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Invalid OTP");
+      setError(err.message || "Verification failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -218,10 +248,13 @@ function PhoneOtpPageInner() {
     try {
       const text = await navigator.clipboard.readText();
       const code = text.replace(/\D/g, "").slice(0, 6);
-      if (code.length === 6) setOtp(code);
-      else toast.error("Clipboard does not contain a valid 6-digit code.");
+      if (code.length === 6) {
+        setOtp(code);
+      } else {
+        toast.error("No valid 6-digit verification code found in clipboard.");
+      }
     } catch {
-      toast.error("Failed to read from clipboard.");
+      toast.error("Unable to read from clipboard. Please paste the code manually.");
     }
   };
 
@@ -270,7 +303,7 @@ function PhoneOtpPageInner() {
                       variant="secondary"
                       className="px-4 ml-2 text-white"
                       onClick={handleResendOtp}
-                      disabled={isLoading}
+                      disabled={isResending}
                     >
                       Resend OTP
                     </Button>

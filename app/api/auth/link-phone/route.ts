@@ -16,10 +16,10 @@ export async function POST(request: NextRequest) {
 
     if (action === 'request_link_otp') {
       if (!phone) {
-        return NextResponse.json({ success: false, error: 'Phone number is required' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Please enter your phone number to continue.' }, { status: 400 });
       }
       if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_WHATSAPP_FROM) {
-        return NextResponse.json({ success: false, error: 'WhatsApp OTP service not configured.' }, { status: 503 });
+        return NextResponse.json({ success: false, error: 'Phone verification is temporarily unavailable. Please contact support or try again later.' }, { status: 503 });
       }
       const generatedOtp = generateOtp();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
@@ -41,13 +41,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, message: 'OTP sent to phone' });
       } catch (error) {
         console.error('Twilio error:', error);
-        return NextResponse.json({ success: false, error: 'Failed to send WhatsApp OTP' }, { status: 500 });
+        return NextResponse.json({ success: false, error: 'Unable to send verification code to your phone. Please check the number and try again.' }, { status: 500 });
       }
     }
 
     if (action === 'verify_link_otp') {
       if (!phone || !otp || !email) {
-        return NextResponse.json({ success: false, error: 'Phone, OTP, and email are required' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Please enter the 6-digit verification code.' }, { status: 400 });
       }
       // Find the most recent, unexpired OTP for this phone
       const now = new Date();
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
         .orderBy(desc(phoneOtps.createdAt))
         .limit(1);
       if (!record) {
-        return NextResponse.json({ success: false, error: 'No OTP found for this phone number' }, { status: 400 });
+        return NextResponse.json({ success: false, error: 'Verification code has expired or is invalid. Please request a new code.' }, { status: 400 });
       }
       // Invalidate OTP after use
       await db.delete(phoneOtps).where(eq(phoneOtps.id, record.id));
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
         .set({ phone })
         .where(eq(users.email, email));
       if (result.rowCount === 0) {
-        return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
+        return NextResponse.json({ success: false, error: 'Account not found. Please sign in again.' }, { status: 404 });
       }
       return NextResponse.json({ success: true, message: 'Phone linked successfully' });
     }
@@ -73,6 +73,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
   } catch (error) {
     console.error('Link phone API error:', error);
-    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Something went wrong. Please try again.' }, { status: 500 });
   }
 } 
