@@ -898,18 +898,8 @@ export default function CreateCampaignPage() {
             type="button"
             onClick={nextStep}
             className="bg-[#104901] flex justify-between items-center font-semibold text-2xl px-6 py-3 h-14 hover:bg-transparent"
-            disabled={isLoading}
           >
-            {isLoading ? (
-              <>
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                Creating...
-              </>
-            ) : (
-              <>
-                {isFinalStep ? "Submit" : "Next"} <ChevronsRight />
-              </>
-            )}
+            {isFinalStep ? "Submit" : "Next"} <ChevronsRight />
           </Button>
         </div>
       </form>

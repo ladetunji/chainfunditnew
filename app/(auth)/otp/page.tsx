@@ -101,6 +101,7 @@ function OtpPageInner() {
   const [error, setError] = useState("");
   const [identifier, setIdentifier] = useState<string | null>(null);
   const [loginType, setLoginType] = useState<"email" | "phone" | null>(null);
+  const [isResending, setIsResending] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect");
@@ -140,6 +141,14 @@ function OtpPageInner() {
     }
   }, [otpTimer]);
 
+  // Auto-submit when OTP is complete
+  useEffect(() => {
+    if (otp.length === 6 && !isLoading) {
+      handleOtpSubmit();
+    }
+    // eslint-disable-next-line
+  }, [otp]);
+
   // Check for required data
   if (!identifier || !loginType) {
     return (
@@ -154,8 +163,6 @@ function OtpPageInner() {
       </div>
     );
   }
-
-  const [isResending, setIsResending] = useState(false);
 
   // Resend OTP handler
   const handleResendOtp = async () => {
@@ -200,14 +207,6 @@ function OtpPageInner() {
       setIsResending(false);
     }
   };
-
-  // Auto-submit when OTP is complete
-  useEffect(() => {
-    if (otp.length === 6 && !isLoading) {
-      handleOtpSubmit();
-    }
-    // eslint-disable-next-line
-  }, [otp]);
 
   const handleOtpSubmit = async () => {
     if (otp.length !== 6 || isLoading || !identifier || !loginType) return;

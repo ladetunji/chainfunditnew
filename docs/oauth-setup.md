@@ -1,11 +1,11 @@
 # OAuth Setup Guide for ChainFundIt
 
-This guide will help you set up Google and Facebook OAuth authentication for your ChainFundIt application.
+This guide will help you set up Google and Discord OAuth authentication for your ChainFundIt application.
 
 ## Prerequisites
 
 - A Google Developer Account
-- A Facebook Developer Account
+- A Discord Developer Account
 - Your application deployed or running locally
 
 ## Google OAuth Setup
@@ -49,46 +49,38 @@ GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
 ```
 
-## Facebook OAuth Setup
+## Discord OAuth Setup
 
-### 1. Create a Facebook App
+### 1. Create a Discord Application
 
-1. Go to [Facebook Developers](https://developers.facebook.com/)
-2. Click "Create App"
-3. Choose "Consumer" app type
-4. Fill in the app details
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
+2. Click "New Application"
+3. Fill in the application details:
+   - Name: "ChainFundIt"
+   - Description: "Fundraising platform with chainer system"
 
-### 2. Configure Facebook Login
+### 2. Configure OAuth2 Settings
 
-1. In your app dashboard, go to "Add Product" > "Facebook Login"
-2. Choose "Web" platform
-3. Add your site URL:
-   - `http://localhost:3000` (for development)
-   - `https://yourdomain.com` (for production)
-4. Add OAuth redirect URIs:
-   - `http://localhost:3000/api/auth/callback`
-   - `https://yourdomain.com/api/auth/callback`
+1. In your Discord application dashboard, go to "OAuth2" > "General"
+2. Add redirect URIs:
+   - `http://localhost:3000/api/auth/callback` (for development)
+   - `https://yourdomain.com/api/auth/callback` (for production)
+3. Copy the Client ID and Client Secret
 
-### 3. Configure App Settings
+### 3. Configure OAuth2 Scopes
 
-1. Go to "Settings" > "Basic"
-2. Add your domain to "App Domains"
-3. Add your privacy policy and terms of service URLs
-4. Go to "Facebook Login" > "Settings"
-5. Add your domain to "Valid OAuth Redirect URIs"
+1. Go to "OAuth2" > "Scopes"
+2. Add the following scopes:
+   - `identify` - Access user's Discord username and avatar
+   - `email` - Access user's email address
 
-### 4. Get App Credentials
-
-1. Go to "Settings" > "Basic"
-2. Copy the App ID and App Secret
-
-### 5. Add to Environment Variables
+### 4. Add to Environment Variables
 
 Add these to your `.env.local` file:
 
 ```env
-FACEBOOK_CLIENT_ID="your-facebook-app-id"
-FACEBOOK_CLIENT_SECRET="your-facebook-app-secret"
+DISCORD_CLIENT_ID="your-discord-client-id"
+DISCORD_CLIENT_SECRET="your-discord-client-secret"
 ```
 
 ## Environment Variables
@@ -108,8 +100,8 @@ JWT_SECRET="your-jwt-secret"
 # OAuth Providers
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
-FACEBOOK_CLIENT_ID="your-facebook-app-id"
-FACEBOOK_CLIENT_SECRET="your-facebook-app-secret"
+DISCORD_CLIENT_ID="your-discord-client-id"
+DISCORD_CLIENT_SECRET="your-discord-client-secret"
 
 # Other required variables...
 ```
@@ -118,7 +110,7 @@ FACEBOOK_CLIENT_SECRET="your-facebook-app-secret"
 
 1. Start your development server: `pnpm dev`
 2. Go to `/signin` or `/signup`
-3. Click on "Google" or "Facebook" buttons
+3. Click on "Google" or "Discord" buttons
 4. Complete the OAuth flow
 5. You should be redirected to `/dashboard` after successful authentication
 
@@ -127,11 +119,11 @@ FACEBOOK_CLIENT_SECRET="your-facebook-app-secret"
 ### Common Issues
 
 1. **"Invalid redirect URI" error**
-   - Make sure your redirect URIs match exactly in both Google/Facebook console and your app
+   - Make sure your redirect URIs match exactly in both Google/Discord console and your app
    - Check for trailing slashes and protocol (http vs https)
 
 2. **"App not configured" error**
-   - Ensure your app is in "Live" mode (Facebook) or has proper OAuth consent screen setup (Google)
+   - Ensure your app is in "Live" mode (Discord) or has proper OAuth consent screen setup (Google)
    - Add your email as a test user
 
 3. **Database errors**
@@ -162,7 +154,7 @@ DEBUG=true
 
 1. Update your OAuth app settings with production URLs
 2. Set all environment variables in your hosting platform
-3. Ensure your domain is verified in both Google and Facebook consoles
+3. Ensure your domain is verified in both Google and Discord consoles
 4. Test the OAuth flow in production
 
 ## Support

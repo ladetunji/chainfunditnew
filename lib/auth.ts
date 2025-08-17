@@ -43,9 +43,9 @@ export const auth = betterAuth({
     },
     {
       type: "oauth",
-      id: "facebook",
-      clientId: process.env.FACEBOOK_CLIENT_ID!,
-      clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
+      id: "discord",
+      clientId: process.env.DISCORD_CLIENT_ID!,
+      clientSecret: process.env.DISCORD_CLIENT_SECRET!,
     },
     // {
     //     type: "oauth",
@@ -57,13 +57,13 @@ export const auth = betterAuth({
   callbacks: {
     async signIn({ user, account, profile }: any) {
       // Handle OAuth sign-in
-      if (account?.provider === "google" || account?.provider === "facebook") {
+      if (account?.provider === "google" || account?.provider === "discord") {
         // Update user profile with OAuth data
         if (profile) {
           await db.update(users)
             .set({
-              fullName: profile.name || user.name || user.email?.split('@')[0] || 'User',
-              avatar: profile.picture || profile.image,
+              fullName: profile.name || profile.username || user.name || user.email?.split('@')[0] || 'User',
+              avatar: profile.picture || profile.image || profile.avatar,
               isVerified: true,
               hasCompletedProfile: true,
             })

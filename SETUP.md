@@ -19,8 +19,8 @@ DATABASE_URL=postgresql://username:password@host:port/database
 BETTER_AUTH_SECRET=your-better-auth-secret-key
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-FACEBOOK_CLIENT_ID=your-facebook-client-id
-FACEBOOK_CLIENT_SECRET=your-facebook-client-secret
+DISCORD_CLIENT_ID=your-discord-client-id
+DISCORD_CLIENT_SECRET=your-discord-client-secret
 
 # Payments
 STRIPE_SECRET_KEY=sk_test_...

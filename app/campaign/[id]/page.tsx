@@ -3,33 +3,11 @@ import Main from "../Main";
 import React from "react";
 import Cards from '../cards';
 import Footer from '@/components/layout/Footer';
-import { Suspense } from 'react';
 import Link from 'next/link';
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
-
-// Loading component for the campaign page
-const CampaignLoading = () => (
-  <div className="h-full">
-    <Navbar />
-    <div className="max-w-[1440px] mx-auto mt-16 md:mt-22 h-full p-5 md:p-12">
-      <div className="animate-pulse">
-        <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-        <div className="h-6 bg-gray-200 rounded w-1/2 mb-8"></div>
-        <div className="h-96 bg-gray-200 rounded mb-4"></div>
-        <div className="flex gap-4 mb-8">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="w-20 h-16 bg-gray-200 rounded"></div>
-          ))}
-        </div>
-        <div className="h-32 bg-gray-200 rounded"></div>
-      </div>
-    </div>
-    <Footer />
-  </div>
-);
 
 // Error component for the campaign page
 const CampaignError = ({ error }: { error: string }) => (
@@ -66,10 +44,8 @@ const page = async ({ params }: PageProps) => {
   return (
     <div className='h-full'>
       <Navbar />
-      <Suspense fallback={<CampaignLoading />}>
-        <Main campaignId={id} />
-        <Cards campaignId={id} />
-      </Suspense>
+      <Main campaignId={id} />
+      <Cards campaignId={id} />
       <Footer />
     </div>
   );

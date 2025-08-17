@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useCampaignComments } from '@/hooks/use-campaigns';
-import { Loader2, MessageSquare, User } from 'lucide-react';
+import { MessageSquare, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 
@@ -40,31 +40,6 @@ const Comments = (props: Props) => {
       </div>
     );
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-[#104901]" />
-        <span className="ml-2 text-lg text-[#104901]">Loading comments...</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <p className="text-lg text-red-600 mb-4">Error loading comments: {error}</p>
-          <button 
-            onClick={() => fetchComments()}
-            className="px-4 py-2 bg-[#104901] text-white rounded-lg hover:bg-[#0a3a01]"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="2xl:container 2xl:mx-auto space-y-6">

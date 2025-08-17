@@ -108,13 +108,13 @@ const ShareModal: React.FC<ShareModalProps> = ({ open, onOpenChange, campaign })
           <div>
             <div className="flex items-center space-x-2">
               <Input
-                value={isLoading ? "Generating link..." : campaignUrl}
+                value={campaignUrl}
                 readOnly
                 className="flex-1 text-2xl text-[#104901] font-medium bg-[#E5ECDE] border-none shadow-none"
               />
               <Button
                 onClick={handleCopyLink}
-                disabled={!campaignUrl || isLoading}
+                disabled={!campaignUrl}
                 className="bg-[#104901] text-white"
               >
                 <Copy size={16} className="mr-1" />

@@ -196,24 +196,6 @@ const Cards = ({ campaignId }: { campaignId: string }) => {
         </div>
       </div>
 
-      {loading && (
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#104901]"></div>
-        </div>
-      )}
-
-      {error && (
-        <div className="text-center py-8">
-          <p className="text-red-600 mb-4">Error loading related campaigns: {error}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-[#104901] text-white rounded-lg hover:bg-[#0a3a01]"
-          >
-            Try Again
-          </button>
-        </div>
-      )}
-
       <div
         ref={scrollContainerRef}
         className="flex gap-4 overflow-x-auto scrollbar-hide pb-4"

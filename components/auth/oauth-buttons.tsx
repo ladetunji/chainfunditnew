@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { FaGoogle, FaFacebook } from "react-icons/fa";
+import { FaGoogle, FaDiscord } from "react-icons/fa";
 import { toast } from "sonner";
 
 interface OAuthButtonsProps {
@@ -14,7 +14,7 @@ export function OAuthButtons({
   mode = "signin",
   className = "",
 }: OAuthButtonsProps) {
-  const handleOAuthSignIn = async (provider: "google" | "facebook") => {
+  const handleOAuthSignIn = async (provider: "google" | "discord") => {
     try {
       // Redirect to BetterAuth OAuth endpoint
       const url = `/api/auth/[...betterauth]?provider=${provider}`;
@@ -47,14 +47,14 @@ export function OAuthButtons({
         <Button
           className="w-1/2 md:w-[236px] h-16 bg-[#D9D9DC] border-[#8E8C95] text-[#474553] font-semibold text-2xl hover:bg-[#C9C9CC] transition-colors"
           type="button"
-          onClick={() => handleOAuthSignIn("facebook")}
+          onClick={() => handleOAuthSignIn("discord")}
         >
-          <FaFacebook size={24} /> Facebook
+          <FaDiscord size={24} /> Discord
         </Button>
       </div>
 
       <p className="text-center text-sm font-normal text-[#104901] mt-2">
-        By continuing with Google, Facebook, Email or Phone number, you agree to
+        By continuing with Google, Discord, Email or Phone number, you agree to
         Chainfundit <span className="font-bold">Terms of Service</span> as well
         as the <span className="font-bold">Privacy Policy</span>.
       </p>
