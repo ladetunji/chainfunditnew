@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 
 const images = [
-  "/images/main-3.png",
+  "/images/currencies.png",
   "/images/teamwork.png",
   "/images/secure.png",
 ];
@@ -33,93 +33,152 @@ const features = [
 const BenefitsCarousel = () => {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [current, setCurrent] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const scrollTo = useCallback((index: number) => {
+    if (!emblaApi) return;
+    emblaApi.scrollTo(index);
+  }, [emblaApi]);
 
   const autoplay = useCallback(() => {
-    if (!emblaApi) return;
+    if (!emblaApi || !isAutoPlaying) return;
     emblaApi.scrollNext();
-  }, [emblaApi]);
+  }, [emblaApi, isAutoPlaying]);
 
-  useEffect(() => {
-    const interval = setInterval(autoplay, 4000);
-    return () => clearInterval(interval);
+  const startAutoplay = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(autoplay, 4000);
   }, [autoplay]);
 
+  const stopAutoplay = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isAutoPlaying) {
+      startAutoplay();
+    } else {
+      stopAutoplay();
+    }
+
+    return () => stopAutoplay();
+  }, [isAutoPlaying, startAutoplay, stopAutoplay]);
+
   useEffect(() => {
     if (!emblaApi) return;
-    emblaApi.on("select", () => {
+    
+    const onSelect = () => {
       setCurrent(emblaApi.selectedScrollSnap());
-    });
+    };
+
+    emblaApi.on("select", onSelect);
+    
+    return () => {
+      emblaApi.off("select", onSelect);
+    };
   }, [emblaApi]);
 
+  const handleFeatureClick = (index: number) => {
+    setIsAutoPlaying(false);
+    scrollTo(index);
+    // Resume autoplay after 6 seconds of inactivity
+    setTimeout(() => setIsAutoPlaying(true), 6000);
+  };
+
   return (
-    <div className="w-full md:px-12 px-4 py-10 h-[650px] overflow-hidden">
-      <div className="flex md:gap-10 w-full">
-        <div className="md:w-1/2 md:block hidden h-full bg-cover bg-no-repeat relative">
-          <div className="overflow-hidden" ref={emblaRef}>
-            <div className="flex">
-              {images.map((img, idx) => (
-                <div
-                  key={idx}
-                  className="min-w-full h-[650px] bg-cover bg-no-repeat relative"
-                  style={{ backgroundImage: `url(${img})` }}
-                >
-                  <div className="flex justify-center gap-4 mt-6 px-8 w-full absolute top-0 left-0">
-                    {images.map((_, i) => (
-                      <div
-                        key={i}
-                        className="w-[170px] h-[2px] bg-[#8E8C95] rounded overflow-hidden"
-                      >
+    <>
+      <style jsx>{`
+        @keyframes fill-bar {
+          from {
+            width: 0%;
+          }
+          to {
+            width: 100%;
+          }
+        }
+        .animate-fill-bar {
+          animation: fill-bar 4s linear forwards;
+        }
+      `}</style>
+      
+      <div className="w-full md:px-12 px-4 py-10 h-[650px] overflow-hidden">
+        <div className="flex md:gap-10 w-full">
+          <div className="md:w-1/2 md:block hidden h-full bg-cover bg-no-repeat relative">
+            <div className="overflow-hidden" ref={emblaRef}>
+              <div className="flex">
+                {images.map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="min-w-full h-[650px] bg-cover bg-no-repeat relative"
+                    style={{ backgroundImage: `url(${img})` }}
+                  >
+                    <div className="flex justify-center gap-4 mt-6 px-8 w-full absolute top-0 left-0">
+                      {images.map((_, i) => (
                         <div
-                          className={`h-full bg-white ${
-                            current === i ? "animate-fill-bar" : "w-0"
-                          }`}
-                        ></div>
-                      </div>
-                    ))}
+                          key={i}
+                          className="w-[170px] h-[2px] bg-[#8E8C95] rounded overflow-hidden cursor-pointer"
+                          onClick={() => handleFeatureClick(i)}
+                        >
+                          <div
+                            className={`h-full bg-white transition-all duration-200 ${
+                              current === i ? "animate-fill-bar" : "w-0"
+                            }`}
+                            style={{
+                              animationPlayState: isAutoPlaying ? 'running' : 'paused'
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="md:w-1/2 w-full h-[650px] flex flex-col mx-auto gap-10">
-          <section className="flex flex-col gap-2">
-            <h4 className="font-source font-semibold text-4xl text-black">
-              Maximise your fundraising efforts
-            </h4>
-            <p className="font-source font-normal text-xl text-black">
-              We’ll handle the grueling campaign management, so you can do what
-              matters most - getting donations
-            </p>
-          </section>
-          <ul className="flex flex-col gap-2">
-            {features.map((item, i) => (
-              <li
-                key={i}
-                className={`md:w-[500px] w-full h-fit p-5 flex flex-col gap-2 transition-all duration-300 ${
-                  current === i
-                    ? "scale-[1.05] shadow-lg border-2 border-[#104901]"
-                    : "opacity-70"
-                }`}
-                style={{ backgroundColor: current === i ? "#104901" : item.bg }}
-              >
-                <p
-                  className={`font-source font-medium text-xl ${item.textColor}`}
+          <div className="md:w-1/2 w-full h-[650px] flex flex-col mx-auto gap-10">
+            <section className="flex flex-col gap-2">
+              <h4 className="font-source font-semibold text-4xl text-black">
+                Maximise your fundraising efforts
+              </h4>
+              <p className="font-source font-normal text-xl text-black">
+                We'll handle the grueling campaign management, so you can do what
+                matters most - getting donations
+              </p>
+            </section>
+            <ul className="flex flex-col gap-2">
+              {features.map((item, i) => (
+                <li
+                  key={i}
+                  className={`md:w-[500px] w-full h-fit p-5 flex flex-col gap-2 transition-all duration-300 cursor-pointer ${
+                    current === i
+                      ? "scale-[1.05] shadow-lg border-2 border-[#104901]"
+                      : "opacity-70 hover:opacity-90"
+                  }`}
+                  style={{ backgroundColor: current === i ? "#104901" : item.bg }}
+                  onClick={() => handleFeatureClick(i)}
                 >
-                  {item.title}
-                </p>
-                <span
-                  className={`font-source font-normal text-base ${item.textColor}`}
-                >
-                  {item.desc}
-                </span>
-              </li>
-            ))}
-          </ul>
+                  <p
+                    className={`font-source font-medium text-xl ${item.textColor}`}
+                  >
+                    {item.title}
+                  </p>
+                  <span
+                    className={`font-source font-normal text-base ${item.textColor}`}
+                  >
+                    {item.desc}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

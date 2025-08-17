@@ -17,7 +17,7 @@ const Navbar = (props: Props) => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 z-50 w-full bg-white shadow font-source px-4 py-4 md:px-12 md:py-6">
+    <nav className="fixed top-0 left-0 z-50 w-full bg-white shadow font-source px-4 py-4 md:px-12 md:py-5">
       <div className="flex justify-between items-center">
         <Link href='/' className="flex gap-1 items-center">
           <Image

@@ -15,7 +15,7 @@ const Hero = (props: Props) => {
   };
 
   return (
-    <div className="mt-24 md:mt-36 mb-6 font-source px-4 md:px-12">
+    <div className="mt-24 md:mt-28 mb-6 font-source px-4 md:px-12">
       <div className="flex flex-col md:flex-row gap-5 w-full h-fit my-5">
         <section className="w-full md:w-2/3 bg-[url('/images/bolu.png')] bg-cover bg-no-repeat h-60 md:h-[600px] flex">
           <div className="flex flex-col md:flex-row gap-4 md:gap-8 mt-auto ml-4 md:ml-16 -mb-3">
