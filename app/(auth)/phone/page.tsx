@@ -57,12 +57,7 @@ function PhonePage() {
         }),
       });
       const data = await res.json();
-      if (data.success) {
-        toast.success("Verification code sent to your WhatsApp!");
-        window.location.href = `/phone-otp?phone=${encodeURIComponent(
-          phone
-        )}&email=${encodeURIComponent(email)}`;
-      } else {
+      if (!res.ok) {
         let userMessage = data.error;
         if (data.error?.includes("Phone number is required")) {
           userMessage = "Please enter your phone number to continue.";
@@ -71,9 +66,20 @@ function PhonePage() {
         } else if (data.error?.includes("Failed to send")) {
           userMessage = "Unable to send verification code to your phone. Please check the number and try again.";
         }
-        toast.error(userMessage || "Unable to send verification code. Please try again.");
-        setError(userMessage || "Unable to send verification code. Please try again.");
+        throw new Error(userMessage || "Unable to send verification code. Please try again.");
       }
+      
+      // Handle success with method information
+      if (data.method === 'sms' && data.fallback) {
+        toast.success("Verification code sent via SMS! (WhatsApp unavailable)");
+      } else if (data.method === 'whatsapp') {
+        toast.success("Verification code sent! Check your WhatsApp.");
+      } else {
+        toast.success("Verification code sent! Check your WhatsApp.");
+      }
+      window.location.href = `/phone-otp?phone=${encodeURIComponent(
+          phone
+        )}&email=${encodeURIComponent(email)}`;
     } catch (err: any) {
       toast.error("Unable to connect to our servers. Please check your internet connection and try again.");
       setError("Unable to connect to our servers. Please check your internet connection and try again.");

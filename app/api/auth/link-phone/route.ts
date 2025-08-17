@@ -21,27 +21,71 @@ export async function POST(request: NextRequest) {
       if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_WHATSAPP_FROM) {
         return NextResponse.json({ success: false, error: 'Phone verification is temporarily unavailable. Please contact support or try again later.' }, { status: 503 });
       }
+      
       const generatedOtp = generateOtp();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
       // Store OTP in DB
       await db.insert(phoneOtps).values({ phone, otp: generatedOtp, expiresAt });
+      
+      const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+      
       try {
-        const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-        // Log parameters for debugging
-        console.log('Sending WhatsApp OTP:', {
+        // First attempt: Send via WhatsApp
+        console.log('Attempting WhatsApp OTP for phone linking:', {
           from: process.env.TWILIO_WHATSAPP_FROM,
           to: `whatsapp:${phone}`,
           body: `Your OTP code is: ${generatedOtp}`
         });
+        
         await twilioClient.messages.create({
           from: process.env.TWILIO_WHATSAPP_FROM,
           to: `whatsapp:${phone}`,
           body: `Your OTP code is: ${generatedOtp}`
         });
-        return NextResponse.json({ success: true, message: 'OTP sent to phone' });
-      } catch (error) {
-        console.error('Twilio error:', error);
-        return NextResponse.json({ success: false, error: 'Unable to send verification code to your phone. Please check the number and try again.' }, { status: 500 });
+        
+        // WhatsApp succeeded
+        return NextResponse.json({ 
+          success: true, 
+          message: 'OTP sent to phone via WhatsApp',
+          method: 'whatsapp'
+        });
+        
+      } catch (whatsappError) {
+        console.error('WhatsApp failed for phone linking, attempting SMS fallback:', whatsappError);
+        
+        // WhatsApp failed, try SMS as fallback
+        try {
+          // Check if we have a regular Twilio phone number for SMS
+          if (!process.env.TWILIO_PHONE_NUMBER) {
+            throw new Error('SMS fallback not configured');
+          }
+          
+          // Send via SMS
+          await twilioClient.messages.create({
+            from: process.env.TWILIO_PHONE_NUMBER,
+            to: phone,
+            body: `Your ChainFundIt verification code is: ${generatedOtp}. This code will expire in 10 minutes.`
+          });
+          
+          // SMS succeeded
+          return NextResponse.json({ 
+            success: true, 
+            message: 'OTP sent to phone via SMS (WhatsApp unavailable)',
+            method: 'sms',
+            fallback: true
+          });
+          
+        } catch (smsError) {
+          console.error('Both WhatsApp and SMS failed for phone linking:', { whatsappError, smsError });
+          
+          // Both methods failed - clean up the OTP from DB
+          await db.delete(phoneOtps).where(eq(phoneOtps.phone, phone));
+          
+          return NextResponse.json({ 
+            success: false, 
+            error: 'Unable to send verification code to your phone. Please check the number and try again.' 
+          }, { status: 500 });
+        }
       }
     }
 

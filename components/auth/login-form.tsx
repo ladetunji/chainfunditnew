@@ -63,10 +63,9 @@ export function LoginForm({
       }
       const data = await res.json();
       if (!res.ok) {
-        // Map API errors to user-friendly messages
         let userMessage = data.error;
         if (data.error?.includes("No account found")) {
-          userMessage = isPhone 
+          userMessage = isPhone
             ? "No account found with this phone number. Please sign up first or try a different number."
             : "No account found with this email. Please sign up first or check your email address.";
         } else if (data.error?.includes("WhatsApp OTP service not configured")) {
@@ -76,13 +75,21 @@ export function LoginForm({
             ? "Unable to send verification code to your phone. Please check the number and try again."
             : "Unable to send verification code to your email. Please check your email address and try again.";
         } else if (data.error?.includes("Email is required") || data.error?.includes("Phone number is required")) {
-          userMessage = isPhone 
+          userMessage = isPhone
             ? "Please enter your phone number to continue."
             : "Please enter your email address to continue.";
         }
         throw new Error(userMessage || "Unable to send verification code. Please try again.");
       }
-      toast.success("Verification code sent! Check your " + (isPhone ? "WhatsApp" : "email") + ".");
+      
+      // Handle success with method information
+      if (data.method === 'sms' && data.fallback) {
+        toast.success("Verification code sent via SMS! (WhatsApp unavailable)");
+      } else if (data.method === 'whatsapp') {
+        toast.success("Verification code sent! Check your WhatsApp.");
+      } else {
+        toast.success("Verification code sent! Check your " + (isPhone ? "WhatsApp" : "email") + ".");
+      }
       // Store identifier and type for /otp page
       if (isPhone) {
         localStorage.setItem("otp_login_type", "phone");

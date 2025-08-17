@@ -22,6 +22,14 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 DISCORD_CLIENT_ID=your-discord-client-id
 DISCORD_CLIENT_SECRET=your-discord-client-secret
 
+# Email & Phone Verification
+RESEND_API_KEY=your-resend-api-key
+RESEND_FROM_EMAIL=noreply@yourdomain.com
+TWILIO_ACCOUNT_SID=your-twilio-account-sid
+TWILIO_AUTH_TOKEN=your-twilio-auth-token
+TWILIO_WHATSAPP_FROM=whatsapp:+1234567890
+TWILIO_PHONE_NUMBER=+1234567890
+
 # Payments
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_PUBLISHABLE_KEY=pk_test_...
