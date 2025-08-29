@@ -55,6 +55,7 @@ import { LuImage } from "react-icons/lu";
 import Image from "next/image";
 import { useShortenLink } from "@/hooks/use-shorten-link";
 import { toast } from "sonner";
+import { Upload } from '@/components/ui/upload';
 
 const reasons = [
   { text: "Business", icon: <Briefcase /> },
@@ -152,6 +153,31 @@ export default function CreateCampaignPage() {
     story: "",
   });
 
+  // Add upload URLs state
+  const [uploadedFiles, setUploadedFiles] = useState({
+    coverImageUrl: "",
+    imageUrls: [] as string[],
+    documentUrls: [] as string[],
+  });
+
+  const handleCoverImageUpload = (url: string) => {
+    setUploadedFiles(prev => ({ ...prev, coverImageUrl: url }));
+  };
+
+  const handleImageUpload = (url: string) => {
+    setUploadedFiles(prev => ({ 
+      ...prev, 
+      imageUrls: [...prev.imageUrls, url] 
+    }));
+  };
+
+  const handleDocumentUpload = (url: string) => {
+    setUploadedFiles(prev => ({ 
+      ...prev, 
+      documentUrls: [...prev.documentUrls, url] 
+    }));
+  };
+
   const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -230,17 +256,27 @@ export default function CreateCampaignPage() {
     setIsLoading(true);
     const payload = new FormData();
 
-    Object.entries(formData).forEach(([key, value]) => {
-      if (key === "images" || key === "documents") {
-        (value as File[]).forEach((file) => payload.append(key, file));
-      } else if (key === "coverImage") {
-        if (value) {
-          payload.append("coverImage", value as File);
+    // Add form data with safety check
+    if (formData && typeof formData === 'object') {
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === "images" || key === "documents" || key === "coverImage") {
+          // Skip file objects, we'll use URLs instead
+          return;
+        } else {
+          payload.append(key, value as string);
         }
-        // Don't append anything if no cover image is selected
-      } else {
-        payload.append(key, value as string);
-      }
+      });
+    }
+
+    // Add uploaded file URLs
+    if (uploadedFiles.coverImageUrl) {
+      payload.append("coverImageUrl", uploadedFiles.coverImageUrl);
+    }
+    uploadedFiles.imageUrls.forEach(url => {
+      payload.append("imageUrls", url);
+    });
+    uploadedFiles.documentUrls.forEach(url => {
+      payload.append("documentUrls", url);
     });
 
     try {

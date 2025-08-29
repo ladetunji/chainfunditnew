@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link as LinkIcon, Copy, Facebook, Instagram, Twitter, Linkedin, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import Link from "next/link";
+import { useChain } from "@/hooks/use-chain";
+import { useAuth } from "@/hooks/use-auth";
 
 interface Campaign {
   id: string;
@@ -25,13 +27,39 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign })
   const [whyChain, setWhyChain] = useState("");
   const [proceedsOption, setProceedsOption] = useState("give-back");
   const [copied, setCopied] = useState(false);
+  const [referralCode, setReferralCode] = useState("");
+  
+  const { user } = useAuth();
+  const { createChain, loading, error } = useChain();
 
-  const handleChainCampaign = () => {
-    setStep("success");
+  const handleChainCampaign = async () => {
+    if (!user || !campaign) return;
+
+    // Map the proceeds option to the API format
+    const commissionDestinationMap = {
+      'give-back': 'donate_back' as const,
+      'receive-payout': 'keep' as const,
+      'donate-charity': 'donate_other' as const,
+    };
+
+    const chainData = {
+      userId: user.id,
+      campaignId: campaign.id,
+      commissionDestination: commissionDestinationMap[proceedsOption as keyof typeof commissionDestinationMap],
+      charityChoiceId: proceedsOption === 'donate-charity' ? undefined : undefined, // TODO: Add charity selection
+    };
+
+    const result = await createChain(chainData);
+    
+    if (result.success && result.data) {
+      setReferralCode(result.data.referralCode);
+      setStep("success");
+    }
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText("chainfund.it/d1R3lly?ref=t3mfl1k");
+    const chainLink = `${window.location.origin}/c/${referralCode}`;
+    navigator.clipboard.writeText(chainLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -40,6 +68,7 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign })
     setStep("form");
     setWhyChain("");
     setProceedsOption("give-back");
+    setReferralCode("");
     onOpenChange(false);
   };
 
@@ -120,22 +149,39 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign })
                   Please Note: The campaign creator has approved only a 5% commission on this campaign.
                 </p>
 
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                  {error}
+                </div>
+              )}
+
               <Button
                 onClick={handleChainCampaign}
+                disabled={loading || !whyChain.trim()}
                 className="w-[300px] h-16 font-medium text-2xl flex justify-between items-center"
               >
-                Chain campaign <LinkIcon size={24} />
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                    Creating chain...
+                  </>
+                ) : (
+                  <>
+                    Chain campaign <LinkIcon size={24} />
+                  </>
+                )}
               </Button>
             </div>
           ) : (
             <div className="space-y-6">
               <div className="">
                 <div className="flex items-center justify-between">
-                  <span className="text-2xl font-medium text-[#104901]">
-                    chainfund.it/d1R3lly?ref=t3mfl1k
+                  <span className="text-2xl font-medium text-[#104901] break-all">
+                    {referralCode ? `${window.location.origin}/c/${referralCode}` : 'Generating link...'}
                   </span>
                   <Button
                     onClick={handleCopyLink}
+                    disabled={!referralCode}
                     className="flex justify-between items-center text-2xl w-[150px] h-16"
                   >
                     {copied ? "Copied!" : "Copy"}
@@ -149,16 +195,36 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign })
                   Share campaign
                 </Label>
                 <div className="flex space-x-5">
-                  <Link href="https://www.facebook.com/sharer/sharer.php?u=https://www.google.com" target="_blank" className="text-[#5F8555]">
-                        <Facebook size={32} color="#104901" strokeWidth={1.5} />
+                  <Link 
+                    href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`${window.location.origin}/c/${referralCode}`)}`} 
+                    target="_blank" 
+                    className="text-[#5F8555]"
+                    onClick={(e) => !referralCode && e.preventDefault()}
+                  >
+                    <Facebook size={32} color="#104901" strokeWidth={1.5} />
                   </Link>
-                  <Link href="https://www.instagram.com/sharer/sharer.php?u=https://www.google.com" target="_blank" className="text-[#104901]">
+                  <Link 
+                    href={`https://www.instagram.com/sharer/sharer.php?u=${encodeURIComponent(`${window.location.origin}/c/${referralCode}`)}`} 
+                    target="_blank" 
+                    className="text-[#104901]"
+                    onClick={(e) => !referralCode && e.preventDefault()}
+                  >
                     <Instagram size={32} color="#104901" strokeWidth={1.5} />
                   </Link>
-                  <Link href="https://www.twitter.com/sharer/sharer.php?u=https://www.google.com" target="_blank" className="text-[#104901]">
+                  <Link 
+                    href={`https://www.twitter.com/sharer/sharer.php?u=${encodeURIComponent(`${window.location.origin}/c/${referralCode}`)}`} 
+                    target="_blank" 
+                    className="text-[#104901]"
+                    onClick={(e) => !referralCode && e.preventDefault()}
+                  >
                     <Twitter size={32} color="#104901" strokeWidth={1.5} />
                   </Link>
-                  <Link href="https://www.linkedin.com/sharer/sharer.php?u=https://www.google.com" target="_blank" className="text-[#104901]">
+                  <Link 
+                    href={`https://www.linkedin.com/sharer/sharer.php?u=${encodeURIComponent(`${window.location.origin}/c/${referralCode}`)}`} 
+                    target="_blank" 
+                    className="text-[#104901]"
+                    onClick={(e) => !referralCode && e.preventDefault()}
+                  >
                     <Linkedin size={32} color="#104901" strokeWidth={1.5} />
                   </Link>
                 </div>

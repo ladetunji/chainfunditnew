@@ -11,11 +11,15 @@ import {
   Heart,
   MessageSquare,
   Send,
+  PlusSquare,
 } from "lucide-react";
 import CTA from "./cta";
 import ChainModal from "./chain-modal";
 import DonateModal from "./donate-modal";
 import ShareModal from "./share-modal";
+import UpdateModal from "./update-modal";
+import CommentModal from "./comment-modal";
+import { useCampaignDonations } from "@/hooks/use-campaign-donations";
 
 interface CampaignData {
   id: string;
@@ -31,7 +35,7 @@ interface CampaignData {
   documents: string[];
   goalAmount: number;
   currency: string;
-  minimumDonation: number;
+  minimumDonation: string;
   chainerCommissionRate: number;
   currentAmount: number;
   status: string;
@@ -48,53 +52,37 @@ interface CampaignData {
     uniqueDonors: number;
     progressPercentage: number;
   };
+  canEdit?: boolean;
+}
+
+interface CampaignUpdate {
+  id: string;
+  title: string;
+  content: string;
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CampaignComment {
+  id: string;
+  content: string;
+  isPublic: boolean;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  userAvatar?: string;
 }
 
 interface MainProps {
   campaignId: string;
 }
 
-const images = [
-  "/images/story-1.png",
-  "/images/thumbnail1.png",
-  "/images/thumbnail2.png",
-  "/images/thumbnail3.png",
-  "/images/thumbnail4.png",
-  "/images/thumbnail5.png",
-];
 
-const donors = [
-  {
-    image: "/images/donor1.png",
-    name: "Angela Bassett",
-    amount: "₦125,000",
-  },
-  {
-    image: "/images/donor2.png",
-    name: "Alexander Iwobi",
-    amount: "₦120,000",
-  },
-  {
-    image: "/images/donor3.png",
-    name: "Chichi Onwuegbo",
-    amount: "₦100,000",
-  },
-  {
-    image: "/images/donor4.png",
-    name: "Kareem Kapoor",
-    amount: "₦100,000",
-  },
-  {
-    image: "/images/donor5.png",
-    name: "Sergio Texeira",
-    amount: "₦80,000",
-  },
-  {
-    image: "/images/donor6.png",
-    name: "Ruslev Mikhailsky",
-    amount: "₦50,000",
-  },
-];
+
+
 
 const chainers = [
   {
@@ -166,110 +154,257 @@ const Main = ({ campaignId }: MainProps) => {
   const [chainModalOpen, setChainModalOpen] = useState(false);
   const [donateModalOpen, setDonateModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
   const [campaign, setCampaign] = useState<CampaignData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updates, setUpdates] = useState<CampaignUpdate[]>([]);
+  const [loadingUpdates, setLoadingUpdates] = useState(false);
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [comments, setComments] = useState<CampaignComment[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  
+  // Fetch donations data
+  const { donations, loading: loadingDonations } = useCampaignDonations(campaignId);
 
-  // Fetch campaign data
-  React.useEffect(() => {
-    const fetchCampaign = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        console.log("Fetching campaign with ID:", campaignId);
-        const response = await fetch(`/api/campaigns/${campaignId}`);
-        console.log("Response status:", response.status);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch campaign: ${response.status}`);
-        }
+  // Fetch campaign updates
+  const fetchUpdates = React.useCallback(async () => {
+    try {
+      setLoadingUpdates(true);
+      const response = await fetch(`/api/campaigns/${campaignId}/updates`);
+      
+      if (response.ok) {
         const result = await response.json();
-        console.log("API response:", result);
-        if (!result.success) {
-          throw new Error(result.error || "Failed to fetch campaign");
+        if (result.success) {
+          setUpdates(result.data);
         }
-        setCampaign(result.data);
-      } catch (err) {
-        console.error("Error fetching campaign:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch campaign"
-        );
-        const dummyCampaign: CampaignData = {
-          id: campaignId,
-          title: "Support the Thomases' move into a new flat",
-          subtitle:
-            "A young London caregiver's family needs your help at a better life.",
-          description:
-            "A little girl lost her teddy bear while visiting Glacier National Park in Montana. One year later, a family friend visiting the park spotted the bear, and now it is reunited with its owner. TODAY's Hoda Kotb has your Morning Boost.",
-          reason: "Family",
-          fundraisingFor: "Thomas family",
-          duration: "30 days",
-          videoUrl: "https://example.com/video.mp4",
-          coverImageUrl: "/images/story-1.png",
-          galleryImages: [
-            "/images/thumbnail1.png",
-            "/images/thumbnail2.png",
-            "/images/thumbnail3.png",
-            "/images/thumbnail4.png",
-            "/images/thumbnail5.png",
-          ],
-          documents: [],
-          goalAmount: 3000000,
-          currency: "NGN",
-          minimumDonation: 1000,
-          chainerCommissionRate: 5.0,
-          currentAmount: 1192000,
-          status: "active",
-          isActive: true,
-          createdAt: "2024-01-15",
-          updatedAt: "2024-01-15",
-          creatorId: "dummy-creator-id",
-          creatorName: "Donald Chopra",
-          creatorAvatar: "/images/avatar-7.png",
-          stats: {
-            totalDonations: 35,
-            totalAmount: 1192000,
-            uniqueDonors: 28,
-            progressPercentage: 40,
-          },
-        };
-        setCampaign(dummyCampaign);
-        setError(null);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    if (campaignId) {
-      fetchCampaign();
+    } catch (err) {
+      console.error("Error fetching updates:", err);
+    } finally {
+      setLoadingUpdates(false);
     }
   }, [campaignId]);
 
-  // Use campaign data or fallback to mock data
-  const campaignData = campaign || {
-    title: "91 Days of Kindness Challenge",
-    subtitle: "Spreading kindness across Nigeria, one act at a time",
-    description: "Nigeria is a nation built on resilience, unity, and a love for community. This campaign aims to spread kindness across the country, one act at a time. Join us in making a difference! We believe that small acts of kindness can create a ripple effect that transforms communities and brings people together.",
-    reason: "Community Development",
-    fundraisingFor: "Ajegunle Children's Charity",
-    creatorName: "Adebola Ajani",
-    goalAmount: 3000000,
-    currentAmount: 1201000,
-    currency: "NGN",
-    stats: {
-      totalDonations: 35,
-      uniqueDonors: 28,
-      progressPercentage: 40,
-    },
-  };
+  // Fetch campaign comments
+  const fetchComments = React.useCallback(async () => {
+    try {
+      setLoadingComments(true);
+      const response = await fetch(`/api/campaigns/${campaignId}/comments`);
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setComments(result.data);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching comments:", err);
+    } finally {
+      setLoadingComments(false);
+    }
+  }, [campaignId]);
+
+  // Fetch campaign data and updates
+  const fetchCampaign = React.useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log("Fetching campaign with ID:", campaignId);
+      const response = await fetch(`/api/campaigns/${campaignId}`);
+      console.log("Response status:", response.status);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Campaign not found");
+        }
+        throw new Error(`Failed to fetch campaign: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      console.log("API response:", result);
+      
+      if (!result.success) {
+        throw new Error(result.error || "Failed to fetch campaign");
+      }
+      
+      let campaignData = result.data;
+      
+      // If creator information is missing, try to fetch it separately
+      if (!campaignData.creatorName && campaignData.creatorId) {
+        try {
+          console.log("Creator name missing, fetching user info for:", campaignData.creatorId);
+          
+          // Try multiple approaches to get creator info
+          let creatorName = null;
+          let creatorAvatar = null;
+          
+          // Approach 1: Try the direct creator endpoint (bypasses JOIN issues)
+          try {
+            const directCreatorResponse = await fetch(`/api/campaigns/${campaignData.id}/direct-creator`);
+            if (directCreatorResponse.ok) {
+              const directCreatorResult = await directCreatorResponse.json();
+              if (directCreatorResult.success) {
+                creatorName = directCreatorResult.data.creator.fullName;
+                creatorAvatar = directCreatorResult.data.creator.avatar;
+                console.log("Successfully fetched creator info via direct creator API:", { creatorName, creatorAvatar });
+              }
+            }
+          } catch (directCreatorErr) {
+            console.log("Direct creator API approach failed:", directCreatorErr);
+          }
+          
+          // Approach 2: Try the regular creator endpoint
+          if (!creatorName) {
+            try {
+              const creatorResponse = await fetch(`/api/campaigns/${campaignData.id}/creator`);
+              if (creatorResponse.ok) {
+                const creatorResult = await creatorResponse.json();
+                if (creatorResult.success) {
+                  creatorName = creatorResult.creator.fullName;
+                  creatorAvatar = creatorResult.creator.avatar;
+                  console.log("Successfully fetched creator info via creator API:", { creatorName, creatorAvatar });
+                }
+              }
+            } catch (creatorErr) {
+              console.log("Creator API approach failed:", creatorErr);
+            }
+          }
+          
+          // Approach 2: Try the user API endpoint as fallback
+          if (!creatorName) {
+            try {
+              const userResponse = await fetch(`/api/user/${campaignData.creatorId}`);
+              if (userResponse.ok) {
+                const userResult = await userResponse.json();
+                if (userResult.success) {
+                  creatorName = userResult.user.fullName;
+                  creatorAvatar = userResult.user.avatar;
+                  console.log("Successfully fetched creator info via user API:", { creatorName, creatorAvatar });
+                }
+              }
+            } catch (apiErr) {
+              console.log("User API approach failed:", apiErr);
+            }
+          }
+          
+          // Approach 2: Try to fetch from user profile endpoint
+          if (!creatorName) {
+            try {
+              const profileResponse = await fetch(`/api/user/profile`);
+              if (profileResponse.ok) {
+                const profileResult = await profileResponse.json();
+                if (profileResult.success && profileResult.user.id === campaignData.creatorId) {
+                  creatorName = profileResult.user.fullName;
+                  creatorAvatar = profileResult.user.avatar;
+                  console.log("Successfully fetched creator info via profile API:", { creatorName, creatorAvatar });
+                }
+              }
+            } catch (profileErr) {
+              console.log("Profile API approach failed:", profileErr);
+            }
+          }
+          
+          // Update campaign data with whatever we found
+          if (creatorName) {
+            campaignData = {
+              ...campaignData,
+              creatorName: creatorName,
+              creatorAvatar: creatorAvatar
+            };
+            console.log("Updated campaign data with creator info:", campaignData);
+          } else {
+            // Fallback to default values
+            campaignData = {
+              ...campaignData,
+              creatorName: 'Unknown Creator',
+              fundraisingFor: campaignData.fundraisingFor || 'Unknown Cause'
+            };
+            console.log("No creator info found, using fallback values");
+          }
+        } catch (userErr) {
+          console.error("Error in creator info fallback:", userErr);
+          // Fallback to default values
+          campaignData = {
+            ...campaignData,
+            creatorName: 'Unknown Creator',
+            fundraisingFor: campaignData.fundraisingFor || 'Unknown Cause'
+          };
+        }
+      }
+      
+      setCampaign(campaignData);
+      
+      // Fetch campaign updates and comments
+      await Promise.all([fetchUpdates(), fetchComments()]);
+    } catch (err) {
+      console.error("Error fetching campaign:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch campaign"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [campaignId, fetchUpdates, fetchComments]);
+
+  React.useEffect(() => {
+    if (campaignId) {
+      fetchCampaign();
+    }
+  }, [campaignId, fetchCampaign]);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="max-w-[1440px] mx-auto mt-16 md:mt-22 h-full p-5 md:p-12 font-source">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#104901] mx-auto mb-4"></div>
+            <p className="text-lg text-[#757575]">Loading campaign...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error || !campaign) {
+    return (
+      <div className="max-w-[1440px] mx-auto mt-16 md:mt-22 h-full p-5 md:p-12 font-source">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="text-6xl mb-4">😔</div>
+            <h2 className="text-2xl font-semibold text-black mb-2">
+              {error === "Campaign not found" ? "Campaign Not Found" : "Something went wrong"}
+            </h2>
+            <p className="text-lg text-[#757575] mb-4">
+              {error === "Campaign not found" 
+                ? "The campaign you're looking for doesn't exist or has been removed."
+                : "We couldn't load the campaign. Please try again later."
+              }
+            </p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="bg-[#104901] text-white px-6 py-3 rounded-lg hover:bg-[#0d3a01] transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const campaignData = campaign;
 
   const raised = campaignData.currentAmount;
   const goal = campaignData.goalAmount;
   const percent = Math.min(100, Math.round((raised / goal) * 100));
 
-  // Use campaign images if available, otherwise fallback to default images
+  // Use campaign images if available, otherwise show empty state
   const campaignImages = campaign?.galleryImages && campaign.galleryImages.length > 0 
-    ? campaign.galleryImages 
-    : images;
+    ? campaign.galleryImages.filter(img => img && !img.startsWith('/uploads/') && img !== 'undefined')
+    : [];
 
   return (
     <div className="max-w-[1440px] bg-[url('/images/logo-bg.svg')] bg-[length:60%] md:bg-[length:30%] md:h-full bg-no-repeat bg-right-bottom mx-auto mt-16 md:mt-22 h-full p-5 md:p-12 font-source">
@@ -285,51 +420,69 @@ const Main = ({ campaignId }: MainProps) => {
             </p>
           </div>
           {/* Main Image */}
-          <div className="w-full flex mb-4 mt-10">
-            <div className="relative md:w-[900px] md:h-[600px] overflow-hidden">
-              <Image
-                src={campaignImages[selectedImage]}
-                alt={`Gallery image ${selectedImage + 1}`}
-                style={{ objectFit: "cover" }}
-                width={900}
-                height={600}
-                priority
-              />
-            </div>
-          </div>
-          {/* Thumbnails */}
-          <div className="flex gap-4 overflow-x-auto">
-            {campaignImages.map((img, idx) => (
-              <button
-                key={img}
-                onClick={() => setSelectedImage(idx)}
-                className={`relative md:w-[137px] w-[60px] md:h-[84px] h-[60px] border-2 ${
-                  selectedImage === idx
-                    ? "border-[#104901]"
-                    : "border-transparent"
-                } overflow-hidden focus:outline-none`}
-                aria-label={`Show image ${idx + 1}`}
-              >
+          {campaignImages.length > 0 ? (
+            <>
+              <div className="w-full flex mb-4 mt-10">
+                <div className="relative md:w-[900px] md:h-[600px] overflow-hidden">
+                  <Image
+                    src={campaignImages[selectedImage]}
+                    alt={`Gallery image ${selectedImage + 1}`}
+                    style={{ objectFit: "cover" }}
+                    width={900}
+                    height={600}
+                    priority
+                  />
+                </div>
+              </div>
+              {/* Thumbnails */}
+              <div className="flex gap-4 overflow-x-auto">
+                {campaignImages.map((img, idx) => (
+                  <button
+                    key={img}
+                    onClick={() => setSelectedImage(idx)}
+                    className={`relative md:w-[137px] w-[60px] md:h-[84px] h-[60px] border-2 ${
+                      selectedImage === idx
+                        ? "border-[#104901]"
+                        : "border-transparent"
+                    } overflow-hidden focus:outline-none`}
+                    aria-label={`Show image ${idx + 1}`}
+                  >
+                    <Image
+                      src={img}
+                      alt={`Thumbnail ${idx + 1}`}
+                      fill
+                      style={{ objectFit: "cover" }}
+                    />
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="w-full flex mb-4 mt-10">
+              <div className="relative md:w-[900px] md:h-[600px] overflow-hidden bg-gray-200 flex items-center justify-center">
                 <Image
-                  src={img}
-                  alt={`Thumbnail ${idx + 1}`}
-                  fill
+                  src="/images/card-img1.png"
+                  alt="Default campaign image"
+                  width={900}
+                  height={600}
                   style={{ objectFit: "cover" }}
                 />
-              </button>
-            ))}
-          </div>
+              </div>
+            </div>
+          )}
 
           <p className="font-medium text-2xl text-[#757575] md:my-1 my-3">
             Organised by{" "}
             <span className="font-semibold text-[#104901]">
-              {campaignData.creatorName}
+              {campaignData.creatorName || 'Unknown Creator'}
             </span>{" "}
             for {" "}
             <span className="font-semibold text-[#104901]">
-              {campaignData.fundraisingFor}
+              {campaignData.fundraisingFor || 'Unknown Cause'}
             </span>
           </p>
+          
+     
           <div className="flex md:flex-row flex-col gap-2 justify-between md:items-center pb-5 border-b border-[#ADADAD]">
             <section className="flex gap-2 items-center">
               <p className="font-medium text-sm md:text-xl text-[#757575]">
@@ -425,97 +578,50 @@ const Main = ({ campaignId }: MainProps) => {
                 <p className="">
                   {campaignData.description}
                 </p>
-
-                <div className="space-y-2">
-                  <p className="flex items-start gap-2">
-                    <span className="">»</span>
-                    <span>
-                      Subscribe to TODAY:{" "}
-                      <a
-                        href="http://on.today.com/SubscribeToTODAY"
-                        className="underline hover:text-[#0A3A0A]"
-                      >
-                        http://on.today.com/SubscribeToTODAY
-                      </a>
-                    </span>
-                  </p>
-                  <p className="flex items-start gap-2">
-                    <span className="">»</span>
-                    <span>
-                      Watch the latest from TODAY:{" "}
-                      <a
-                        href="http://bit.ly/LatestTODAY"
-                        className="underline hover:text-[#0A3A0A]"
-                      >
-                        http://bit.ly/LatestTODAY
-                      </a>
-                    </span>
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="mb-2">About: TODAY</h3>
-                  <p className="">
-                    About: TODAY brings you the latest headlines and expert tips
-                    on money, health and parenting. We wake up every morning to
-                    give you and your family all you need to start your day. If
-                    it matters to you, it matters to us. We are in the people
-                    business. Subscribe to our channel for exclusive TODAY
-                    archival footage & our original web series.
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="mb-2">Connect with TODAY Online!</h3>
-                  <div className="space-y-1">
-                    <p>
-                      Visit TODAY&apos;s Website:{" "}
-                      <a
-                        href="http://on.today.com/ReadTODAY"
-                        className="underline hover:text-[#0A3A0A]"
-                      >
-                        http://on.today.com/ReadTODAY
-                      </a>
-                    </p>
-                    <p>
-                      Find TODAY on Facebook:{" "}
-                      <a
-                        href="http://on.today.com/LikeTODAY"
-                        className="underline hover:text-[#0A3A0A]"
-                      >
-                        http://on.today.com/LikeTODAY
-                      </a>
-                    </p>
-                    <p>
-                      Follow TODAY on Twitter:{" "}
-                      <a
-                        href="http://on.today.com/FollowTODAY"
-                        className="underline hover:text-[#0A3A0A]"
-                      >
-                        http://on.today.com/FollowTODAY
-                      </a>
-                    </p>
-                    <p>
-                      Follow TODAY on Instagram:{" "}
-                      <a
-                        href="http://on.today.com/InstaTODAY"
-                        className="underline hover:text-[#0A3A0A]"
-                      >
-                        http://on.today.com/InstaTODAY
-                      </a>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-4">
-                  <p className="">#NationalParks #GoodNews #TODAYShow</p>
-                </div>
               </div>
             )}
 
             {activeTab === "updates" && (
               <div className="bg-[#F2F1E9] border-x border-b border-[#C0BFC4] font-normal text-sm md:text-xl text-[#104901] p-3 md:p-6">
-                <p className="">No updates available yet.</p>
+                {loadingUpdates ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#104901] mx-auto mb-4"></div>
+                    <p className="text-[#757575]">Loading updates...</p>
+                  </div>
+                ) : updates.length > 0 ? (
+                  <div className="space-y-6">
+                    {updates.map((update) => (
+                      <div key={update.id} className="bg-white rounded-xl p-4 border border-[#C0BFC4]">
+                        <div className="flex items-start justify-between mb-3">
+                          <h4 className="font-semibold text-lg text-[#104901]">{update.title}</h4>
+                          <span className="text-sm text-[#757575]">
+                            {new Date(update.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <p className="text-[#474553] leading-relaxed">{update.content}</p>
+                        {!update.isPublic && (
+                          <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
+                            <span>🔒</span>
+                            <span>Private Update</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-[#757575] mb-4">No updates available yet.</p>
+                    {campaign?.canEdit && (
+                      <Button
+                        onClick={() => setUpdateModalOpen(true)}
+                        className="bg-gradient-to-r from-green-600 to-[#104901] text-white rounded-xl px-6 py-2 hover:shadow-lg transition-all duration-300"
+                      >
+                        <PlusSquare className="h-4 w-4 mr-2" />
+                        Add First Update
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -525,25 +631,8 @@ const Main = ({ campaignId }: MainProps) => {
             <h3 className="text-3xl font-semibold text-black mb-4">
               Top Donors
             </h3>
-            <div className="grid md:grid-cols-6 grid-cols-3 gap-3">
-              {donors.map((donor, index) => (
-                <div key={index} className="flex flex-col items-center">
-                  <div className="relative w-20 h-20 border-2 border-white rounded-3xl overflow-hidden">
-                    <Image
-                      src={donor.image}
-                      alt={donor.name}
-                      fill
-                      style={{ objectFit: "cover" }}
-                    />
-                  </div>
-                  <p className="font-normal text-base text-black">
-                    {donor.name}
-                  </p>
-                  <p className="font-medium text-sm text-[#757575]">
-                    {donor.amount}
-                  </p>
-                </div>
-              ))}
+            <div className="flex items-center justify-center py-8">
+              <p className="text-[#757575]">No donors yet. Be the first to donate!</p>
             </div>
           </section>
 
@@ -551,34 +640,29 @@ const Main = ({ campaignId }: MainProps) => {
             <h3 className="text-3xl font-semibold text-black mb-4">
               Top Chainers
             </h3>
-            <div className="flex gap-8">
-              {chainers.map((chainer, index) => (
-                <div key={index} className="flex flex-col items-center">
-                  <div className="relative w-20 h-20 border-2 border-white rounded-3xl overflow-hidden">
-                    <Image
-                      src={chainer.image}
-                      alt={chainer.name}
-                      fill
-                      style={{ objectFit: "cover" }}
-                    />
-                  </div>
-                  <p className="font-normal text-lg text-black">
-                    {chainer.name}
-                  </p>
-                  <p className="font-medium text-base text-[#5F8555]">
-                    {chainer.numberOfDonations} donations
-                  </p>
-                  <p className="font-medium text-base text-[#757575]">
-                    {chainer.amount}
-                  </p>
-                </div>
-              ))}
+            <div className="flex items-center justify-center py-8">
+              <p className="text-[#757575]">No chainers yet. Start the chain!</p>
             </div>
           </section>
         </div>
 
         {/* Right side */}
         <div className="w-full md:w-1/4 space-y-10">
+          {/* Update Button for Campaign Creator */}
+          {campaign?.canEdit && (
+            <div className="mb-5 py-3 px-2 bg-white rounded-2xl border border-[#C0BFC4]">
+              <Button
+                className="w-full h-12 px-4 py-2 font-semibold text-lg text-white rounded-xl bg-gradient-to-r from-green-600 to-[#104901] hover:from-green-600 hover:to-[#104901] transition-all duration-300"
+                onClick={() => setUpdateModalOpen(true)}
+              >
+                <PlusSquare className="h-5 w-5 mr-2" />
+                Add Update
+              </Button>
+            </div>
+          )}
+
+         
+          
           <div className="mb-5 py-3 px-2 bg-[#E7EDE6] rounded-2xl">
             <section className="w-full flex gap-3 mb-5">
               <Button
@@ -645,55 +729,96 @@ const Main = ({ campaignId }: MainProps) => {
                 </Button>
               </section>
             </section>
+                        {loadingDonations ? (
+              <div className="my-5 py-8 bg-white border border-[#C0BFC4] rounded-2xl">
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#104901] mr-3"></div>
+                  <span className="text-[#5F8555]">Loading recent donations...</span>
+                </div>
+              </div>
+            ) : donations.length > 0 ? (
             <ul className="my-5 py-3 px-2 bg-white space-y-3 border border-[#C0BFC4] rounded-2xl">
-              <li className="flex gap-3 items-center">
-                <Image src="/images/donor1.png" alt="" width={64} height={64} />
-                <section>
-                  <p className="font-normal text-xl text-[#5F8555]">
-                    Angela Bassett
-                  </p>
-                  <p className="font-medium text-xl text-black">
-                    ₦20,000 •{" "}
-                    <span className="font-normal text-lg text-[#5F8555]">
-                      Recent donation
-                    </span>{" "}
-                  </p>
-                </section>
-              </li>
-              <li className="flex gap-3 items-center">
-                <Image
-                  src="/images/logo-bg.svg"
-                  alt=""
-                  width={64}
-                  height={64}
-                />
-                <section>
-                  <p className="font-normal text-xl text-[#5F8555]">
-                    Anonymous
-                  </p>
-                  <p className="font-medium text-xl text-black">
-                    ₦10,000 •{" "}
-                    <span className="font-normal text-lg text-[#5F8555]">
-                      Recent donation
-                    </span>{" "}
-                  </p>
-                </section>
-              </li>
-              <li className="flex gap-3 items-center">
-                <Image src="/images/donor4.png" alt="" width={64} height={64} />
-                <section>
-                  <p className="font-normal text-xl text-[#5F8555]">
-                    Kareem Kapoor
-                  </p>
-                  <p className="font-medium text-xl text-black">
-                    ₦100,000 •{" "}
-                    <span className="font-normal text-lg text-[#5F8555]">
-                      Recent donation
-                    </span>{" "}
-                  </p>
-                </section>
-              </li>
+                {donations.slice(0, 3).map((donation) => {
+                  // Get status styling
+                  const getStatusStyle = (status: string) => {
+                    switch (status) {
+                      case 'completed':
+                        return 'bg-green-100 text-green-700 border-green-200';
+                      case 'pending':
+                        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+                      case 'failed':
+                        return 'bg-red-100 text-red-700 border-red-200';
+                      default:
+                        return 'bg-gray-100 text-gray-700 border-gray-200';
+                    }
+                  };
+
+                  const getStatusText = (status: string) => {
+                    switch (status) {
+                      case 'completed':
+                        return '✓ Completed';
+                      case 'pending':
+                        return '⏳ Pending';
+                      case 'failed':
+                        return '✗ Failed';
+                      default:
+                        return status;
+                    }
+                  };
+
+                  return (
+                    <li key={donation.id} className="flex gap-3 items-center">
+                      {donation.donorAvatar && !donation.isAnonymous ? (
+                        <Image
+                          src={donation.donorAvatar} 
+                          alt={donation.donorName || "Donor"} 
+                          width={64}
+                          height={64}
+                          className="rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-[#E7EDE6] rounded-full flex items-center justify-center text-[#104901] font-semibold text-xl">
+                          {donation.isAnonymous ? "?" : (donation.donorName?.charAt(0).toUpperCase() || "D")}
+                        </div>
+                      )}
+                      <section className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="font-normal text-xl text-[#5F8555]">
+                            {donation.donorName}
+                          </p>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusStyle(donation.paymentStatus)}`}>
+                            {getStatusText(donation.paymentStatus)}
+                          </span>
+                        </div>
+                        <p className="font-medium text-xl text-black">
+                          {donation.currency}{parseFloat(donation.amount).toLocaleString()} •{" "}
+                          <span className="font-normal text-lg text-[#5F8555]">
+                            {new Date(donation.createdAt).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </p>
+                        {donation.message && (
+                          <p className="font-normal text-sm text-[#757575] italic mt-1">
+                            "{donation.message}"
+                          </p>
+                        )}
+                      </section>
+                    </li>
+                  );
+                })}
             </ul>
+            ) : (
+              <div className="my-5 py-8 bg-white border border-[#C0BFC4] rounded-2xl">
+                <div className="text-center">
+                  <p className="text-[#5F8555] text-lg">No donations yet</p>
+                  <p className="text-[#757575] text-sm mt-1">Be the first to support this campaign!</p>
+                </div>
+              </div>
+            )}
             <section className="flex justify-center">
               <Button
                 className="bg-white h-12 font-semibold text-[#104901] text-lg px-4 py-1.5 border-2 border-[#104901] rounded-none"
@@ -709,64 +834,81 @@ const Main = ({ campaignId }: MainProps) => {
             <h3 className="font-semibold text-3xl text-[#104901]">
               Top Comments
             </h3>
-            {comments.map((comment) => (
-              <div className="" key={comment.id}>
-                <section className="bg-[#F2F1E9] w-full p-3 space-y-3 rounded-t-xl">
-                  <section className="flex gap-2 items-start">
-                    <Image src={comment.image} alt="" width={36} height={36} />
-                    <section className="space-y-2">
-                      <p className="font-semibold text-base text-[#104901]">
-                        {comment.name}{" "}
-                        <span className="font-normal">made a donation of </span>{" "}
-                        {comment.donation}
-                      </p>
-                      <p className="font-name text-xs text-[#104901]">
-                        {comment.time}
-                      </p>
-                      <p className="font-normal text-xl text-[#104901]">
-                        {comment.comment}
-                      </p>
-                      <div className="flex justify-between gap-3 items-center">
-                        <section className="flex gap-2 items-center font-normal text-sm text-[#104901]">
-                          <Heart color="black" size={20} /> Like
+            {loadingComments ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#104901] mx-auto mb-4"></div>
+                  <p className="text-[#757575]">Loading comments...</p>
+                </div>
+              </div>
+            ) : comments.length > 0 ? (
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {comments.slice(0, 5).map((comment) => (
+                  <div className="" key={comment.id}>
+                    <section className="bg-[#F2F1E9] w-full p-3 space-y-3 rounded-t-xl">
+                      <section className="flex gap-2 items-start">
+                        <div className="w-9 h-9 bg-[#E7EDE6] rounded-full flex items-center justify-center text-[#104901] font-semibold text-sm overflow-hidden">
+                          {comment.userAvatar ? (
+                            <Image 
+                              src={comment.userAvatar} 
+                              alt={comment.userName}
+                              width={36}
+                              height={36}
+                              className="w-9 h-9 rounded-full object-cover"
+                            />
+                          ) : (
+                            comment.userName.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <section className="space-y-2">
+                          <p className="font-semibold text-base text-[#104901]">
+                            {comment.userName}{" "}
+                            <span className="font-normal">made a donation</span>
+                          </p>
+                          <p className="font-normal text-xs text-[#104901]">
+                            {new Date(comment.createdAt).toLocaleDateString()}
+                          </p>
+                          <p className="font-normal text-xl text-[#104901]">
+                            {comment.content}
+                          </p>
+                          <div className="flex justify-between gap-3 items-center">
+                            <section className="flex gap-2 items-center font-normal text-sm text-[#104901]">
+                              <Heart color="black" size={20} /> Like
+                            </section>
+                            <section className="flex gap-2 items-center font-normal text-sm text-[#104901]">
+                              <MessageSquare color="black" size={20} /> Comment
+                            </section>
+                            <section className="flex gap-2 items-center font-normal text-sm text-[#104901]">
+                              <Send color="black" size={20} /> Share
+                            </section>
+                          </div>
                         </section>
-                        <section className="flex gap-2 items-center font-normal text-sm text-[#104901]">
-                          <MessageSquare color="black" size={20} /> Comment
-                        </section>
-                        <section className="flex gap-2 items-center font-normal text-sm text-[#104901]">
-                          <Send color="black" size={20} /> Share
+                      </section>
+                    </section>
+                    <section className="bg-[#D9D9D9] w-full p-5 shadow-lg rounded-b-xl">
+                      <div className="">
+                        <section className="flex gap-2 items-center font-semibold text-base text-[#104901]">
+                          <Heart color="black" size={20} />{" "}
+                          <p>
+                            <span className="font-normal">Liked by the campaign creator</span>
+                          </p>
                         </section>
                       </div>
                     </section>
-                  </section>
-                </section>
-                <section className="bg-[#D9D9D9] w-full p-5 shadow-lg rounded-b-xl">
-                  {comment.creator && (
-                    <div className="">
-                      <section className="flex gap-2 items-center font-semibold text-base text-[#104901]">
-                        <Heart color="black" size={20} />{" "}
-                        <p>
-                          Mojisola <span className="font-normal">and</span> 12
-                          others
-                        </p>
-                      </section>
-                      <p className="font-semibold text-base text-[#104901] flex gap-2 items-center">
-                        {comment.creator.name}
-                        <span className="font-normal text-sm text-[#104901]">
-                          {comment.creator.comment}
-                        </span>
-                      </p>
-                      <p className="text-xs text-[#104901]">
-                        {comment.creator.time}
-                      </p>
-                    </div>
-                  )}
-                </section>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-[#757575]">No comments yet. Be the first to comment!</p>
+              </div>
+            )}
             <section className="flex justify-center">
-              <Button className="bg-transparent h-12 text-[#104901] border-2 border-[#104901]">
-                See all coments
+              <Button 
+                onClick={() => setCommentModalOpen(true)}
+                className="bg-transparent h-12 text-[#104901] border-2 border-[#104901] hover:bg-[#104901] hover:text-white transition-colors"
+              >
+               Add a comment <PlusSquare />
               </Button>
             </section>
           </div>
@@ -776,10 +918,30 @@ const Main = ({ campaignId }: MainProps) => {
       <ChainModal
         open={chainModalOpen}
         onOpenChange={setChainModalOpen}
-        campaign={campaign}
+        campaign={campaign || undefined}
       />
-      <DonateModal open={donateModalOpen} onOpenChange={setDonateModalOpen} />
-      <ShareModal open={shareModalOpen} onOpenChange={setShareModalOpen} />
+      <DonateModal
+        open={donateModalOpen}
+        onOpenChange={setDonateModalOpen}
+        campaign={campaign || undefined}
+      />
+      <ShareModal
+        open={shareModalOpen}
+        onOpenChange={setShareModalOpen}
+        campaign={campaign || undefined}
+      />
+      <UpdateModal
+        isOpen={updateModalOpen}
+        onClose={() => setUpdateModalOpen(false)}
+        campaignId={campaignId}
+        onUpdateCreated={fetchUpdates}
+      />
+      <CommentModal
+        isOpen={commentModalOpen}
+        onClose={() => setCommentModalOpen(false)}
+        campaignId={campaignId}
+        onCommentCreated={fetchComments}
+      />
     </div>
   );
 };

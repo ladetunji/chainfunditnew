@@ -23,7 +23,6 @@ export default function PhonePageWrapper() {
 function PhonePage() {
   const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const searchParams = useSearchParams();
 
   // Get email from query string if present
@@ -32,7 +31,6 @@ function PhonePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
     try {
       // Prefer email from query string, fallback to cookie
       let email = emailFromQuery;
@@ -88,9 +86,6 @@ function PhonePage() {
       )}&email=${encodeURIComponent(email)}`;
     } catch (err: any) {
       toast.error(
-        "Unable to connect to our servers. Please check your internet connection and try again."
-      );
-      setError(
         "Unable to connect to our servers. Please check your internet connection and try again."
       );
     } finally {
@@ -158,7 +153,6 @@ function PhonePage() {
                   Skip
                 </Button>
               </div>
-              {/* {error && <p className="text-center text-red-500">{error}</p>} */}
             </form>
           </div>
         </div>

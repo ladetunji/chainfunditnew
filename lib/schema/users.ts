@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, text, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, text, boolean, index } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
@@ -20,7 +20,11 @@ export const users = pgTable('users', {
   tiktok: varchar('tiktok', { length: 255 }),
   youtube: varchar('youtube', { length: 255 }),
   bio: text('bio'),
-});
+}, (table) => ({
+  emailIdx: index('users_email_idx').on(table.email),
+  phoneIdx: index('users_phone_idx').on(table.phone),
+  verifiedIdx: index('users_verified_idx').on(table.isVerified),
+}));
 
 // Relations will be defined later to avoid circular dependencies
 

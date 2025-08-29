@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Plus, Eye, Link as LinkIcon, Users } from "lucide-react";
+import { Plus, Eye, Link as LinkIcon, Users, Edit, PlusSquare, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { Campaign, transformCampaign } from "./types";
+import { useCampaignChains } from "@/hooks/use-campaign-chains";
 
 type Props = {
   campaigns: Campaign[];
@@ -12,31 +13,40 @@ type Props = {
 const Chains = ({ campaigns }: Props) => {
   const isEmpty = campaigns.length === 0;
   const transformedCampaigns = campaigns.map(transformCampaign);
+  
+  // Get chain counts for all campaigns - use memoized IDs from parent
+  const campaignIds = useMemo(() => campaigns.map(campaign => campaign.id), [campaigns]);
+  
+  // Debug logging
+  console.log('Chains: campaigns prop changed, length:', campaigns.length);
+  console.log('Chains: campaignIds:', campaignIds);
+  
+  const { chainCounts, loading: chainsLoading } = useCampaignChains(campaignIds);
 
   if (isEmpty) {
     return (
-      <div className="flex flex-col gap-4 2xl:container 2xl:mx-auto">
-        <section className="relative w-fit">
-          <Image src="/images/frame.png" alt="" width={232} height={216} />
-          <section
-            className="absolute -top-5 -right-4 w-[70px] h-[78px] bg-white flex items-center justify-center font-bold text-[64px] text-[#C0BFC4] rounded-2xl"
-            style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
-          >
-            0
-          </section>
-        </section>
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="relative inline-block mb-8">
+          <div className="absolute -inset-1 bg-gradient-to-r from-green-600 to-[#104901] rounded-full blur opacity-20"></div>
+          <div className="relative bg-white/80 backdrop-blur-sm p-8 rounded-full">
+            <Image src="/images/frame.png" alt="" width={200} height={180} />
+            <div className="absolute -top-4 -right-4 w-16 h-16 bg-gradient-to-r from-green-600 to-[#104901] flex items-center justify-center font-bold text-4xl text-white rounded-2xl shadow-lg">
+              0
+            </div>
+          </div>
+        </div>
 
-        <section>
-          <h3 className="font-semibold text-3xl text-[#104901]">
+        <div className="text-center mb-8">
+          <h3 className="font-bold text-3xl text-[#104901] mb-3">
             No Chains Found
           </h3>
-          <p className="font-normal text-xl text-[#104901]">
-            Want to start your own fundraiser? Click the button below.
+          <p className="font-normal text-xl text-[#104901] opacity-80">
+            Start chaining campaigns to earn commissions and help others fundraise.
           </p>
-        </section>
+        </div>
 
         <Link href="/create-campaign">
-          <Button className="w-[300px] h-16 flex justify-between font-semibold text-2xl items-center">
+          <Button className="bg-gradient-to-r from-green-600 to-[#104901] text-white rounded-xl px-8 py-4 hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-semibold text-xl">
             Create a Campaign <Plus size={24} />
           </Button>
         </Link>
@@ -45,73 +55,134 @@ const Chains = ({ campaigns }: Props) => {
   }
 
   return (
-    <div className="flex flex-col gap-6 font-source 2xl:container 2xl:mx-auto">
-      {transformedCampaigns.map((campaign) => (
-        <div
-          key={campaign.id}
-          className="border border-[#D9D9D9] bg-white py-4 pl-4 pr-6 flex justify-between items-start"
-          style={{ boxShadow: "0px 4px 8px 0px #0000001A" }}
-        >
-          <Image
-            src={campaign.image}
-            alt={campaign.title}
-            width={270}
-            height={190}
-            className="object-cover"
-          />
-          <div className="flex flex-col justify-end">
-            <h3 className="text-2xl font-medium">{campaign.title}</h3>
-            <span className="font-normal text-base">
-              {campaign.description.slice(0, 60)}...
-            </span>
-            <section className="flex justify-between">
-              <p className="text-lg font-medium my-1 text-black">
-                ₦{campaign.amountRaised.toLocaleString()} raised
-              </p>
-              <p className="font-medium text-lg text-[#757575] my-1">
-                ₦{campaign.goal.toLocaleString()} total
-              </p>
-            </section>
-            <div className="w-full bg-[#D9D9D9] h-2 my-1">
-              <div
-                className="bg-[#104901] h-full transition-all duration-500"
-                style={{
-                  width: `${Math.min(
-                    100,
-                    Math.round((campaign.amountRaised / campaign.goal) * 100)
-                  )}%`,
-                }}
-              ></div>
-            </div>
-            <section className="flex justify-between items-center">
-              <p className="text-lg text-[#868686] flex gap-1 items-center">
-                <Users size={20} />
-                {campaign.donors} donors
-              </p>
-              <p className="text-lg text-[#868686] flex gap-1 items-center">
-                <LinkIcon size={20} /> {campaign.chains} chains
-              </p>
-            </section>
-            <div className="mt-3 flex gap-2">
-              <Link href={`/campaign/${campaign.id}`}>
-                <Button
-                  className="bg-[#F2F1E9] font-medium text-lg text-[#474553] border-[#474553]"
-                  variant="outline"
-                >
-                  View
-                  <Eye />
-                </Button>
-              </Link>
+    <div className="flex flex-col gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {transformedCampaigns.map((campaign) => {
+          const chainCount = chainCounts[campaign.id] || 0;
+          
+          return (
+            <div
+              key={campaign.id}
+              className="group relative overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2"
+            >
+            <div className="absolute -inset-1 bg-gradient-to-r from-green-600 to-[#104901] rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+            <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+              <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200">
+                <Image
+                  src={campaign.image}
+                  alt={campaign.title}
+                  fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                {/* Chain badge */}
+                <div className="absolute top-4 right-4">
+                  <div className="bg-gradient-to-r from-green-600 to-[#104901] text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                    <LinkIcon size={14} />
+                    Chained
+                  </div>
+                </div>
+              </div>
+              <div className="p-6">
+                <h3 className="font-bold text-[#104901] mb-3 text-xl">
+                  {campaign.title}
+                </h3>
+                <p className="text-[#104901] opacity-80 mb-4 text-sm">
+                  {campaign.description.slice(0, 80)}...
+                </p>
+                
+                <div className="space-y-3 mb-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#104901] opacity-80">Raised</span>
+                    <span className="font-semibold">
+                      ₦{campaign.amountRaised.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#104901] opacity-80">Goal</span>
+                    <span className="font-semibold">
+                      ₦{campaign.goal.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-[#104901] to-green-500 h-3 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          Math.round((campaign.amountRaised / campaign.goal) * 100)
+                        )}%`,
+                      }}
+                    ></div>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>{Math.min(100, Math.round((campaign.amountRaised / campaign.goal) * 100))}% complete</span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center mb-4 text-sm text-[#104901] opacity-80">
+                  <div className="flex items-center gap-1">
+                    <Users size={16} />
+                    {campaign.donors} donors
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <LinkIcon size={16} />
+                    {chainsLoading ? '...' : chainCount} chains
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex gap-3">
+                    <Link href={`/campaigns/edit/${campaign.id}`} className="flex-1">
+                      <Button
+                        variant="outline"
+                        className="w-full text-[#104901] border-[#104901] hover:bg-[#104901] hover:text-white rounded-xl py-2 transition-all duration-300"
+                      >
+                        <Edit size={16} className="mr-2" />
+                        Edit
+                      </Button>
+                    </Link>
+                    <Link href={`/campaign/${campaign.id}`} className="flex-1">
+                      <Button
+                        className="w-full bg-gradient-to-r from-green-600 to-[#104901] text-white rounded-xl py-2 hover:shadow-lg transition-all duration-300"
+                      >
+                        <Eye size={16} className="mr-2" />
+                        View Campaign
+                      </Button>
+                    </Link>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => window.open(`/campaign/${campaign.id}`, '_blank')}
+                      className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl py-2 hover:shadow-lg transition-all duration-300"
+                    >
+                      <PlusSquare size={16} className="mr-2" />
+                      Update
+                    </Button>
+                    {/* <Button
+                      onClick={() => window.open(`/campaign/${campaign.id}`, '_blank')}
+                      variant="outline"
+                      className="flex-1 text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white rounded-xl py-2 transition-all duration-300"
+                    >
+                      <MessageCircle size={16} className="mr-2" />
+                      Comment
+                    </Button> */}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+        })}
+      </div>
 
-      <Link href="/create-campaign">
-        <Button className="w-[300px] h-16 flex justify-between font-semibold text-2xl items-center mt-6">
-          Create a Campaign <Plus size={24} />
-        </Button>
-      </Link>
+      <div className="flex justify-center mt-8">
+        <Link href="/create-campaign">
+          <Button className="bg-gradient-to-r from-green-600 to-[#104901] hover:from-green-600 hover:to-[#104901] hover:text-white text-white rounded-xl px-8 py-4 hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-semibold text-xl">
+            Create a Campaign <Plus size={24} />
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 };

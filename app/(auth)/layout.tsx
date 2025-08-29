@@ -11,7 +11,7 @@ type Props = {};
 
 const carouselData = [
   {
-    image: "/images/signin-1.png",
+    image: "/images/plant.jpg",
     buttonText: "Fundraise",
     text: "Start raising funds for causes you love on the Chainfundit platform, using modern tools for fundraising like Stripe, PayPal, Paystack and more to get your funds quickly.",
   },

@@ -127,15 +127,19 @@ export function useCampaigns() {
       setError(null);
 
       const payload = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key === "images" || key === "documents") {
-          (value as File[]).forEach((file) => payload.append(key, file));
-        } else if (key === "coverImage" && value) {
-          payload.append("coverImage", value as File);
-        } else {
-          payload.append(key, value as string);
-        }
-      });
+      
+      // Add safety check for formData
+      if (formData && typeof formData === 'object') {
+        Object.entries(formData).forEach(([key, value]) => {
+          if (key === "images" || key === "documents") {
+            (value as File[]).forEach((file) => payload.append(key, file));
+          } else if (key === "coverImage" && value) {
+            payload.append("coverImage", value as File);
+          } else {
+            payload.append(key, value as string);
+          }
+        });
+      }
 
       const response = await fetch('/api/campaigns', {
         method: 'POST',

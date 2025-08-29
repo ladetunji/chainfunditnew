@@ -98,7 +98,6 @@ function OtpPageInner() {
   const [otp, setOtp] = useState("");
   const [otpTimer, setOtpTimer] = useState(40);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [identifier, setIdentifier] = useState<string | null>(null);
   const [loginType, setLoginType] = useState<"email" | "phone" | null>(null);
   const [isResending, setIsResending] = useState(false);
@@ -150,19 +149,19 @@ function OtpPageInner() {
   }, [otp]);
 
   // Check for required data
-  if (!identifier || !loginType) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Missing Information</h1>
-          <p className="text-gray-600 mb-4">Unable to verify your account. Please start the sign-in process again.</p>
-          <Button onClick={() => window.location.href = "/signin"} className="bg-blue-600 hover:bg-blue-700">
-            Go to Sign In
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // if (!identifier || !loginType) {
+  //   return (
+  //     <div className="flex flex-col items-center justify-center min-h-screen p-4">
+  //       <div className="text-center">
+  //         <h1 className="text-2xl font-bold text-red-600 mb-4">Missing Information</h1>
+  //         <p className="text-gray-600 mb-4">Unable to verify your account. Please start the sign-in process again.</p>
+  //         <Button onClick={() => window.location.href = "/signin"} className="bg-blue-600 hover:bg-blue-700">
+  //           Go to Sign In
+  //         </Button>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   // Resend OTP handler
   const handleResendOtp = async () => {
@@ -211,7 +210,6 @@ function OtpPageInner() {
   const handleOtpSubmit = async () => {
     if (otp.length !== 6 || isLoading || !identifier || !loginType) return;
     setIsLoading(true);
-    setError("");
     console.log('OTP Page: Submitting OTP', { otp, identifier, loginType, mode });
     try {
       let payload, endpoint;
@@ -263,7 +261,6 @@ function OtpPageInner() {
         }
       }
     } catch (err: any) {
-      setError(err.message || "Verification failed. Please try again.");
       toast.error(err.message || "Verification failed. Please try again.");
     } finally {
       setIsLoading(false);
@@ -298,14 +295,7 @@ function OtpPageInner() {
                   Please enter the 6 digit code we sent to:
                   <br />
                   <span className="font-semibold text-[#104901]">
-                    {identifier ? (
-                      identifier
-                    ) : (
-                      <span className="text-red-600">
-                        No identifier found. Please go back and enter your email
-                        or phone.
-                      </span>
-                    )}
+                    {identifier }
                   </span>
                 </p>
                 <OtpInput value={otp} onChange={setOtp} length={6} />

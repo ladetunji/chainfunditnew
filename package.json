@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
+    "@pushduck/ui": "^0.1.1",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-checkbox": "^1.3.2",
     "@radix-ui/react-dialog": "^1.1.14",
@@ -38,6 +39,8 @@
     "next": "15.3.5",
     "nookies": "^2.5.2",
     "openai": "^5.10.2",
+    "paystack-api": "^2.0.6",
+    "pushduck": "^0.1.22",
     "radix-ui": "^1.4.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

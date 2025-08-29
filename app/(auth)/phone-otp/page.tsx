@@ -94,7 +94,6 @@ function PhoneOtpPageInner() {
   const [otp, setOtp] = useState("");
   const [otpTimer, setOtpTimer] = useState(21);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [phone, setPhone] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const router = useRouter();
@@ -151,19 +150,19 @@ function PhoneOtpPageInner() {
   }, [otp]);
 
   // Check for required data
-  if (!phone || !email) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Missing Information</h1>
-          <p className="text-gray-600 mb-4">Unable to verify your phone number. Please start the process again.</p>
-          <Button onClick={() => window.location.href = "/phone"} className="bg-blue-600 hover:bg-blue-700">
-            Go to Phone Verification
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // if (!phone || !email) {
+  //   return (
+  //     <div className="flex flex-col items-center justify-center min-h-screen p-4">
+  //       <div className="text-center">
+  //         <h1 className="text-2xl font-bold text-red-600 mb-4">Missing Information</h1>
+  //         <p className="text-gray-600 mb-4">Unable to verify your phone number. Please start the process again.</p>
+  //         <Button onClick={() => window.location.href = "/phone"} className="bg-blue-600 hover:bg-blue-700">
+  //           Go to Phone Verification
+  //         </Button>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   // Resend OTP handler
   const handleResendOtp = async () => {
@@ -204,7 +203,6 @@ function PhoneOtpPageInner() {
   const handleOtpSubmit = async () => {
     if (otp.length !== 6 || isLoading || !phone || !email) return;
     setIsLoading(true);
-    setError("");
     try {
       console.log("Verifying OTP with:", { phone, otp, email });
       const res = await fetch("/api/auth/link-phone", {
@@ -238,7 +236,6 @@ function PhoneOtpPageInner() {
       toast.success("Phone number linked successfully!");
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Verification failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -272,14 +269,7 @@ function PhoneOtpPageInner() {
                   Please enter the 6 digit code we sent to:
                   <br />
                   <span className="font-semibold text-[#104901]">
-                    {phone ? (
-                      phone
-                    ) : (
-                      <span className="text-red-600">
-                        No phone number found. Please go back and enter your
-                        phone.
-                      </span>
-                    )}
+                    {phone}
                   </span>
                 </p>
                 <OtpInput value={otp} onChange={setOtp} length={6} />
@@ -311,7 +301,6 @@ function PhoneOtpPageInner() {
                 </div>
               </div>
             </div>
-            {/* {error && <p className="text-center text-red-500">{error}</p>} */}
             {isLoading && (
               <p className="text-center text-[#104901]">Verifying...</p>
             )}
@@ -328,4 +317,4 @@ export default function PhoneOtpPage() {
       <PhoneOtpPageInner />
     </Suspense>
   );
-}
+  }

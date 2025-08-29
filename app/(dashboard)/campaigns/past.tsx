@@ -1,9 +1,10 @@
 import React from 'react'
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Plus, Eye, Edit, Link as LinkIcon, Users } from "lucide-react";
+import { Plus, Eye, Edit, Link as LinkIcon, Users, Clock, Target, XCircle } from "lucide-react";
 import Link from "next/link";
 import { Campaign, transformCampaign } from "./types";
+import { getCampaignStatus, getTimeRemaining } from "@/lib/utils/campaign-status";
 
 type Props = {
   campaigns: Campaign[];
@@ -60,7 +61,37 @@ const PastCampaigns = ({ campaigns }: Props) => {
             className="object-cover"
           />
           <div className="flex flex-col justify-end">
-            <h3 className="text-2xl font-medium">{campaign.title}</h3>
+            <div className="flex items-center gap-2 mb-2">
+              <h3 className="text-2xl font-medium">{campaign.title}</h3>
+              {(() => {
+                const statusInfo = getCampaignStatus(campaign);
+                const timeRemaining = getTimeRemaining(campaign);
+                
+                if (statusInfo.status === 'expired') {
+                  return (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-sm">
+                      <Clock size={14} />
+                      <span>{timeRemaining}</span>
+                    </div>
+                  );
+                } else if (statusInfo.status === 'goal_reached') {
+                  return (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-sm">
+                      <Target size={14} />
+                      <span>Goal Reached</span>
+                    </div>
+                  );
+                } else if (statusInfo.status === 'closed') {
+                  return (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                      <XCircle size={14} />
+                      <span>Closed</span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+            </div>
             <span className="font-normal text-base">
               {campaign.description.slice(0, 60)}...
             </span>

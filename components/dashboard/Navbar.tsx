@@ -14,7 +14,7 @@ const Navbar = (props: Props) => {
   return (
     <nav className="px-2 md:px-10 py-3 md:py-5 flex flex-col md:flex-row justify-between items-center font-source border-b border-[#C0BFC4] w-full">
       <div className="flex w-full md:w-auto justify-between items-center">
-        <Link href="/" className="flex gap-1 items-center">
+        <Link href="/dashboard" className="flex gap-1 items-center">
           <Image
             src="/images/logo.svg"
             alt="Chainfundit Logo"

@@ -34,7 +34,7 @@ export type Campaign = {
 
 // Transformed campaign type for display
 export type TransformedCampaign = {
-  id: number;
+  id: string; // Changed from number to string to preserve UUID
   title: string;
   description: string;
   amountRaised: number;
@@ -46,7 +46,7 @@ export type TransformedCampaign = {
 
 // Transform function to convert Campaign to TransformedCampaign
 export const transformCampaign = (campaign: Campaign): TransformedCampaign => ({
-  id: parseInt(campaign.id) || 0,
+  id: campaign.id, // Keep as string instead of converting to number
   title: campaign.title,
   description: campaign.description,
   amountRaised: campaign.currentAmount || 0,

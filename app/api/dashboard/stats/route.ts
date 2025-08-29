@@ -64,26 +64,29 @@ export async function GET(request: NextRequest) {
       .where(eq(chainers.userId, userId));
 
     // Get recent donations
-    const recentDonations = await db
-      .select({
-        id: donations.id,
-        amount: donations.amount,
-        currency: donations.currency,
-        message: donations.message,
-        isAnonymous: donations.isAnonymous,
-        createdAt: donations.createdAt,
-        campaignTitle: campaigns.title,
-        donorName: users.fullName
-      })
-      .from(donations)
-      .leftJoin(campaigns, eq(donations.campaignId, campaigns.id))
-      .leftJoin(users, eq(donations.donorId, users.id))
-      .where(and(
-        sql`${donations.campaignId} = ANY(${campaignIds})`,
-        eq(donations.paymentStatus, 'completed')
-      ))
-      .orderBy(desc(donations.createdAt))
-      .limit(5);
+    let recentDonations = [];
+    if (campaignIds.length > 0) {
+      recentDonations = await db
+        .select({
+          id: donations.id,
+          amount: donations.amount,
+          currency: donations.currency,
+          message: donations.message,
+          isAnonymous: donations.isAnonymous,
+          createdAt: donations.createdAt,
+          campaignTitle: campaigns.title,
+          donorName: users.fullName
+        })
+        .from(donations)
+        .leftJoin(campaigns, eq(donations.campaignId, campaigns.id))
+        .leftJoin(users, eq(donations.donorId, users.id))
+        .where(and(
+          sql`${donations.campaignId} = ANY(${campaignIds})`,
+          eq(donations.paymentStatus, 'completed')
+        ))
+        .orderBy(desc(donations.createdAt))
+        .limit(5);
+    }
 
     // Get active campaigns
     const activeCampaigns = userCampaigns.filter(c => c.isActive && c.status === 'active');

@@ -29,18 +29,28 @@ export async function GET(
   try {
     const { id: campaignId } = await params;
     
-    // For testing purposes, skip UUID validation to allow any campaign ID
-    // TODO: Re-enable UUID validation in production
-    // if (!isValidUUID(campaignId)) {
-    //   console.log('Invalid UUID format:', campaignId);
-    //   return NextResponse.json(
-    //     { success: false, error: 'Invalid campaign ID format' },
-    //     { status: 400 }
-    //   );
-    // }
+    // Validate UUID format
+    if (!isValidUUID(campaignId)) {
+      console.log('Invalid UUID format:', campaignId);
+      return NextResponse.json(
+        { success: false, error: 'Invalid campaign ID format' },
+        { status: 400 }
+      );
+    }
 
-    // Get campaign with creator details
-    const campaignData = await db
+    // Get authenticated user (optional for viewing)
+    const userEmail = await getUserFromRequest(request);
+    let userId: string | null = null;
+    
+    if (userEmail) {
+      const user = await db.select().from(users).where(eq(users.email, userEmail)).limit(1);
+      if (user.length) {
+        userId = user[0].id;
+      }
+    }
+
+    // Get campaign with creator details - using a more robust approach
+    let campaignData = await db
       .select({
         id: campaigns.id,
         title: campaigns.title,
@@ -72,63 +82,71 @@ export async function GET(
       .where(eq(campaigns.id, campaignId))
       .limit(1);
 
+    // If JOIN didn't work or creator info is missing, fetch user info separately
+    if (campaignData.length > 0 && campaignData[0].creatorId && !campaignData[0].creatorName) {
+      console.log('JOIN failed, fetching user info separately for creatorId:', campaignData[0].creatorId);
+      
+      try {
+        const userInfo = await db
+          .select({
+            fullName: users.fullName,
+            avatar: users.avatar,
+          })
+          .from(users)
+          .where(eq(users.id, campaignData[0].creatorId))
+          .limit(1);
+
+        if (userInfo.length > 0) {
+          // Update the campaign data with user info
+          campaignData[0] = {
+            ...campaignData[0],
+            creatorName: userInfo[0].fullName,
+            creatorAvatar: userInfo[0].avatar,
+          };
+          console.log('Successfully fetched user info separately:', userInfo[0]);
+        } else {
+          console.log('No user found for creatorId:', campaignData[0].creatorId);
+        }
+      } catch (userErr) {
+        console.error('Error fetching user info separately:', userErr);
+      }
+    }
+
+    // Debug logging
+    console.log('Campaign API Debug:', {
+      campaignId,
+      campaignData: campaignData[0],
+      creatorId: campaignData[0]?.creatorId,
+      creatorName: campaignData[0]?.creatorName,
+      fundraisingFor: campaignData[0]?.fundraisingFor,
+      hasCreatorId: !!campaignData[0]?.creatorId,
+      hasCreatorName: !!campaignData[0]?.creatorName
+    });
+
+    // Additional debug: Check if the JOIN is working
+    if (campaignData[0]?.creatorId) {
+      try {
+        const userCheck = await db
+          .select({ fullName: users.fullName })
+          .from(users)
+          .where(eq(users.id, campaignData[0].creatorId))
+          .limit(1);
+        
+        console.log('User lookup debug:', {
+          creatorId: campaignData[0].creatorId,
+          userFound: userCheck.length > 0,
+          userName: userCheck[0]?.fullName
+        });
+      } catch (userErr) {
+        console.error('User lookup error:', userErr);
+      }
+    }
+
     if (!campaignData.length) {
-      // Return dummy data for testing purposes
-      const dummyCampaign = {
-        id: campaignId,
-        title: "91 Days of Kindness Challenge",
-        subtitle: "Spreading kindness across Nigeria, one act at a time",
-        description: "Nigeria is a nation built on resilience, unity, and a love for community. This campaign aims to spread kindness across the country, one act at a time. Join us in making a difference! We believe that small acts of kindness can create a ripple effect that transforms communities and brings people together. Through this 91-day challenge, we're encouraging Nigerians to perform daily acts of kindness and share their experiences.",
-        reason: "Community Development",
-        fundraisingFor: "Ajegunle Children's Charity",
-        duration: "91 days",
-        videoUrl: "https://example.com/video.mp4",
-        coverImageUrl: "/images/story-1.png",
-        galleryImages: JSON.stringify([
-          "/images/thumbnail1.png",
-          "/images/thumbnail2.png", 
-          "/images/thumbnail3.png",
-          "/images/thumbnail4.png",
-          "/images/thumbnail5.png"
-        ]),
-        documents: JSON.stringify([]),
-        goalAmount: "3000000",
-        currency: "NGN",
-        minimumDonation: "1000",
-        chainerCommissionRate: "5.0",
-        currentAmount: "1201000",
-        status: "active",
-        isActive: true,
-        createdAt: new Date("2024-01-15"),
-        updatedAt: new Date("2024-01-15"),
-        closedAt: null,
-        creatorId: "dummy-creator-id",
-        creatorName: "Adebola Ajani",
-        creatorAvatar: "/images/avatar-7.png",
-      };
-
-      const dummyStats = {
-        totalDonations: 35,
-        totalAmount: 1201000,
-        uniqueDonors: 28,
-        progressPercentage: 40,
-      };
-
-      const campaignWithStats = {
-        ...dummyCampaign,
-        goalAmount: Number(dummyCampaign.goalAmount),
-        currentAmount: Number(dummyCampaign.currentAmount),
-        minimumDonation: Number(dummyCampaign.minimumDonation),
-        chainerCommissionRate: Number(dummyCampaign.chainerCommissionRate),
-        galleryImages: JSON.parse(dummyCampaign.galleryImages),
-        documents: JSON.parse(dummyCampaign.documents),
-        stats: dummyStats,
-      };
-
-      return NextResponse.json({
-        success: true,
-        data: campaignWithStats,
-      });
+      return NextResponse.json(
+        { success: false, error: 'Campaign not found' },
+        { status: 404 }
+      );
     }
 
     const campaign = campaignData[0];
@@ -163,6 +181,7 @@ export async function GET(
       galleryImages: campaign.galleryImages ? JSON.parse(campaign.galleryImages) : [],
       documents: campaign.documents ? JSON.parse(campaign.documents) : [],
       stats,
+      canEdit: userId === campaign.creatorId, // Add flag for edit permission
     };
 
     return NextResponse.json({
@@ -184,7 +203,6 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // TODO: Re-enable authentication later
     const { id: campaignId } = await params;
     
     // Validate UUID format
@@ -194,6 +212,26 @@ export async function PUT(
         { status: 400 }
       );
     }
+
+    // Get authenticated user
+    const userEmail = await getUserFromRequest(request);
+    if (!userEmail) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    // Get user details
+    const user = await db.select().from(users).where(eq(users.email, userEmail)).limit(1);
+    if (!user.length) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    const userId = user[0].id;
     const body = await request.json();
 
     // Check if campaign exists
@@ -202,13 +240,36 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Campaign not found' }, { status: 404 });
     }
 
+    // Verify user is the creator of the campaign
+    if (campaign[0].creatorId !== userId) {
+      return NextResponse.json(
+        { success: false, error: 'You can only edit campaigns you created' },
+        { status: 403 }
+      );
+    }
+
     // Update campaign
     const updateData: any = {
       updatedAt: new Date(),
     };
 
     // Only allow updating certain fields
-    const allowedFields = ['title', 'subtitle', 'description', 'videoUrl', 'status', 'isActive'];
+    const allowedFields = [
+      'title', 
+      'subtitle', 
+      'description', 
+      'reason',
+      'fundraisingFor',
+      'duration',
+      'videoUrl', 
+      'goalAmount',
+      'currency',
+      'minimumDonation',
+      'chainerCommissionRate',
+      'status', 
+      'isActive'
+    ];
+    
     allowedFields.forEach(field => {
       if (body[field] !== undefined) {
         updateData[field] = body[field];

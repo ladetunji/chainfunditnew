@@ -3,17 +3,36 @@ import { Resend } from 'resend';
 import twilio from 'twilio';
 import { db } from '@/lib/db';
 import { emailOtps } from '@/lib/schema/email-otps';
-import { eq, and, desc, gt } from 'drizzle-orm';
+import { eq, and, desc, gt, lt } from 'drizzle-orm';
 import { users } from '@/lib/schema/users';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Cache for rate limiting and phone OTPs
+const rateLimitCache = new Map<string, { count: number; resetTime: number }>();
+const otpStore = new Map<string, { otp: string; expires: number }>();
 
 function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// In-memory storage for phone OTPs (for now)
-const otpStore = new Map<string, { otp: string; expires: number }>();
+// Rate limiting function
+function checkRateLimit(identifier: string, limit: number = 3, windowMs: number = 60000): boolean {
+  const now = Date.now();
+  const cached = rateLimitCache.get(identifier);
+  
+  if (!cached || now > cached.resetTime) {
+    rateLimitCache.set(identifier, { count: 1, resetTime: now + windowMs });
+    return true;
+  }
+  
+  if (cached.count >= limit) {
+    return false;
+  }
+  
+  cached.count++;
+  return true;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,46 +44,68 @@ export async function POST(request: NextRequest) {
       if (!email) {
         return NextResponse.json({ success: false, error: 'Please enter your email address to continue.' }, { status: 400 });
       }
-      // Check if user exists
-      const existingUser = await db.select().from(users).where(eq(users.email, email)).limit(1);
-      if (!existingUser || existingUser.length === 0) {
+
+      // Rate limiting
+      if (!checkRateLimit(`signin_email_${email}`)) {
+        return NextResponse.json(
+          { success: false, error: 'Too many requests. Please wait a minute before trying again.' },
+          { status: 429 }
+        );
+      }
+
+      // Check if user exists with a single query
+      const existingUser = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+      if (!existingUser.length) {
         return NextResponse.json({ success: false, error: 'No account found with this email. Please sign up first or check your email address.' }, { status: 404 });
       }
+
       const generatedOtp = generateOtp();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-      // Store OTP in DB
-      console.log('Inserting email OTP into DB:', { email, otp: generatedOtp, expiresAt });
+      
+      // Clean up expired OTPs first
+      await db.delete(emailOtps).where(lt(emailOtps.expiresAt, new Date()));
+      
+      // Insert new OTP
       await db.insert(emailOtps).values({ email, otp: generatedOtp, expiresAt });
-      console.log('Inserted email OTP into DB');
-      // Send OTP email using Resend
-      try {
-        await resend.emails.send({
-          from: process.env.RESEND_FROM_EMAIL || 'noreply@example.com',
-          to: email,
-          subject: 'Sign in OTP - ChainFundIt',
-          html: `
-            <h2>Your Sign in OTP</h2>
-            <p>Your verification code is: <strong>${generatedOtp}</strong></p>
-            <p>This code will expire in 10 minutes.</p>
-            <p>If you didn't request this code, please ignore this email.</p>
-          `,
-        });
-        return NextResponse.json({ success: true, message: 'Email OTP sent successfully' });
-      } catch (error) {
+
+      // Send email asynchronously
+      resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || 'noreply@example.com',
+        to: email,
+        subject: 'Sign in OTP - ChainFundIt',
+        html: `
+          <h2>Your Sign in OTP</h2>
+          <p>Your verification code is: <strong>${generatedOtp}</strong></p>
+          <p>This code will expire in 10 minutes.</p>
+          <p>If you didn't request this code, please ignore this email.</p>
+        `,
+      }).catch(error => {
         console.error('Resend error:', error);
-        return NextResponse.json({ success: false, error: 'Unable to send verification code to your email. Please check your email address and try again.' }, { status: 500 });
-      }
+        // Don't fail the request if email fails
+      });
+
+      return NextResponse.json({ success: true, message: 'Email OTP sent successfully' });
     }
 
     if (action === 'request_phone_otp') {
       if (!phone) {
         return NextResponse.json({ success: false, error: 'Please enter your phone number to continue.' }, { status: 400 });
       }
-      // Check if user exists by phone
-      const existingUser = await db.select().from(users).where(eq(users.phone, phone)).limit(1);
-      if (!existingUser || existingUser.length === 0) {
+
+      // Rate limiting
+      if (!checkRateLimit(`signin_phone_${phone}`)) {
+        return NextResponse.json(
+          { success: false, error: 'Too many requests. Please wait a minute before trying again.' },
+          { status: 429 }
+        );
+      }
+
+      // Check if user exists with a single query
+      const existingUser = await db.select({ id: users.id }).from(users).where(eq(users.phone, phone)).limit(1);
+      if (!existingUser.length) {
         return NextResponse.json({ success: false, error: 'No account found with this phone number. Please sign up first or try a different number.' }, { status: 404 });
       }
+
       // Check if Twilio environment variables are set
       if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN || !process.env.TWILIO_WHATSAPP_FROM) {
         return NextResponse.json({ 
@@ -82,14 +123,12 @@ export async function POST(request: NextRequest) {
       
       try {
         // First attempt: Send via WhatsApp
-        console.log('Attempting WhatsApp OTP:', { phone, otp: generatedOtp });
         await twilioClient.messages.create({
           from: process.env.TWILIO_WHATSAPP_FROM,
           to: `whatsapp:${phone}`,
           body: `Your ChainFundIt sign in verification code is: ${generatedOtp}. This code will expire in 10 minutes.`
         });
         
-        // WhatsApp succeeded
         return NextResponse.json({ 
           success: true, 
           message: 'WhatsApp OTP sent successfully',
@@ -99,21 +138,17 @@ export async function POST(request: NextRequest) {
       } catch (whatsappError) {
         console.error('WhatsApp failed, attempting SMS fallback:', whatsappError);
         
-        // WhatsApp failed, try SMS as fallback
         try {
-          // Check if we have a regular Twilio phone number for SMS
           if (!process.env.TWILIO_PHONE_NUMBER) {
             throw new Error('SMS fallback not configured');
           }
           
-          // Send via SMS
           await twilioClient.messages.create({
             from: process.env.TWILIO_PHONE_NUMBER,
             to: phone,
             body: `Your ChainFundIt sign in verification code is: ${generatedOtp}. This code will expire in 10 minutes.`
           });
           
-          // SMS succeeded
           return NextResponse.json({ 
             success: true, 
             message: 'SMS OTP sent successfully (WhatsApp unavailable)',
@@ -123,8 +158,6 @@ export async function POST(request: NextRequest) {
           
         } catch (smsError) {
           console.error('Both WhatsApp and SMS failed:', { whatsappError, smsError });
-          
-          // Both methods failed
           otpStore.delete(phone);
           return NextResponse.json({ 
             success: false, 
@@ -139,21 +172,29 @@ export async function POST(request: NextRequest) {
       if (!email || !otp) {
         return NextResponse.json({ success: false, error: 'Please enter the 6-digit verification code.' }, { status: 400 });
       }
-      // Find the most recent, unexpired OTP for this email
+
+      // Rate limiting for verification
+      if (!checkRateLimit(`verify_email_${email}`, 5, 300000)) {
+        return NextResponse.json(
+          { success: false, error: 'Too many verification attempts. Please wait 5 minutes before trying again.' },
+          { status: 429 }
+        );
+      }
+
       const now = new Date();
-      console.log('Selecting email OTP from DB:', { email, otp });
-      const [record] = await db.select().from(emailOtps)
+      
+      // Find and delete OTP in one operation
+      const [record] = await db
+        .delete(emailOtps)
         .where(and(eq(emailOtps.email, email), eq(emailOtps.otp, otp), gt(emailOtps.expiresAt, now)))
-        .orderBy(desc(emailOtps.createdAt))
-        .limit(1);
-      console.log('Selected email OTP record:', record);
-      if (!record) {
+        .returning();
+
+      const result = record;
+
+      if (!result) {
         return NextResponse.json({ success: false, error: 'Verification code has expired or is invalid. Please request a new code.' }, { status: 400 });
       }
-      // Optionally, delete or invalidate the OTP after use
-      console.log('Deleting email OTP from DB:', record.id);
-      await db.delete(emailOtps).where(eq(emailOtps.id, record.id));
-      console.log('Deleted email OTP from DB');
+
       // TODO: Create user session/token here
       return NextResponse.json({ success: true, message: 'Email OTP verified successfully' });
     }
@@ -162,6 +203,15 @@ export async function POST(request: NextRequest) {
       if (!phone || !otp || !email) {
         return NextResponse.json({ success: false, error: 'Please enter the 6-digit verification code.' }, { status: 400 });
       }
+
+      // Rate limiting for verification
+      if (!checkRateLimit(`verify_phone_${phone}`, 5, 300000)) {
+        return NextResponse.json(
+          { success: false, error: 'Too many verification attempts. Please wait 5 minutes before trying again.' },
+          { status: 429 }
+        );
+      }
+
       const storedData = otpStore.get(phone);
       if (!storedData) {
         return NextResponse.json({ success: false, error: 'Verification code has expired or is invalid. Please request a new code.' }, { status: 400 });
@@ -174,10 +224,10 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Incorrect verification code. Please check the code and try again.' }, { status: 400 });
       }
       otpStore.delete(phone);
+      
       // Update user's phone in the database
-      console.log('Updating user phone in DB:', { email, phone });
-      const updateResult = await db.update(users).set({ phone }).where(eq(users.email, email));
-      console.log('User phone update result:', updateResult);
+      await db.update(users).set({ phone }).where(eq(users.email, email));
+      
       // TODO: Create user session/token here if needed
       return NextResponse.json({ success: true, message: 'Phone OTP verified and user phone updated successfully' });
     }
