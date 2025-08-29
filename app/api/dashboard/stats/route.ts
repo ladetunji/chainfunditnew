@@ -64,7 +64,18 @@ export async function GET(request: NextRequest) {
       .where(eq(chainers.userId, userId));
 
     // Get recent donations
-    let recentDonations = [];
+    let recentDonations: Array<{
+      id: string;
+      amount: string;
+      currency: string;
+      message: string | null;
+      isAnonymous: boolean;
+      createdAt: Date;
+      campaignTitle: string | null;
+      donorName: string | null;
+      donorAvatar: string | null;
+    }> = [];
+    
     if (campaignIds.length > 0) {
       recentDonations = await db
         .select({
@@ -75,7 +86,8 @@ export async function GET(request: NextRequest) {
           isAnonymous: donations.isAnonymous,
           createdAt: donations.createdAt,
           campaignTitle: campaigns.title,
-          donorName: users.fullName
+          donorName: users.fullName,
+          donorAvatar: users.avatar
         })
         .from(donations)
         .leftJoin(campaigns, eq(donations.campaignId, campaigns.id))

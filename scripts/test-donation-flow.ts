@@ -147,7 +147,7 @@ function testCurrencySupport() {
 // Main test runner
 async function runTests() {
   console.log('🚀 ChainFundIt Donation Flow Test Suite\n');
-  console.log('=' * 50 + '\n');
+  console.log('='.repeat(50) + '\n');
 
   await testPaymentConfig();
   testCurrencySupport();
@@ -155,7 +155,7 @@ async function runTests() {
   // Uncomment to test actual donation flow (requires auth)
   // await testDonationFlow();
 
-  console.log('\n' + '=' * 50);
+  console.log('\n' + '='.repeat(50));
   console.log('Tests completed! 🎯');
 }
 

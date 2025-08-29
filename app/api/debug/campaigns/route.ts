@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
               campaignTitle: campaign.title,
               creatorId: campaign.creatorId,
               userFound: false,
-              error: err.message,
+              error: err instanceof Error ? err.message : 'Unknown error',
             };
           }
         }

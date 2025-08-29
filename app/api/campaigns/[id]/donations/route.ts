@@ -25,9 +25,8 @@ export async function GET(
         isAnonymous: donations.isAnonymous,
         createdAt: donations.createdAt,
         processedAt: donations.processedAt,
-        donorName: users.firstName,
-        donorLastName: users.lastName,
-        donorAvatar: users.profilePictureUrl,
+        donorName: users.fullName,
+        donorAvatar: users.avatar,
       })
       .from(donations)
       .leftJoin(users, eq(donations.donorId, users.id))
@@ -66,9 +65,7 @@ export async function GET(
       processedAt: donation.processedAt || null,
       donorName: donation.isAnonymous 
         ? 'Anonymous' 
-        : (donation.donorName && donation.donorLastName)
-          ? `${donation.donorName} ${donation.donorLastName}`
-          : (donation.donorName || 'Anonymous'),
+        : (donation.donorName || 'Anonymous'),
       donorAvatar: donation.isAnonymous ? null : (donation.donorAvatar || null),
     }));
 

@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
           campaignId,
           donorEmail: user[0].email!,
           metadata: {
-            donorName: `${user[0].firstName} ${user[0].lastName}`,
+            donorName: user[0].fullName,
             campaignTitle: campaign[0].title,
           },
         });
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
           campaignId,
           donorEmail: user[0].email!,
           metadata: {
-            donorName: `${user[0].firstName} ${user[0].lastName}`,
+            donorName: user[0].fullName,
             campaignTitle: campaign[0].title,
           },
         });
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
           donationId,
           campaignId,
           metadata: {
-            donorName: `${user[0].firstName} ${user[0].lastName}`,
+            donorName: user[0].fullName,
             campaignTitle: campaign[0].title,
           },
         });
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
           donationId,
           campaignId,
           metadata: {
-            donorName: `${user[0].firstName} ${user[0].lastName}`,
+            donorName: user[0].fullName,
             campaignTitle: campaign[0].title,
           },
         });

@@ -31,5 +31,9 @@ export function middleware(request: NextRequest) {
 
 // Optionally, limit middleware to only certain paths for performance
 export const config = {
-  matcher: [...protectedRoutes],
+  matcher: [
+    '/dashboard/:path*',
+    '/create-campaign',
+    '/settings/:path*'
+  ],
 };

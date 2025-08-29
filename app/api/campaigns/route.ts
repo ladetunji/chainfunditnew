@@ -136,26 +136,39 @@ export async function GET(request: NextRequest) {
 // POST /api/campaigns - Create a new campaign
 export async function POST(request: NextRequest) {
   try {
-    // TODO: Re-enable authentication later
-    // For now, create or get a mock user for testing
-    const mockUserEmail = 'mock-user@example.com';
-    const mockUserName = 'Mock User';
-    
-    // Check if mock user exists, create if not
-    let [existingUser] = await db.select().from(users).where(eq(users.email, mockUserEmail)).limit(1);
-    let creatorId: string;
-    
-    if (!existingUser) {
-      const [newUser] = await db.insert(users).values({
-        email: mockUserEmail,
-        fullName: mockUserName,
-        hasCompletedProfile: true,
-      }).returning();
-      creatorId = newUser.id;
-    } else {
-      creatorId = existingUser.id;
+    // Get authenticated user from request
+    const email = await getUserFromRequest(request);
+    if (!email) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Not authenticated. Please sign in to create a campaign.' 
+      }, { status: 401 });
     }
-    
+
+    // Get user profile to get their fullName
+    const [user] = await db.select({
+      id: users.id,
+      fullName: users.fullName,
+      hasCompletedProfile: users.hasCompletedProfile
+    }).from(users).where(eq(users.email, email)).limit(1);
+
+    if (!user) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'User not found' 
+      }, { status: 404 });
+    }
+
+    if (!user.hasCompletedProfile) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Please complete your profile before creating a campaign' 
+      }, { status: 400 });
+    }
+
+    const creatorId = user.id;
+    const creatorName = user.fullName;
+
     const formData = await request.formData();
 
     const title = formData.get('title') as string;

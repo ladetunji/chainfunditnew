@@ -47,22 +47,24 @@ const PastCampaigns = ({ campaigns }: Props) => {
 
   return (
     <div className="flex flex-col gap-6 font-source 2xl:container 2xl:mx-auto">
-      {transformedCampaigns.map((campaign) => (
+      {transformedCampaigns.map((transformedCampaign, index) => {
+        const campaign = campaigns[index]; // Get original campaign data
+        return (
         <div
-          key={campaign.id}
+          key={transformedCampaign.id}
           className="border border-[#D9D9D9] bg-white py-4 pl-4 pr-6 flex justify-between items-start"
           style={{ boxShadow: "0px 4px 8px 0px #0000001A" }}
         >
           <Image
-            src={campaign.image}
-            alt={campaign.title}
+            src={transformedCampaign.image}
+            alt={transformedCampaign.title}
             width={270}
             height={190}
             className="object-cover"
           />
           <div className="flex flex-col justify-end">
             <div className="flex items-center gap-2 mb-2">
-              <h3 className="text-2xl font-medium">{campaign.title}</h3>
+              <h3 className="text-2xl font-medium">{transformedCampaign.title}</h3>
               {(() => {
                 const statusInfo = getCampaignStatus(campaign);
                 const timeRemaining = getTimeRemaining(campaign);
@@ -93,14 +95,14 @@ const PastCampaigns = ({ campaigns }: Props) => {
               })()}
             </div>
             <span className="font-normal text-base">
-              {campaign.description.slice(0, 60)}...
+              {transformedCampaign.description.slice(0, 60)}...
             </span>
             <section className="flex justify-between">
               <p className="text-lg font-medium my-1 text-black">
-                ₦{campaign.amountRaised.toLocaleString()} raised
+                ₦{transformedCampaign.amountRaised.toLocaleString()} raised
               </p>
               <p className="font-medium text-lg text-[#757575] my-1">
-                ₦{campaign.goal.toLocaleString()} total
+                ₦{transformedCampaign.goal.toLocaleString()} total
               </p>
             </section>
             <div className="w-full bg-[#D9D9D9] h-2 my-1">
@@ -109,7 +111,7 @@ const PastCampaigns = ({ campaigns }: Props) => {
                 style={{
                   width: `${Math.min(
                     100,
-                    Math.round((campaign.amountRaised / campaign.goal) * 100)
+                    Math.round((transformedCampaign.amountRaised / transformedCampaign.goal) * 100)
                   )}%`,
                 }}
               ></div>
@@ -117,14 +119,14 @@ const PastCampaigns = ({ campaigns }: Props) => {
             <section className="flex justify-between items-center">
               <p className="text-lg text-[#868686] flex gap-1 items-center">
                 <Users size={20} />
-                {campaign.donors} donors
+                {transformedCampaign.donors} donors
               </p>
               <p className="text-lg text-[#868686] flex gap-1 items-center">
-                <LinkIcon size={20} /> {campaign.chains} chains
+                <LinkIcon size={20} /> {transformedCampaign.chains} chains
               </p>
             </section>
             <div className="mt-3 flex gap-2">
-              <Link href={`/campaign/${campaign.id}`}>
+              <Link href={`/campaign/${transformedCampaign.id}`}>
                 <Button
                   className="bg-[#F2F1E9] font-medium text-lg text-[#474553] border-[#474553]"
                   variant="outline"
@@ -136,7 +138,8 @@ const PastCampaigns = ({ campaigns }: Props) => {
             </div>
           </div>
         </div>
-      ))}
+        );
+      })}
 
       <Link href="/create-campaign">
         <Button className="w-[300px] h-16 flex justify-between font-semibold text-2xl items-center mt-6">

@@ -163,6 +163,8 @@ const Main = ({ campaignId }: MainProps) => {
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [comments, setComments] = useState<CampaignComment[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [chainCount, setChainCount] = useState(0);
+  const [loadingChains, setLoadingChains] = useState(false);
   
   // Fetch donations data
   const { donations, loading: loadingDonations } = useCampaignDonations(campaignId);
@@ -202,6 +204,25 @@ const Main = ({ campaignId }: MainProps) => {
       console.error("Error fetching comments:", err);
     } finally {
       setLoadingComments(false);
+    }
+  }, [campaignId]);
+
+  // Fetch campaign chain count
+  const fetchChainCount = React.useCallback(async () => {
+    try {
+      setLoadingChains(true);
+      const response = await fetch(`/api/campaigns/${campaignId}/chains`);
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setChainCount(result.data.chainCount);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching chain count:", err);
+    } finally {
+      setLoadingChains(false);
     }
   }, [campaignId]);
 
@@ -335,8 +356,8 @@ const Main = ({ campaignId }: MainProps) => {
       
       setCampaign(campaignData);
       
-      // Fetch campaign updates and comments
-      await Promise.all([fetchUpdates(), fetchComments()]);
+      // Fetch campaign updates, comments, and chain count
+      await Promise.all([fetchUpdates(), fetchComments(), fetchChainCount()]);
     } catch (err) {
       console.error("Error fetching campaign:", err);
       setError(
@@ -539,7 +560,12 @@ const Main = ({ campaignId }: MainProps) => {
               {campaignData.stats.uniqueDonors} donors
             </p>
             <p className="text-lg text-[#868686] flex gap-1 items-center">
-              <LinkIcon size={20} /> 2 chains
+              <LinkIcon size={20} />
+              {loadingChains ? (
+                <span className="animate-pulse">Loading...</span>
+              ) : (
+                `${chainCount} chain${chainCount === 1 ? '' : 's'}`
+              )}
             </p>
           </section>
 

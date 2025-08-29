@@ -10,7 +10,8 @@
     "db:migrate": "tsx lib/migrate.ts",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "test": "jest"
+    "test": "jest",
+    "update-creators": "tsx scripts/update-campaign-creators.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
