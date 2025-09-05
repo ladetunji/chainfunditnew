@@ -11,7 +11,7 @@ type Props = {};
 
 const links = [
   {
-    href: "/campaigns",
+    href: "/dashboard/campaigns",
     icon: <PiggyBank size={40} />,
     label: "Campaigns",
   },

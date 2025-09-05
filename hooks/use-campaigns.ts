@@ -98,6 +98,7 @@ export function useCampaigns() {
   
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
+  const fetchCampaignsRef = useRef<((newFilters?: typeof filters) => Promise<void>) | null>(null);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -191,14 +192,17 @@ export function useCampaigns() {
         setLoading(false);
       }
     }
-  }, [filters]);
+  }, []);
+
+  // Update ref to latest fetchCampaigns
+  fetchCampaignsRef.current = fetchCampaigns;
 
   // Debounced version for search/filtering
   const debouncedFetch = useCallback(
     debounce((newFilters: typeof filters) => {
-      fetchCampaigns(newFilters);
+      fetchCampaignsRef.current?.(newFilters);
     }, 300),
-    [fetchCampaigns]
+    []
   );
 
   const createCampaign = useCallback(async (campaignData: CampaignFormData): Promise<Campaign | null> => {
@@ -308,10 +312,12 @@ export function useCampaigns() {
 
   // Update filters and refetch
   const updateFilters = useCallback((newFilters: Partial<typeof filters>) => {
-    const updatedFilters = { ...filters, ...newFilters, offset: 0 }; // Reset offset when filters change
-    setFilters(updatedFilters);
-    debouncedFetch(updatedFilters);
-  }, [filters, debouncedFetch]);
+    setFilters(prevFilters => {
+      const updatedFilters = { ...prevFilters, ...newFilters, offset: 0 }; // Reset offset when filters change
+      debouncedFetch(updatedFilters);
+      return updatedFilters;
+    });
+  }, [debouncedFetch]);
 
   // Clear cache manually
   const clearCache = useCallback(() => {

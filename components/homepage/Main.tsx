@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { PiYoutubeLogoLight } from "react-icons/pi";
 import CardDetailsDrawer from "@/components/homepage/CardDetailsDrawer";
@@ -13,124 +13,12 @@ import {
 } from "@/components/ui/select";
 import { NotificationsList } from "@/components/homepage/notifications-list";
 import BenefitsCarousel from "./BenefitsCarousel";
-import { useCampaigns } from "@/hooks/use-campaigns";
-import ClientToaster from "@/components/ui/client-toaster";
+import { usePublicCampaigns } from "@/hooks/use-public-campaigns";
+import { formatCurrency } from "@/lib/utils/currency";
+import { Button } from "@/components/ui/button";
+import { Eye } from "lucide-react";
 
 type Props = {};
-
-// Skeleton loading component for campaign cards
-const CampaignCardSkeleton = () => (
-  <div className="w-full md:w-1/3 p-2 animate-pulse">
-    <div className="w-full h-40 md:h-60 bg-gray-200 rounded-lg"></div>
-    <div className="h-5 bg-gray-200 rounded mt-3 w-3/4"></div>
-    <div className="h-4 bg-gray-200 rounded mt-2 w-full"></div>
-    <div className="h-4 bg-gray-200 rounded mt-2 w-1/2"></div>
-    <div className="w-full bg-gray-200 h-2 mt-3 rounded"></div>
-  </div>
-);
-
-// Optimized campaign card component
-const CampaignCard = React.memo(({ card, idx, onClick }: { 
-  card: any; 
-  idx: number; 
-  onClick: () => void; 
-}) => (
-  <div
-    className="w-full md:w-80 lg:w-96 cursor-pointer"
-    onClick={onClick}
-  >
-    {/* Main Card Container */}
-    <div className="bg-white border-2 border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 h-[500px]">
-      {/* Image Section */}
-      <div className="relative overflow-hidden h-48">
-        <Image
-          src={card.image}
-          alt={card.title}
-          width={400}
-          height={300}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          priority={idx < 3}
-          loading={idx < 3 ? "eager" : "lazy"}
-          placeholder="blur"
-          blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-        />
-        
-        {/* Progress Badge Overlay */}
-        <div className="absolute top-4 right-4">
-          <div className="bg-[#104901] text-white px-3 py-1.5 rounded-full text-sm font-semibold shadow-lg">
-            {card.percentage}
-          </div>
-        </div>
-        
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      </div>
-      
-      {/* Content Section */}
-      <div className="p-5 space-y-3 flex flex-col h-[calc(500px-192px)]">
-        {/* Title */}
-        <h3 className="font-source font-bold text-xl text-gray-900 line-clamp-2 group-hover:text-[#104901] transition-colors duration-300">
-          {card.title}
-        </h3>
-        
-        {/* Description */}
-        <p className="font-source text-gray-600 line-clamp-2 text-sm leading-relaxed flex-1">
-          {card.description.slice(0, 80)}...
-        </p>
-        
-        {/* Progress Bar */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-sm">
-            <span className="font-medium text-gray-700">Progress</span>
-            <span className="font-semibold text-[#104901]">{card.percentage}</span>
-          </div>
-          <div className="w-full bg-gray-200 h-3 rounded-full overflow-hidden">
-            <div
-              className="bg-gradient-to-r from-[#104901] to-green-600 h-full rounded-full transition-all duration-700 ease-out shadow-sm"
-              style={{
-                width: card.percentage || "0%"
-              }}
-            />
-          </div>
-        </div>
-        
-        {/* Amount and Donors */}
-        <div className="flex justify-between items-center pt-2 border-t border-gray-100">
-          <div className="text-left">
-            <p className="font-bold text-2xl text-[#104901]">
-              {card.raised.split(' ')[0]}
-            </p>
-            <p className="text-xs text-gray-500">raised</p>
-          </div>
-          <div className="text-right">
-            <p className="font-semibold text-lg text-gray-700">
-              {card.donors}
-            </p>
-            <p className="text-xs text-gray-500">donors</p>
-          </div>
-        </div>
-        
-        {/* Creator Info */}
-        <div className="flex items-center gap-3 pt-3 border-t border-gray-100">
-          <div className="w-8 h-8 bg-gradient-to-br from-[#104901] to-green-600 rounded-full flex items-center justify-center">
-            <span className="text-white text-sm font-bold">
-              {card.creator.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div className="flex-1">
-            <p className="font-medium text-gray-900 text-sm">by {card.creator}</p>
-            <p className="text-xs text-gray-500">{card.createdFor}</p>
-          </div>
-        </div>
-      </div>
-      
-      {/* Hover Effect Border */}
-      <div className="absolute inset-0 border-2 border-[#104901] rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-    </div>
-  </div>
-));
-
-CampaignCard.displayName = 'CampaignCard';
 
 const Main = (props: Props) => {
   
@@ -143,8 +31,8 @@ const Main = (props: Props) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [openCard, setOpenCard] = useState<number | null>(null);
   
-  // Fetch real campaigns from database with performance optimizations
-  const { campaigns, loading: campaignsLoading, error: campaignsError } = useCampaigns();
+  // Fetch public campaigns
+  const { campaigns, loading: campaignsLoading, error: campaignsError, updateFilters } = usePublicCampaigns();
 
   const handlePreviousCard = () => {
     if (openCard !== null && openCard > 0) {
@@ -153,81 +41,44 @@ const Main = (props: Props) => {
   };
 
   const handleNextCard = () => {
-    if (openCard !== null && openCard < Math.min(campaigns.length, 3) - 1) {
+    if (openCard !== null && openCard < campaigns.length - 1) {
       setOpenCard(openCard + 1);
     }
   };
 
-  // Memoized campaign transformation to prevent unnecessary recalculations
-  const cardDetails = React.useMemo(() => {
-    console.log('Campaigns at render:', campaigns);
-    // console.log('Campaigns type:', typeof campaigns);
-    console.log('Campaigns isArray:', Array.isArray(campaigns));
-    return (campaigns && campaigns.length > 0) ? campaigns.slice(0, 3).map((campaign) => {
-      const currencySymbol = campaign.currency === 'NGN' ? '₦' : 
-                            campaign.currency === 'USD' ? '$' : 
-                            campaign.currency === 'EUR' ? '€' : 
-                            campaign.currency === 'GBP' ? '£' : campaign.currency;
-      
-      const progressPercentage = Math.min(100, Math.round((campaign.currentAmount / campaign.goalAmount) * 100));
-      
-      return {
-        id: campaign.id,
-        title: campaign.title,
-        description: campaign.description,
-        raised: `${currencySymbol}${campaign.currentAmount.toLocaleString()} raised`,
-        image: campaign.coverImageUrl || "/images/card-img1.png",
-        extra: `Goal: ${currencySymbol}${campaign.goalAmount.toLocaleString()}. ${progressPercentage}% funded!`,
-        date: new Date(campaign.createdAt).toLocaleDateString(),
-        timeLeft: "Active", // You can calculate actual time left if needed
-        avatar: campaign.creatorAvatar || "/images/avatar-7.png",
-        creator: campaign.creatorName || "",
-        createdFor: campaign.fundraisingFor || "Charity",
-        percentage: `${progressPercentage}%`,
-        total: `${currencySymbol}${campaign.goalAmount.toLocaleString()} total`,
-        donors: campaign.stats?.uniqueDonors || 0,
-      };
-    }) : null;
-  }, [campaigns]);
+  // Transform campaigns data to match the expected format
+  const cardDetails = campaigns.map(campaign => {
+    console.log('Campaign currency:', campaign.currency, 'Amount:', campaign.currentAmount);
+    return {
+      id: campaign.id,
+      title: campaign.title,
+      description: campaign.description,
+      raised: `${formatCurrency(campaign.currentAmount, campaign.currency)} raised`,
+      image: campaign.coverImageUrl || "/images/card-img1.png",
+      extra: `Goal: ${formatCurrency(campaign.goalAmount, campaign.currency)}. ${campaign.stats.totalDonations} donations so far!`,
+      date: new Date(campaign.createdAt).toLocaleDateString(),
+      timeLeft: campaign.status === 'active' ? "Active" : "Completed",
+      avatar: campaign.creatorAvatar || "/images/avatar-7.png",
+      creator: campaign.creatorName || "Anonymous",
+      createdFor: campaign.fundraisingFor || "Charity",
+      percentage: `${campaign.stats.progressPercentage}%`,
+      total: `${formatCurrency(campaign.goalAmount, campaign.currency)} total`,
+      donors: campaign.stats.uniqueDonors,
+      // New fields for dashboard-style cards
+      amountRaised: campaign.currentAmount,
+      goal: campaign.goalAmount,
+      currency: campaign.currency,
+    };
+  });
 
-  // Optimized image rotation effect
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 5000); // Increased to 5 seconds for better performance
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [images.length]);
 
-  // Show loading state while campaigns are being fetched
-  if (campaignsLoading) {
-    return (
-      <div className="min-h-screen bg-[#E5ECDE] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#104901] mx-auto mb-4"></div>
-          <p className="text-lg text-[#104901]">Loading campaigns...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state if campaigns failed to load
-  if (campaignsError) {
-    return (
-      <div className="min-h-screen bg-[#E5ECDE] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg text-red-600 mb-4">Failed to load campaigns</p>
-          <p className="text-sm text-gray-600">{campaignsError}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 bg-[#104901] text-white px-6 py-3 rounded-lg hover:bg-[#0d3a01] transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
   return (
     <div className="my-6">
       {/* benefits */}
@@ -271,33 +122,119 @@ const Main = (props: Props) => {
           </Select>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-6 w-full justify-center">
-          {cardDetails && cardDetails.length > 0 ? (
-            <>
-              {cardDetails.map((card, idx) => (
-                <CampaignCard
-                  key={card.id} // Use campaign ID instead of index for better React performance
-                  card={card}
-                  idx={idx}
-                  onClick={() => setOpenCard(idx)}
-                />
-              ))}
-              <CardDetailsDrawer
-                open={openCard !== null}
-                onOpenChange={(open) => !open && setOpenCard(null)}
-                card={openCard !== null ? cardDetails[openCard] : null}
-                currentIndex={openCard !== null ? openCard : 0}
-                totalCards={Math.min(cardDetails.length, 3)}
-                onPrevious={handlePreviousCard}
-                onNext={handleNextCard}
-              />
-            </>
-          ) : (
-            <div className="w-full text-center py-8">
-              <p className="text-lg text-[#104901]">No campaigns available</p>
-              <p className="text-sm text-gray-600">Check back later for new campaigns</p>
+        <div className="flex flex-col md:flex-row gap-3 w-full">
+          {/* Loading State */}
+          {campaignsLoading && (
+            <div className="flex items-center justify-center w-full py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#104901] mb-4"></div>
+              <p className="text-[#104901] text-xl ml-4">Loading campaigns...</p>
             </div>
           )}
+
+          {/* Error State */}
+          {campaignsError && !campaignsLoading && (
+            <div className="flex flex-col items-center justify-center w-full py-16">
+              <div className="text-red-500 mb-4">
+                <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <h3 className="font-bold text-2xl text-red-600 mb-3">Error Loading Campaigns</h3>
+              <p className="text-red-500 text-center mb-4">{campaignsError}</p>
+            </div>
+          )}
+
+          {/* No Campaigns State */}
+          {!campaignsLoading && !campaignsError && cardDetails.length === 0 && (
+            <div className="flex flex-col items-center justify-center w-full py-16">
+              <div className="text-[#104901] mb-4">
+                <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <h3 className="font-bold text-2xl text-[#104901] mb-3">No Campaigns Available</h3>
+              <p className="text-[#104901] text-center">Check back later for inspiring campaigns!</p>
+            </div>
+          )}
+
+          {/* Campaign Cards */}
+          {!campaignsLoading && !campaignsError && cardDetails.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {cardDetails.map((card, idx) => (
+            <div
+              key={card.id}
+              className="group relative overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 cursor-pointer"
+              onClick={() => setOpenCard(idx)}
+            >
+              <div className="absolute -inset-1 bg-gradient-to-r from-green-600 to-blue-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+              <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+                <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200">
+                  <Image
+                    src={card.image}
+                    alt={card.title}
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                </div>
+                <div className="p-6">
+                  <h3 className="font-bold text-[#104901] mb-3 text-lg">
+                    {card.title}
+                  </h3>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                    {card.description.slice(0, 80)}...
+                  </p>
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-[#104901] opacity-80">Raised</span>
+                      <span className="font-semibold">
+                        {formatCurrency(card.amountRaised || 0, card.currency || 'USD')}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-[#104901] opacity-80">Goal</span>
+                      <span className="font-semibold">
+                        {formatCurrency(card.goal || 0, card.currency || 'USD')}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-[#104901] to-green-500 h-3 rounded-full transition-all duration-500"
+                        style={{ width: card.percentage }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>{card.percentage} complete</span>
+                      <span>{card.donors} donors</span>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full mt-6 text-[#104901] border-[#104901] hover:bg-[#104901] hover:text-white rounded-xl py-3 transition-all duration-300"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenCard(idx);
+                    }}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Campaign
+                  </Button>
+                </div>
+              </div>
+            </div>
+              ))}
+            </div>
+          )}
+          
+          <CardDetailsDrawer
+            open={openCard !== null}
+            onOpenChange={(open) => !open && setOpenCard(null)}
+            card={openCard !== null ? cardDetails[openCard] : null}
+            currentIndex={openCard !== null ? openCard : 0}
+            totalCards={cardDetails.length}
+            onPrevious={handlePreviousCard}
+            onNext={handleNextCard}
+          />
         </div>
       </div>
       {/* features*/}
@@ -419,7 +356,6 @@ const Main = (props: Props) => {
           </section>
         </section>
       </div>
-      <ClientToaster />
     </div>
   );
 };

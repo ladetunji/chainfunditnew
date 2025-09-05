@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { Campaign, transformCampaign } from "./types";
 import { useCampaignChains } from "@/hooks/use-campaign-chains";
+import { formatCurrency } from "@/lib/utils/currency";
 
 type Props = {
   campaigns: Campaign[];
@@ -108,13 +109,13 @@ const Chains = ({ campaigns }: Props) => {
                     <div className="flex justify-between text-sm">
                       <span className="text-[#104901] opacity-80">Raised</span>
                       <span className="font-semibold">
-                        ₦{campaign.amountRaised.toLocaleString()}
+                        {formatCurrency(campaign.amountRaised, campaign.currency)}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-[#104901] opacity-80">Goal</span>
                       <span className="font-semibold">
-                        ₦{campaign.goal.toLocaleString()}
+                        {formatCurrency(campaign.goal, campaign.currency)}
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
@@ -157,7 +158,7 @@ const Chains = ({ campaigns }: Props) => {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="flex gap-3">
                       <Link
-                        href={`/campaigns/edit/${campaign.id}`}
+                        href={`/dashboard/campaigns/edit/${campaign.id}`}
                         className="flex-1"
                       >
                         <Button

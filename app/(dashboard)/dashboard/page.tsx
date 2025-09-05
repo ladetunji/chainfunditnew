@@ -349,7 +349,7 @@ export default function DashboardPage() {
                 </h2>
                 <Button
                   variant="outline"
-                  onClick={() => router.push("/campaigns")}
+                  onClick={() => router.push("/dashboard/campaigns")}
                   className="text-[#104901] border-[#104901] hover:bg-[#104901] hover:text-white rounded-xl px-6 py-2"
                 >
                   View All

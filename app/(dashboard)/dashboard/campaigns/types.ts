@@ -42,6 +42,7 @@ export type TransformedCampaign = {
   donors: number;
   chains: number;
   image: string;
+  currency: string;
 };
 
 // Transform function to convert Campaign to TransformedCampaign
@@ -54,4 +55,5 @@ export const transformCampaign = (campaign: Campaign): TransformedCampaign => ({
   donors: campaign.stats?.uniqueDonors || 0,
   chains: 0, // TODO: Implement chain counting
   image: campaign.coverImageUrl || "/images/image.png",
+  currency: campaign.currency,
 }); 

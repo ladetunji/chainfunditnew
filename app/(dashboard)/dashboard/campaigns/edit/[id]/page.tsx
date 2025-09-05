@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { formatCurrency } from "@/lib/utils/currency";
 
 interface CampaignFormData {
   title: string;
@@ -279,11 +280,11 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
                 <span className="text-gray-600">Raised:</span>
-                <p className="font-semibold">₦{campaign.currentAmount?.toLocaleString() || 0}</p>
+                <p className="font-semibold">{formatCurrency(campaign.currentAmount || 0, campaign.currency)}</p>
               </div>
               <div>
                 <span className="text-gray-600">Goal:</span>
-                <p className="font-semibold">₦{campaign.goalAmount?.toLocaleString() || 0}</p>
+                <p className="font-semibold">{formatCurrency(campaign.goalAmount || 0, campaign.currency)}</p>
               </div>
               <div>
                 <span className="text-gray-600">Donors:</span>

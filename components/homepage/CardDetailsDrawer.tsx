@@ -103,7 +103,7 @@ const CardDetailsDrawer: React.FC<CardDetailsDrawerProps> = ({
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
       <DrawerContent
         aria-describedby={undefined}
-        className="right-0 left-auto fixed md:w-2/5 w-full h-screen rounded-none bg-white font-source overflow-y-auto"
+        className="right-0 left-auto fixed md:w-2/5 w-full h-screen rounded-none bg-white font-source overflow-y-auto overflow-x-hidden"
         style={{ boxShadow: "-2px 2px 12px 0px #0000001A" }}
       >
         <DrawerHeader className="bg-[#F5F5F5] w-full py-2 px-4 flex justify-between items-center">

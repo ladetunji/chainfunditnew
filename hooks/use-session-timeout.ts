@@ -12,7 +12,6 @@ interface SessionTimeoutConfig {
 }
 
 export const useSessionTimeout = (config: SessionTimeoutConfig = {}) => {
-  console.log('useSessionTimeout: Starting hook initialization');
   
   const {
     timeoutMinutes = 120, // Default: 120 minutes (2 hours)
@@ -23,10 +22,8 @@ export const useSessionTimeout = (config: SessionTimeoutConfig = {}) => {
     logout = () => Promise.resolve(),
   } = config;
 
-  console.log('useSessionTimeout: Config loaded:', { timeoutMinutes, warningMinutes, checkInterval, enabled, user: !!user });
 
   // Hooks must be called at the top level - no try-catch around hook calls
-  console.log('useSessionTimeout: About to call useAuth');
   // const authData = useAuth(); // This line is removed as per the edit hint
   // console.log('useSessionTimeout: Auth data loaded successfully:', authData); // This line is removed as per the edit hint
 
@@ -34,7 +31,6 @@ export const useSessionTimeout = (config: SessionTimeoutConfig = {}) => {
   // const user = authData?.user || null; // This line is removed as per the edit hint
   // const logout = authData?.logout || (() => Promise.resolve()); // This line is removed as per the edit hint
   
-  console.log('useSessionTimeout: User and logout extracted:', { user: !!user, logout: typeof logout });
   
   const [showTimeoutModal, setShowTimeoutModal] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
@@ -45,11 +41,9 @@ export const useSessionTimeout = (config: SessionTimeoutConfig = {}) => {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const warningRef = useRef<NodeJS.Timeout | null>(null);
 
-  console.log('useSessionTimeout: State initialized');
 
   // Reset session timer on user activity - simplified for React 19 compatibility
   const resetSessionTimer = useCallback(() => {
-    console.log('useSessionTimeout: resetSessionTimer called');
     if (user) {
       lastActivityRef.current = Date.now();
       sessionStartRef.current = Date.now();
@@ -90,7 +84,6 @@ export const useSessionTimeout = (config: SessionTimeoutConfig = {}) => {
 
   // Logout and redirect to login
   const handleSessionExpired = useCallback(async () => {
-    console.log('useSessionTimeout: handleSessionExpired called');
     try {
       if (logout && typeof logout === 'function') {
         await logout();
@@ -99,7 +92,6 @@ export const useSessionTimeout = (config: SessionTimeoutConfig = {}) => {
       setShowWarningModal(false);
       
       // For now, just log the redirect instead of actually redirecting
-      console.log('useSessionTimeout: Would redirect to /signin?message=session_expired');
       
     } catch (error) {
       console.error('Error during logout:', error);
@@ -123,11 +115,9 @@ export const useSessionTimeout = (config: SessionTimeoutConfig = {}) => {
     setShowWarningModal(false);
   }, []);
 
-  console.log('useSessionTimeout: Callbacks defined');
 
   // Set up activity listeners
   useEffect(() => {
-    console.log('useSessionTimeout: Setting up activity listeners');
     if (!user || !enabled) {
       // Clear timers if no user or if session timeout is disabled
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -165,10 +155,6 @@ export const useSessionTimeout = (config: SessionTimeoutConfig = {}) => {
         
         // Only expire session if there's been no activity for the timeout period
         if (timeSinceLastActivity > timeoutMinutes * 60 * 1000) {
-          console.log('Session expired due to inactivity:', {
-            timeSinceLastActivity: Math.round(timeSinceLastActivity / 1000 / 60),
-            timeoutMinutes
-          });
           handleSessionExpired();
         } else if (timeSinceLastActivity > (timeoutMinutes - warningMinutes) * 60 * 1000) {
           // Show warning if approaching expiry
@@ -207,7 +193,6 @@ export const useSessionTimeout = (config: SessionTimeoutConfig = {}) => {
     }
   }, [showWarningModal, timeRemaining, handleSessionExpired]);
 
-  console.log('useSessionTimeout: Hook initialization complete, returning data');
 
   return {
     showTimeoutModal,

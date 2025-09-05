@@ -36,7 +36,7 @@ const Navbar = (props: Props) => {
         {/* Desktop nav */}
         <ul className="hidden md:flex justify-between gap-3 font-semibold text-base text-black">
           <li>
-            <Link href="/campaigns-page">Campaigns</Link>
+            <Link href="/campaigns">Campaigns</Link>
           </li>
           <li>
             <Link href="#">For Individuals</Link>
@@ -76,6 +76,9 @@ const Navbar = (props: Props) => {
       {menuOpen && (
         <div className="md:hidden mt-4 flex flex-col gap-4 animate-fade-in">
           <ul className="flex flex-col gap-2 font-semibold text-base text-black">
+            <li>
+              <Link href="/campaigns">Campaigns</Link>
+            </li>
             <li>
               <Link href="#" onClick={() => setMenuOpen(false)}>
                 For Individuals

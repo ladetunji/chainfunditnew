@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
+import Navbar from "@/app/campaign/Navbar";
 const campaignReasons = [
   "Emergency",
   "Business",
@@ -233,8 +233,9 @@ export default function AllCampaignsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-green-50">
+      <Navbar />
       {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-green-600 to-[#104901] text-white py-16">
+      <div className="mt-20 relative bg-gradient-to-r from-green-600 to-[#104901] text-white py-16">
         <div className="relative container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
             Discover Amazing Campaigns

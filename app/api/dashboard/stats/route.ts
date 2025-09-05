@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users, campaigns, donations, chainers } from '@/lib/schema';
-import { eq, and, sql, desc, count, sum } from 'drizzle-orm';
+import { eq, and, sql, desc, count, sum, inArray } from 'drizzle-orm';
 import { parse } from 'cookie';
 import { verifyUserJWT } from '@/lib/auth';
 
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         })
         .from(donations)
         .where(and(
-          sql`${donations.campaignId} = ANY(${campaignIds})`,
+          inArray(donations.campaignId, campaignIds),
           eq(donations.paymentStatus, 'completed')
         ));
 
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
         .leftJoin(campaigns, eq(donations.campaignId, campaigns.id))
         .leftJoin(users, eq(donations.donorId, users.id))
         .where(and(
-          sql`${donations.campaignId} = ANY(${campaignIds})`,
+          inArray(donations.campaignId, campaignIds),
           eq(donations.paymentStatus, 'completed')
         ))
         .orderBy(desc(donations.createdAt))
