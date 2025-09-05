@@ -224,11 +224,11 @@ const Main = (props: Props) => {
               {cardDetails.map((card, idx) => (
                 <div
                   key={card.id}
-                  className="group relative overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 cursor-pointer"
+                  className="group relative overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
                   onClick={() => setOpenCard(idx)}
                 >
-                  <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
-                    <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200">
+                  <div className="relative h-[400px] bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+                    <div className="relative h-[200px] bg-gradient-to-br from-gray-100 to-gray-200">
                       <Image
                         src={card.image}
                         alt={card.title}
@@ -236,7 +236,7 @@ const Main = (props: Props) => {
                         className="object-cover group-hover:scale-110 transition-transform duration-500"
                       />
                     </div>
-                    <div className="p-6">
+                    <div className="p-6 h-full">
                       <h3 className="font-bold text-[#104901] mb-3 text-lg">
                         {card.title}
                       </h3>

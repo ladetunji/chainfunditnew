@@ -11,8 +11,8 @@
 
 import { config } from 'dotenv';
 
-// Load environment variables
-config();
+// Load environment variables from .env.local
+config({ path: '.env.local' });
 
 async function testDonationFlow() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -153,7 +153,7 @@ async function runTests() {
   testCurrencySupport();
   
   // Uncomment to test actual donation flow (requires auth)
-  // await testDonationFlow();
+  await testDonationFlow();
 
   console.log('\n' + '='.repeat(50));
   console.log('Tests completed! 🎯');

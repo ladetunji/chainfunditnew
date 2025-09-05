@@ -654,9 +654,50 @@ const Main = ({ campaignId }: MainProps) => {
             <h3 className="text-3xl font-semibold text-black mb-4">
               Top Donors
             </h3>
-            <div className="flex items-center justify-center py-8">
-              <p className="text-[#757575]">No donors yet. Be the first to donate!</p>
-            </div>
+            {loadingDonations ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#104901]"></div>
+              </div>
+            ) : donations && donations.length > 0 ? (
+              <div className="space-y-3">
+                {donations.slice(0, 5).map((donation, index) => (
+                  <div key={donation.id} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm border border-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-[#104901] rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-[#104901]">
+                          {donation.isAnonymous ? 'Anonymous' : 'Donor'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(donation.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-[#104901]">
+                        {donation.currency} {donation.amount}
+                      </p>
+                      {donation.message && (
+                        <p className="text-xs text-gray-600 max-w-32 truncate">
+                          "{donation.message}"
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {donations.length > 5 && (
+                  <p className="text-center text-sm text-gray-500 mt-3">
+                    And {donations.length - 5} more donors...
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-[#757575]">No donors yet. Be the first to donate!</p>
+              </div>
+            )}
           </section>
 
           <section className="my-5 py-5 border-y border-[#ADADAD]">
