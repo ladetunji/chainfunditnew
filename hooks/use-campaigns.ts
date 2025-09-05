@@ -247,7 +247,7 @@ export function useCampaigns() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`//api/dashboard/campaigns/${campaignId}`, {
+      const response = await fetch(`/api/dashboard/campaigns/${campaignId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -284,7 +284,7 @@ export function useCampaigns() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`//api/dashboard/campaigns/${campaignId}`, {
+      const response = await fetch(`/api/dashboard/campaigns/${campaignId}`, {
         method: 'DELETE',
       });
 
@@ -393,7 +393,7 @@ export function useCampaignUpdates(campaignId: string) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`//api/dashboard/campaigns/${campaignId}/updates`);
+      const response = await fetch(`/api/dashboard/campaigns/${campaignId}/updates`);
       const data = await response.json();
 
       if (data.success) {
@@ -414,7 +414,7 @@ export function useCampaignUpdates(campaignId: string) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`//api/dashboard/campaigns/${campaignId}/updates`, {
+      const response = await fetch(`/api/dashboard/campaigns/${campaignId}/updates`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -472,7 +472,7 @@ export function useCampaignComments(campaignId: string) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`//api/dashboard/campaigns/${campaignId}/comments?page=${page}&limit=10`);
+      const response = await fetch(`/api/dashboard/campaigns/${campaignId}/comments?page=${page}&limit=10`);
       const data = await response.json();
 
       if (data.success) {
@@ -494,7 +494,7 @@ export function useCampaignComments(campaignId: string) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`//api/dashboard/campaigns/${campaignId}/comments`, {
+      const response = await fetch(`/api/dashboard/campaigns/${campaignId}/comments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
