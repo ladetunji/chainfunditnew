@@ -21,7 +21,6 @@ import { Eye } from "lucide-react";
 type Props = {};
 
 const Main = (props: Props) => {
-  
   const images = [
     "/images/main-3.png", // Image 1: multi-currency
     "/images/teamwork.png", // Image 2: two people lifting
@@ -30,10 +29,16 @@ const Main = (props: Props) => {
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [openCard, setOpenCard] = useState<number | null>(null);
-  const [selectedFilter, setSelectedFilter] = useState<string>("live campaigns");
-  
+  const [selectedFilter, setSelectedFilter] =
+    useState<string>("live campaigns");
+
   // Fetch public campaigns
-  const { campaigns, loading: campaignsLoading, error: campaignsError, updateFilters } = usePublicCampaigns();
+  const {
+    campaigns,
+    loading: campaignsLoading,
+    error: campaignsError,
+    updateFilters,
+  } = usePublicCampaigns();
 
   const handlePreviousCard = () => {
     if (openCard !== null && openCard > 0) {
@@ -48,33 +53,48 @@ const Main = (props: Props) => {
   };
 
   // Filter campaigns based on selected filter
-  const filteredCampaigns = campaigns.filter(campaign => {
+  const filteredCampaigns = campaigns.filter((campaign) => {
     const progressPercentage = campaign.stats.progressPercentage;
-    
+
     switch (selectedFilter) {
       case "live campaigns":
-        return campaign.status === 'active';
+        return campaign.status === "active";
       case "need momentum":
-        return campaign.status === 'active' && progressPercentage >= 0 && progressPercentage <= 10;
+        return (
+          campaign.status === "active" &&
+          progressPercentage >= 0 &&
+          progressPercentage <= 10
+        );
       case "close to target":
-        return campaign.status === 'active' && progressPercentage >= 90;
+        return campaign.status === "active" && progressPercentage >= 90;
       default:
         return true;
     }
   });
 
   // Transform campaigns data to match the expected format
-  const cardDetails = filteredCampaigns.map(campaign => {
-    console.log('Campaign currency:', campaign.currency, 'Amount:', campaign.currentAmount);
+  const cardDetails = filteredCampaigns.map((campaign) => {
+    console.log(
+      "Campaign currency:",
+      campaign.currency,
+      "Amount:",
+      campaign.currentAmount
+    );
     return {
       id: campaign.id,
       title: campaign.title,
       description: campaign.description,
-      raised: `${formatCurrency(campaign.currentAmount, campaign.currency)} raised`,
+      raised: `${formatCurrency(
+        campaign.currentAmount,
+        campaign.currency
+      )} raised`,
       image: campaign.coverImageUrl || "/images/card-img1.png",
-      extra: `Goal: ${formatCurrency(campaign.goalAmount, campaign.currency)}. ${campaign.stats.totalDonations} donations so far!`,
+      extra: `Goal: ${formatCurrency(
+        campaign.goalAmount,
+        campaign.currency
+      )}. ${campaign.stats.totalDonations} donations so far!`,
       date: new Date(campaign.createdAt).toLocaleDateString(),
-      timeLeft: campaign.status === 'active' ? "Active" : "Completed",
+      timeLeft: campaign.status === "active" ? "Active" : "Completed",
       avatar: campaign.creatorAvatar || "/images/avatar-7.png",
       creator: campaign.creatorName || "Anonymous",
       createdFor: campaign.fundraisingFor || "Charity",
@@ -144,7 +164,9 @@ const Main = (props: Props) => {
           {campaignsLoading && (
             <div className="flex items-center justify-center w-full py-16">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#104901] mb-4"></div>
-              <p className="text-[#104901] text-xl ml-4">Loading campaigns...</p>
+              <p className="text-[#104901] text-xl ml-4">
+                Loading campaigns...
+              </p>
             </div>
           )}
 
@@ -152,11 +174,21 @@ const Main = (props: Props) => {
           {campaignsError && !campaignsLoading && (
             <div className="flex flex-col items-center justify-center w-full py-16">
               <div className="text-red-500 mb-4">
-                <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                <svg
+                  className="w-16 h-16"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
-              <h3 className="font-bold text-2xl text-red-600 mb-3">Error Loading Campaigns</h3>
+              <h3 className="font-bold text-2xl text-red-600 mb-3">
+                Error Loading Campaigns
+              </h3>
               <p className="text-red-500 text-center mb-4">{campaignsError}</p>
             </div>
           )}
@@ -165,12 +197,24 @@ const Main = (props: Props) => {
           {!campaignsLoading && !campaignsError && cardDetails.length === 0 && (
             <div className="flex flex-col items-center justify-center w-full py-16">
               <div className="text-[#104901] mb-4">
-                <svg className="w-16 h-16" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
+                <svg
+                  className="w-16 h-16"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
-              <h3 className="font-bold text-2xl text-[#104901] mb-3">No Campaigns Available</h3>
-              <p className="text-[#104901] text-center">Check back later for inspiring campaigns!</p>
+              <h3 className="font-bold text-2xl text-[#104901] mb-3">
+                No Campaigns Available
+              </h3>
+              <p className="text-[#104901] text-center">
+                Check back later for inspiring campaigns!
+              </p>
             </div>
           )}
 
@@ -178,71 +222,80 @@ const Main = (props: Props) => {
           {!campaignsLoading && !campaignsError && cardDetails.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-5 lg:grid-cols-5 gap-8">
               {cardDetails.map((card, idx) => (
-            <div
-              key={card.id}
-              className="group relative overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 cursor-pointer"
-              onClick={() => setOpenCard(idx)}
-            >
-              <div className="absolute -inset-1 bg-gradient-to-r from-green-600 to-blue-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
-                <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200">
-                  <Image
-                    src={card.image}
-                    alt={card.title}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                </div>
-                <div className="p-6">
-                  <h3 className="font-bold text-[#104901] mb-3 text-lg">
-                    {card.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                    {card.description.slice(0, 80)}...
-                  </p>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#104901] opacity-80">Raised</span>
-                      <span className="font-semibold">
-                        {formatCurrency(card.amountRaised || 0, card.currency || 'USD')}
-                      </span>
+                <div
+                  key={card.id}
+                  className="group relative overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 cursor-pointer"
+                  onClick={() => setOpenCard(idx)}
+                >
+                  <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
+                    <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200">
+                      <Image
+                        src={card.image}
+                        alt={card.title}
+                        fill
+                        className="object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#104901] opacity-80">Goal</span>
-                      <span className="font-semibold">
-                        {formatCurrency(card.goal || 0, card.currency || 'USD')}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-[#104901] to-green-500 h-3 rounded-full transition-all duration-500"
-                        style={{ width: card.percentage }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>{card.percentage} complete</span>
-                      <span>{card.donors} donors</span>
+                    <div className="p-6">
+                      <h3 className="font-bold text-[#104901] mb-3 text-lg">
+                        {card.title}
+                      </h3>
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                        {card.description.slice(0, 80)}...
+                      </p>
+                      <div className="space-y-3">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-[#104901] opacity-80">
+                            Raised
+                          </span>
+                          <span className="font-semibold">
+                            {formatCurrency(
+                              card.amountRaised || 0,
+                              card.currency || "USD"
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-[#104901] opacity-80">
+                            Goal
+                          </span>
+                          <span className="font-semibold">
+                            {formatCurrency(
+                              card.goal || 0,
+                              card.currency || "USD"
+                            )}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-[#104901] to-green-500 h-3 rounded-full transition-all duration-500"
+                            style={{ width: card.percentage }}
+                          ></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>{card.percentage} complete</span>
+                          <span>{card.donors} donors</span>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full mt-6 text-[#104901] border-[#104901] hover:bg-[#104901] hover:text-white rounded-xl py-3 transition-all duration-300"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenCard(idx);
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Campaign
+                      </Button>
                     </div>
                   </div>
-                  <Button
-                    variant="outline"
-                    className="w-full mt-6 text-[#104901] border-[#104901] hover:bg-[#104901] hover:text-white rounded-xl py-3 transition-all duration-300"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenCard(idx);
-                    }}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Campaign
-                  </Button>
                 </div>
-              </div>
-            </div>
               ))}
             </div>
           )}
-          
+
           <CardDetailsDrawer
             open={openCard !== null}
             onOpenChange={(open) => !open && setOpenCard(null)}
@@ -346,7 +399,12 @@ const Main = (props: Props) => {
         <section className="bg-[url('/images/video.png')] bg-cover bg-no-repeat w-full md:w-1/3 h-60 md:h-[650px]">
           <section className="bg-[linear-gradient(180deg,rgba(255,255,255,0)_70%,#F2F1E9_100%)] h-full px-2 md:px-4 py-4 md:py-6 flex flex-col">
             <section className="flex items-center justify-center my-auto">
-              <PiYoutubeLogoLight color="white" size={48} strokeWidth={0.1} className="md:w-[100px] md:h-[100px] w-[48px] h-[48px]" />
+              <PiYoutubeLogoLight
+                color="white"
+                size={48}
+                strokeWidth={0.1}
+                className="md:w-[100px] md:h-[100px] w-[48px] h-[48px]"
+              />
             </section>
             <div className="flex flex-col gap-1 justify-end ">
               <p className="font-dm font-medium text-lg md:text-xl text-black">
