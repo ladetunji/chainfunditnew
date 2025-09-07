@@ -310,7 +310,7 @@ export default function DashboardPage() {
                     <p className="text-xs font-medium text-[#104901] opacity-80">
                       Total Donations
                     </p>
-                    <p className="text-2xl font-bold text-[#104901] break-words">
+                    <p className="text-xl font-bold text-[#104901]">
                       {formatCurrency(stats.totalDonations, stats.primaryCurrency)}
                     </p>
                   </div>

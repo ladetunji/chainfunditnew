@@ -98,15 +98,15 @@ export async function GET(request: NextRequest) {
     const campaignsWithStats = userCampaigns.map(campaign => ({
       ...campaign,
       goalAmount: Number(campaign.goalAmount),
-      currentAmount: Number(campaign.currentAmount),
+      currentAmount: Number(campaign.totalRaised || 0), // Use totalRaised instead of currentAmount
       donationCount: Number(campaign.donationCount),
       totalRaised: Number(campaign.totalRaised || 0),
-      progressPercentage: Math.min(100, Math.round((Number(campaign.currentAmount) / Number(campaign.goalAmount)) * 100)),
+      progressPercentage: Math.min(100, Math.round((Number(campaign.totalRaised || 0) / Number(campaign.goalAmount)) * 100)),
       stats: {
         totalDonations: Number(campaign.donationCount),
         totalAmount: Number(campaign.totalRaised || 0),
         uniqueDonors: Number(campaign.donationCount), // This might need to be calculated differently
-        progressPercentage: Math.min(100, Math.round((Number(campaign.currentAmount) / Number(campaign.goalAmount)) * 100))
+        progressPercentage: Math.min(100, Math.round((Number(campaign.totalRaised || 0) / Number(campaign.goalAmount)) * 100))
       }
     }));
 

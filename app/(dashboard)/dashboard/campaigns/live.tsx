@@ -47,7 +47,7 @@ const LiveCampaigns = ({ campaigns }: Props) => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-8">
         {transformedCampaigns.map((campaign) => (
           <div
             key={campaign.id}
@@ -71,15 +71,15 @@ const LiveCampaigns = ({ campaigns }: Props) => {
                   </div>
                 </div>
               </div>
-              <div className="p-6">
-                <h3 className="font-bold text-[#104901] mb-3 text-xl">
+              <div className="p-3 space-y-2">
+                <h3 className="font-bold text-[#104901] text-xl">
                   {campaign.title}
                 </h3>
-                <p className="text-[#104901] opacity-80 mb-4 text-sm">
+                <p className="text-[#104901] opacity-80 text-sm">
                   {campaign.description.slice(0, 80)}...
                 </p>
 
-                <div className="space-y-3 mb-4">
+                <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-[#104901] opacity-80">Raised</span>
                     <span className="font-semibold">
@@ -137,7 +137,7 @@ const LiveCampaigns = ({ campaigns }: Props) => {
                       </Button>
                     </Link>
                     <Link href={`/campaign/${campaign.id}`}>
-                      <Button className="w-full bg-gradient-to-r from-green-600 to-[#104901] text-white rounded-xl py-2 hover:shadow-lg transition-all duration-300">
+                      <Button className="w-full bg-gradient-to-r from-green-600 to-[#104901] text-white rounded-xl py-2 hover:shadow-lg hover:from-green-600 hover:to-[#104901] hover:text-[#104901] transition-all duration-300">
                         <Eye size={16} className="mr-2" />
                         View
                       </Button>
@@ -147,7 +147,7 @@ const LiveCampaigns = ({ campaigns }: Props) => {
                     onClick={() =>
                       window.open(`/campaign/${campaign.id}`, "_blank")
                     }
-                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl py-2 hover:shadow-lg transition-all duration-300"
+                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:text-white rounded-xl py-2 hover:shadow-lg transition-all duration-300"
                   >
                     <PlusSquare size={16} className="mr-2" />
                     Update Campaign
