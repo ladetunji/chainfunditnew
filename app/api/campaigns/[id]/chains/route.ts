@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { chainers } from '@/lib/schema';
-import { eq, count } from 'drizzle-orm';
+import { chainers, users } from '@/lib/schema';
+import { eq, count, desc, sum } from 'drizzle-orm';
 
 export async function GET(
   request: NextRequest,
@@ -9,20 +9,63 @@ export async function GET(
 ) {
   try {
     const { id: campaignId } = await params;
+    const { searchParams } = new URL(request.url);
+    const topChainers = searchParams.get('topChainers') === 'true';
 
-    // Get total chain count for this campaign
-    const chainCount = await db
-      .select({ count: count() })
-      .from(chainers)
-      .where(eq(chainers.campaignId, campaignId));
+    if (topChainers) {
+      // Get top chainers with user data
+      const topChainersData = await db
+        .select({
+          id: chainers.id,
+          userId: chainers.userId,
+          referralCode: chainers.referralCode,
+          totalRaised: chainers.totalRaised,
+          totalReferrals: chainers.totalReferrals,
+          commissionEarned: chainers.commissionEarned,
+          createdAt: chainers.createdAt,
+          userName: users.fullName,
+          userEmail: users.email,
+          userAvatar: users.avatar,
+        })
+        .from(chainers)
+        .leftJoin(users, eq(chainers.userId, users.id))
+        .where(eq(chainers.campaignId, campaignId))
+        .orderBy(desc(chainers.totalRaised), desc(chainers.totalReferrals))
+        .limit(6);
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        campaignId,
-        chainCount: Number(chainCount[0]?.count || 0)
-      }
-    });
+      return NextResponse.json({
+        success: true,
+        data: {
+          campaignId,
+          topChainers: topChainersData.map(chainer => ({
+            id: chainer.id,
+            userId: chainer.userId,
+            referralCode: chainer.referralCode,
+            totalRaised: Number(chainer.totalRaised || 0),
+            totalReferrals: chainer.totalReferrals || 0,
+            commissionEarned: Number(chainer.commissionEarned || 0),
+            createdAt: chainer.createdAt,
+            userName: chainer.userName || 'Anonymous',
+            userEmail: chainer.userEmail,
+            userAvatar: chainer.userAvatar,
+          }))
+        }
+      });
+    } else {
+      // Get total chain count for this campaign (existing functionality)
+      const chainCount = await db
+        .select({ count: count() })
+        .from(chainers)
+        .where(eq(chainers.campaignId, campaignId));
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          campaignId,
+          chainCount: Number(chainCount[0]?.count || 0)
+        }
+      });
+    }
   } catch (error) {
     console.error('Error fetching campaign chains:', error);
     return NextResponse.json(

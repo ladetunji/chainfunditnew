@@ -155,50 +155,34 @@ const Chains = ({ campaigns }: Props) => {
                     </div>
                   </div>
 
+                  <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="flex gap-3">
-                      <Link
-                        href={`/dashboard/campaigns/edit/${campaign.id}`}
-                        className="flex-1"
-                      >
-                        <Button
-                          variant="outline"
-                          className="w-full text-[#104901] border-[#104901] hover:bg-[#104901] hover:text-white rounded-xl py-2 transition-all duration-300"
-                        >
-                          <Edit size={16} className="mr-2" />
-                          Edit
-                        </Button>
-                      </Link>
-                      <Link
-                        href={`/campaign/${campaign.id}`}
-                        className="flex-1"
-                      >
-                        <Button className="w-full bg-gradient-to-r from-green-600 to-[#104901] text-white rounded-xl py-2 hover:shadow-lg transition-all duration-300">
-                          <Eye size={16} className="mr-2" />
-                          View Campaign
-                        </Button>
-                      </Link>
-                    </div>
-                    <div className="flex gap-3">
+                    <Link href={`/dashboard/campaigns/edit/${campaign.id}`}>
                       <Button
-                        onClick={() =>
-                          window.open(`/campaign/${campaign.id}`, "_blank")
-                        }
-                        className="flex-1 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl py-2 hover:shadow-lg transition-all duration-300"
+                        variant="outline"
+                        className="w-full text-[#104901] border-[#104901] hover:bg-[#104901] hover:text-white rounded-xl py-2 transition-all duration-300"
                       >
-                        <PlusSquare size={16} className="mr-2" />
-                        Update
+                        <Edit size={16} className="mr-2" />
+                        Edit
                       </Button>
-                      {/* <Button
-                      onClick={() => window.open(`/campaign/${campaign.id}`, '_blank')}
-                      variant="outline"
-                      className="flex-1 text-blue-600 border-blue-600 hover:bg-blue-600 hover:text-white rounded-xl py-2 transition-all duration-300"
-                    >
-                      <MessageCircle size={16} className="mr-2" />
-                      Comment
-                    </Button> */}
-                    </div>
+                    </Link>
+                    <Link href={`/campaign/${campaign.id}`}>
+                      <Button className="w-full bg-gradient-to-r from-green-600 to-[#104901] text-white rounded-xl py-2 hover:shadow-lg hover:from-green-600 hover:to-[#104901] hover:text-white transition-all duration-300">
+                        <Eye size={16} className="mr-2" />
+                        View
+                      </Button>
+                    </Link>
                   </div>
+                  <Button
+                    onClick={() =>
+                      window.open(`/campaign/${campaign.id}`, "_blank")
+                    }
+                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl py-2 hover:shadow-lg hover:text-white transition-all duration-300"
+                  >
+                    <PlusSquare size={16} className="mr-2" />
+                    Update Campaign
+                  </Button>
+                </div>
                 </div>
               </div>
             </div>

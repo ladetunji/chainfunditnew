@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { useDonations } from "@/hooks/use-donations";
+import { useDonations, DonationResult } from "@/hooks/use-donations";
 import { getSupportedProviders, PaymentProvider } from "@/lib/payments/config";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -58,9 +58,10 @@ const DonateModal: React.FC<DonateModalProps> = ({
   const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>("stripe");
   const [supportedProviders, setSupportedProviders] = useState<PaymentProvider[]>([]);
   const [testMode, setTestMode] = useState(false);
+  const [testScenario, setTestScenario] = useState<'success' | 'pending' | 'failed'>('success');
   const [linkCopied, setLinkCopied] = useState(false);
   
-  const { loading: donationLoading, error: donationError, processTestDonation, processDonation } = useDonations();
+  const { loading: donationLoading, error: donationError, processTestDonation, processDonation, initializeDonation, simulatePaymentStatus } = useDonations();
 
   useEffect(() => {
     if (campaign && open) {
@@ -129,14 +130,32 @@ const DonateModal: React.FC<DonateModalProps> = ({
         isAnonymous: anonymous,
       };
 
-      let result;
+      let result: DonationResult | undefined;
       if (testMode) {
-        result = await processTestDonation(donationData);
+        // For test mode, we need to handle different scenarios
+        if (testScenario === 'success') {
+          result = await processTestDonation(donationData);
+        } else {
+          // For pending and failed scenarios, we need to create the donation and then simulate the status
+          const initResult = await initializeDonation(donationData, true);
+          if (initResult.success && initResult.donationId) {
+            if (testScenario === 'pending') {
+              // Leave it as pending (don't simulate completion)
+              result = { success: true, donationId: initResult.donationId };
+            } else if (testScenario === 'failed') {
+              // Simulate failed payment
+              const simulateResult = await simulatePaymentStatus(initResult.donationId, 'failed');
+              result = { success: simulateResult.success, donationId: initResult.donationId };
+            }
+          } else {
+            result = initResult;
+          }
+        }
       } else {
         result = await processDonation(donationData);
       }
 
-      if (result.success) {
+      if (result && result.success) {
         setStep("thankyou");
       }
     } catch (error) {
@@ -157,6 +176,7 @@ const DonateModal: React.FC<DonateModalProps> = ({
     setAnonymous(false);
     setComments("");
     setTestMode(false);
+    setTestScenario('success');
     setLinkCopied(false);
     onOpenChange(false);
   };
@@ -484,6 +504,51 @@ const DonateModal: React.FC<DonateModalProps> = ({
                 </Label>
               </div>
 
+              {/* Test Mode Options */}
+              {testMode && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-yellow-800 mb-3">Test Payment Scenarios</h4>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button
+                      onClick={() => setTestScenario('success')}
+                      variant="outline"
+                      className={`text-xs h-8 ${
+                        testScenario === 'success' 
+                          ? 'bg-green-200 border-green-400 text-green-900' 
+                          : 'bg-green-100 border-green-300 text-green-800 hover:bg-green-200'
+                      }`}
+                    >
+                      ✅ Success
+                    </Button>
+                    <Button
+                      onClick={() => setTestScenario('pending')}
+                      variant="outline"
+                      className={`text-xs h-8 ${
+                        testScenario === 'pending' 
+                          ? 'bg-yellow-200 border-yellow-400 text-yellow-900' 
+                          : 'bg-yellow-100 border-yellow-300 text-yellow-800 hover:bg-yellow-200'
+                      }`}
+                    >
+                      ⏳ Pending
+                    </Button>
+                    <Button
+                      onClick={() => setTestScenario('failed')}
+                      variant="outline"
+                      className={`text-xs h-8 ${
+                        testScenario === 'failed' 
+                          ? 'bg-red-200 border-red-400 text-red-900' 
+                          : 'bg-red-100 border-red-300 text-red-800 hover:bg-red-200'
+                      }`}
+                    >
+                      ❌ Failed
+                    </Button>
+                  </div>
+                  <p className="text-xs text-yellow-700 mt-2">
+                    Select a scenario to test different payment outcomes
+                  </p>
+                </div>
+              )}
+
               {/* Donate Button */}
               <Button
                 onClick={handleDonate}
@@ -572,7 +637,7 @@ const DonateModal: React.FC<DonateModalProps> = ({
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   ) : (
                     <>
-                      {testMode ? "Simulate Payment" : "Pay Now"} <HandCoins size={20} />
+                      {testMode ? `Test ${testScenario.charAt(0).toUpperCase() + testScenario.slice(1)}` : "Pay Now"} <HandCoins size={20} />
                     </>
                   )}
                 </Button>
@@ -589,7 +654,7 @@ const DonateModal: React.FC<DonateModalProps> = ({
                 </span>
                 <Button 
                   onClick={handleViewDashboard}
-                  className="w-[185px] h-16 flex justify-between items-center font-medium text-2xl bg-[#104901] hover:bg-[#0d3d01] text-white"
+                  className="w-[185px] h-16 flex justify-between items-center font-medium text-2xl bg-[#104901] text-white hover:bg-[#0d3d01] hover:text-white"
                 >
                   View <Send className="ml-2" size={16} />
                 </Button>
@@ -602,7 +667,7 @@ const DonateModal: React.FC<DonateModalProps> = ({
                 </span>
                 <Button 
                   onClick={handleCopyLink}
-                  className="w-[185px] h-16 flex justify-between items-center font-medium text-2xl bg-[#5F8555] hover:bg-[#4a6b42] text-white"
+                  className="w-[185px] h-16 flex justify-between items-center font-medium text-2xl bg-[#5F8555] text-white hover:bg-[#4a6b42] hover:text-white"
                 >
                   {linkCopied ? (
                     <>
@@ -629,40 +694,31 @@ const DonateModal: React.FC<DonateModalProps> = ({
                     target="_blank"
                     className="hover:opacity-80 transition-opacity"
                   >
-                    <Facebook strokeWidth={1.5} size={32} className="text-blue-600" />
+                    <Facebook strokeWidth={1.5} size={32} className="text-[#104901]" />
                   </Link>
                   <button
                     onClick={handleInstagramShare}
                     className="hover:opacity-80 transition-opacity"
                   >
-                    <Instagram strokeWidth={1.5} size={32} className="text-pink-600" />
+                    <Instagram strokeWidth={1.5} size={32} className="text-[#104901]" />
                   </button>
                   <Link
                     href={generateShareUrl('twitter')}
                     target="_blank"
                     className="hover:opacity-80 transition-opacity"
                   >
-                    <Twitter strokeWidth={1.5} size={32} className="text-blue-400" />
+                    <Twitter strokeWidth={1.5} size={32} className="text-[#104901]" />
                   </Link>
                   <Link
                     href={generateShareUrl('linkedin')}
                     target="_blank"
                     className="hover:opacity-80 transition-opacity"
                   >
-                    <Linkedin strokeWidth={1.5} size={32} className="text-blue-700" />
+                    <Linkedin strokeWidth={1.5} size={32} className="text-[#104901]" />
                   </Link>
                 </div>
               </div>
-
-              {/* Close Button */}
-              <div className="flex justify-center pt-4">
-                <Button
-                  onClick={handleClose}
-                  className="w-[200px] h-12 bg-[#104901] hover:bg-[#0d3d01] text-white font-medium text-lg"
-                >
-                  Close
-                </Button>
-              </div>
+              
             </div>
           )}
         </div>

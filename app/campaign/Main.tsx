@@ -20,6 +20,7 @@ import ShareModal from "./share-modal";
 import UpdateModal from "./update-modal";
 import CommentModal from "./comment-modal";
 import { useCampaignDonations } from "@/hooks/use-campaign-donations";
+import { useTopChainers } from "@/hooks/use-top-chainers";
 import ClientToaster from "@/components/ui/client-toaster";
 
 interface CampaignData {
@@ -165,6 +166,7 @@ const Main = ({ campaignId }: MainProps) => {
   
   // Fetch donations data
   const { donations, loading: loadingDonations } = useCampaignDonations(campaignId);
+  const { topChainers, loading: loadingTopChainers } = useTopChainers(campaignId);
 
   // Fetch campaign updates
   const fetchUpdates = React.useCallback(async () => {
@@ -659,38 +661,49 @@ const Main = ({ campaignId }: MainProps) => {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#104901]"></div>
               </div>
             ) : donations && donations.length > 0 ? (
-              <div className="space-y-3">
-                {donations.slice(0, 5).map((donation, index) => (
-                  <div key={donation.id} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm border border-gray-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-[#104901] rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                        {index + 1}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {donations.slice(0, 6).map((donation, index) => (
+                  <div key={donation.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                    <div className="flex flex-col items-center text-center">
+                      {/* Circular Profile Picture */}
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#104901] to-[#5F8555] rounded-full flex items-center justify-center text-white font-bold text-xl mb-3 relative">
+                        {donation.isAnonymous ? 'A' : donation.donorName ? donation.donorName.charAt(0).toUpperCase() : 'D'}
+                        {/* Rank Badge */}
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold text-gray-800">
+                          {index + 1}
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-[#104901]">
-                          {donation.isAnonymous ? 'Anonymous' : 'Donor'}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(donation.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-[#104901]">
-                        {donation.currency} {donation.amount}
+                      
+                      {/* Name */}
+                      <h4 className="font-semibold text-[#104901] text-lg mb-1">
+                        {donation.isAnonymous ? 'Anonymous' : (donation.donorName || 'Donor')}
+                      </h4>
+                      
+                      {/* Amount */}
+                      <p className="font-bold text-xl text-[#104901] mb-2">
+                        {donation.currency} {donation.amount.toLocaleString()}
                       </p>
+                      
+                      {/* Date */}
+                      <p className="text-xs text-gray-500 mb-2">
+                        {new Date(donation.createdAt).toLocaleDateString()}
+                      </p>
+                      
+                      {/* Message */}
                       {donation.message && (
-                        <p className="text-xs text-gray-600 max-w-32 truncate">
+                        <p className="text-xs text-gray-600 italic max-w-full truncate">
                           "{donation.message}"
                         </p>
                       )}
                     </div>
                   </div>
                 ))}
-                {donations.length > 5 && (
-                  <p className="text-center text-sm text-gray-500 mt-3">
-                    And {donations.length - 5} more donors...
-                  </p>
+                {donations.length > 6 && (
+                  <div className="col-span-full text-center py-4">
+                    <p className="text-sm text-gray-500">
+                      And {donations.length - 6} more donors...
+                    </p>
+                  </div>
                 )}
               </div>
             ) : (
@@ -704,9 +717,62 @@ const Main = ({ campaignId }: MainProps) => {
             <h3 className="text-3xl font-semibold text-black mb-4">
               Top Chainers
             </h3>
-            <div className="flex items-center justify-center py-8">
-              <p className="text-[#757575]">No chainers yet. Start the chain!</p>
-            </div>
+            {loadingTopChainers ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#104901]"></div>
+              </div>
+            ) : topChainers && topChainers.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {topChainers.map((chainer, index) => (
+                  <div key={chainer.id} className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                    <div className="flex flex-col items-center text-center">
+                      {/* Circular Profile Picture */}
+                      <div className="w-16 h-16 bg-gradient-to-br from-[#FFAF69] to-[#FFD4AE] rounded-full flex items-center justify-center text-white font-bold text-xl mb-3 relative">
+                        {chainer.userName.charAt(0).toUpperCase()}
+                        {/* Rank Badge */}
+                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center text-xs font-bold text-gray-800">
+                          {index + 1}
+                        </div>
+                      </div>
+                      
+                      {/* Name */}
+                      <h4 className="font-semibold text-[#104901] text-lg mb-1">
+                        {chainer.userName}
+                      </h4>
+                      
+                      {/* Stats */}
+                      <div className="space-y-1 mb-2">
+                        <p className="font-bold text-lg text-[#104901]">
+                          ₦{chainer.totalRaised.toLocaleString()}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {chainer.totalReferrals} referrals
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          ₦{chainer.commissionEarned.toLocaleString()} earned
+                        </p>
+                      </div>
+                      
+                      {/* Date */}
+                      <p className="text-xs text-gray-500">
+                        Joined {new Date(chainer.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {topChainers.length > 6 && (
+                  <div className="col-span-full text-center py-4">
+                    <p className="text-sm text-gray-500">
+                      And {topChainers.length - 6} more chainers...
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-[#757575]">No chainers yet. Start the chain!</p>
+              </div>
+            )}
           </section>
         </div>
 
