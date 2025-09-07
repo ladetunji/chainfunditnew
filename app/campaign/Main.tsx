@@ -217,7 +217,7 @@ const Main = ({ campaignId }: MainProps) => {
   const [commentModalOpen, setCommentModalOpen] = useState(false);
   const [comments, setComments] = useState<CampaignComment[]>([]);
   const [loadingComments, setLoadingComments] = useState(false);
-  const [chainCount, setChainCount] = useState(0);
+  const [chainCount, setChainCount] = useState<number>(0);
   const [loadingChains, setLoadingChains] = useState(false);
 
   // Fetch donations data
@@ -234,8 +234,27 @@ const Main = ({ campaignId }: MainProps) => {
       loadingDonations,
       topChainers: topChainers?.length || 0,
       loadingTopChainers,
+      chainCount,
+      loadingChains,
     });
-  }, [campaignId, donations, loadingDonations, topChainers, loadingTopChainers]);
+  }, [campaignId, donations, loadingDonations, topChainers, loadingTopChainers, chainCount, loadingChains]);
+
+  // Test API endpoint manually
+  React.useEffect(() => {
+    if (campaignId) {
+      const testChainAPI = async () => {
+        try {
+          console.log('🧪 Testing chain API manually for campaign:', campaignId);
+          const response = await fetch(`/api/campaigns/${campaignId}/chains`);
+          const data = await response.json();
+          console.log('🧪 Manual chain API test result:', data);
+        } catch (error) {
+          console.error('🧪 Manual chain API test failed:', error);
+        }
+      };
+      testChainAPI();
+    }
+  }, [campaignId]);
 
   // Fetch campaign updates
   const fetchUpdates = React.useCallback(async () => {
@@ -279,16 +298,30 @@ const Main = ({ campaignId }: MainProps) => {
   const fetchChainCount = React.useCallback(async () => {
     try {
       setLoadingChains(true);
+      console.log('🔗 Fetching chain count for campaign:', campaignId);
       const response = await fetch(`/api/campaigns/${campaignId}/chains`);
 
+      console.log('🔗 Chain count response status:', response.status);
+      
       if (response.ok) {
         const result = await response.json();
+        console.log('🔗 Chain count API response:', result);
+        
         if (result.success) {
-          setChainCount(result.data.chainCount);
+          const count = result.data?.chainCount || 0;
+          console.log('🔗 Setting chain count to:', count);
+          setChainCount(count);
+        } else {
+          console.log('🔗 Chain count API returned success: false');
+          setChainCount(0);
         }
+      } else {
+        console.log('🔗 Chain count API failed with status:', response.status);
+        setChainCount(0);
       }
     } catch (err) {
       console.error("Error fetching chain count:", err);
+      setChainCount(0);
     } finally {
       setLoadingChains(false);
     }
@@ -539,7 +572,7 @@ const Main = ({ campaignId }: MainProps) => {
               {loadingChains ? (
                 <span className="animate-pulse">Loading...</span>
               ) : (
-                `${chainCount} chain${chainCount === 1 ? "" : "s"}`
+                `${chainCount || 0} chain${(chainCount || 0) === 1 ? "" : "s"}`
               )}
             </p>
           </section>

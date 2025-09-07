@@ -227,9 +227,11 @@ const DonateModal: React.FC<DonateModalProps> = ({
       case 'facebook':
         return `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}&quote=${encodedText}`;
       case 'twitter':
-        return `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`;
+        // Use new X.com endpoint
+        return `https://x.com/intent/post?text=${encodedText}&url=${encodedUrl}`;
       case 'linkedin':
-        return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+        // Add summary parameter for encoded text
+        return `https://www.linkedin.com/shareArticle?mini=true&url=${encodedUrl}&summary=${encodedText}`;
       case 'instagram':
         // Instagram doesn't support direct URL sharing, so we'll copy the text
         return '#';
