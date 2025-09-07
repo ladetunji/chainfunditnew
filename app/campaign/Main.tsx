@@ -82,59 +82,6 @@ interface MainProps {
   campaignId: string;
 }
 
-const donors = [
-  {
-    image: "/images/donor1.png",
-    name: "Angela Bassett",
-    amount: "₦125,000",
-  },
-  {
-    image: "/images/donor6.png",
-    name: "Ruslev Mikhailsky",
-    amount: "₦250,000",
-  },
-  {
-    image: "/images/donor2.png",
-    name: "Alexander Iwobi",
-    amount: "₦150,000",
-  },
-  {
-    image: "/images/donor3.png",
-    name: "Sarah Johnson",
-    amount: "₦75,000",
-  },
-  {
-    image: "/images/donor4.png",
-    name: "Michael Brown",
-    amount: "₦200,000",
-  },
-  {
-    image: "/images/donor5.png",
-    name: "Emily Davis",
-    amount: "₦90,000",
-  },
-];
-
-const chainers = [
-  {
-    image: "/images/donor1.png",
-    name: "Angela Bassett",
-    numberOfDonations: 20,
-    amount: "₦125,000",
-  },
-  {
-    image: "/images/donor6.png",
-    name: "Ruslev Mikhailsky",
-    numberOfDonations: 12,
-    amount: "₦250,000",
-  },
-  {
-    image: "/images/donor2.png",
-    name: "Alexander Iwobi",
-    numberOfDonations: 6,
-    amount: "₦150,000",
-  },
-];
 
 const comments = [
   {
@@ -619,55 +566,97 @@ const Main = ({ campaignId }: MainProps) => {
             <h3 className="text-3xl font-semibold text-black mb-4">
               Top Donors
             </h3>
-            <div className="grid md:grid-cols-6 grid-cols-3 gap-3">
-              {donors.map((donor, index) => (
-                <div key={index} className="flex flex-col items-center">
-                  <div className="relative w-20 h-20 border-2 border-white rounded-3xl overflow-hidden">
-                    <Image
-                      src={donor.image}
-                      alt={donor.name}
-                      fill
-                      style={{ objectFit: "cover" }}
-                    />
+            {loadingDonations ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#104901]"></div>
+              </div>
+            ) : donations && donations.length > 0 ? (
+              <div className="grid md:grid-cols-6 grid-cols-3 gap-3">
+                {donations.slice(0, 6).map((donation, index) => (
+                  <div key={donation.id} className="flex flex-col items-center">
+                    <div className="relative w-20 h-20 border-2 border-white rounded-3xl overflow-hidden">
+                      {donation.donorAvatar && !donation.isAnonymous ? (
+                        <Image
+                          src={donation.donorAvatar}
+                          alt={donation.donorName || "Donor"}
+                          fill
+                          style={{ objectFit: "cover" }}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-[#104901] to-[#5F8555] flex items-center justify-center text-white font-bold text-xl">
+                          {donation.isAnonymous
+                            ? "A"
+                            : donation.donorName
+                            ? donation.donorName.charAt(0).toUpperCase()
+                            : "D"}
+                        </div>
+                      )}
+                    </div>
+                    <p className="font-normal text-base text-black">
+                      {donation.isAnonymous
+                        ? "Anonymous"
+                        : donation.donorName || "Donor"}
+                    </p>
+                    <p className="font-medium text-sm text-[#757575]">
+                      {donation.currency} {parseFloat(donation.amount).toLocaleString()}
+                    </p>
                   </div>
-                  <p className="font-normal text-base text-black">
-                    {donor.name}
-                  </p>
-                  <p className="font-medium text-sm text-[#757575]">
-                    {donor.amount}
-                  </p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-[#757575]">
+                  No donors yet. Be the first to donate!
+                </p>
+              </div>
+            )}
           </section>
 
           <section className="my-5 py-5 border-y border-[#ADADAD]">
             <h3 className="text-3xl font-semibold text-black mb-4">
               Top Chainers
             </h3>
-            <div className="flex gap-8">
-              {chainers.map((chainer, index) => (
-                <div key={index} className="flex flex-col items-center">
-                  <div className="relative w-20 h-20 border-2 border-white rounded-3xl overflow-hidden">
-                    <Image
-                      src={chainer.image}
-                      alt={chainer.name}
-                      fill
-                      style={{ objectFit: "cover" }}
-                    />
+            {loadingTopChainers ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#104901]"></div>
+              </div>
+            ) : topChainers && topChainers.length > 0 ? (
+              <div className="flex gap-8">
+                {topChainers.map((chainer, index) => (
+                  <div key={chainer.id} className="flex flex-col items-center">
+                    <div className="relative w-20 h-20 border-2 border-white rounded-3xl overflow-hidden">
+                      {chainer.userAvatar ? (
+                        <Image
+                          src={chainer.userAvatar}
+                          alt={chainer.userName}
+                          fill
+                          style={{ objectFit: "cover" }}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-[#FFAF69] to-[#FFD4AE] flex items-center justify-center text-white font-bold text-xl">
+                          {chainer.userName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <p className="font-normal text-lg text-black">
+                      {chainer.userName}
+                    </p>
+                    <p className="font-medium text-base text-[#5F8555]">
+                      {chainer.totalReferrals} referrals
+                    </p>
+                    <p className="font-medium text-base text-[#757575]">
+                      ₦{chainer.totalRaised.toLocaleString()}
+                    </p>
                   </div>
-                  <p className="font-normal text-lg text-black">
-                    {chainer.name}
-                  </p>
-                  <p className="font-medium text-base text-[#5F8555]">
-                    {chainer.numberOfDonations} donations
-                  </p>
-                  <p className="font-medium text-base text-[#757575]">
-                    {chainer.amount}
-                  </p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-center py-8">
+                <p className="text-[#757575]">
+                  No chainers yet. Start the chain!
+                </p>
+              </div>
+            )}
           </section>
         </div>
 
