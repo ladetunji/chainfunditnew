@@ -1,5 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { Edit, Eye, Link as LinkIcon, Plus, PlusSquare, Users } from "lucide-react";
+import {
+  Edit,
+  Eye,
+  Link as LinkIcon,
+  Plus,
+  PlusSquare,
+  Users,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
@@ -32,7 +39,8 @@ const LiveCampaigns = ({ campaigns }: Props) => {
             No Live Campaigns
           </h3>
           <p className="font-normal text-xl text-[#104901] opacity-80">
-            Start your fundraising journey by creating your first campaign and making a difference in your community.
+            Start your fundraising journey by creating your first campaign and
+            making a difference in your community.
           </p>
         </div>
 
@@ -114,13 +122,10 @@ const LiveCampaigns = ({ campaigns }: Props) => {
                       )}
                       % complete
                     </span>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center mb-4 text-sm text-[#104901] opacity-80">
-                  <div className="flex items-center gap-1">
-                    <Users size={16} />
-                    {campaign.donors} donors
+                    <div className="flex items-center gap-1">
+                      <Users size={16} />
+                      {campaign.donors} donors
+                    </div>
                   </div>
                 </div>
 

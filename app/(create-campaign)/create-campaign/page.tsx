@@ -118,6 +118,8 @@ const tabs = ["S", "M", "L"];
 
 export default function CreateCampaignPage() {
   const [aiInstruction, setAiInstruction] = useState("");
+  const [preview, setPreview] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState(1);
   const { shortenLink } = useShortenLink();
   const [showAiModal, setShowAiModal] = useState(false);
@@ -161,6 +163,15 @@ export default function CreateCampaignPage() {
 
   const handleCoverImageUpload = (url: string) => {
     setUploadedFiles(prev => ({ ...prev, coverImageUrl: url }));
+  };
+
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFormData((prev) => ({ ...prev, coverImage: file }));
+    const reader = new FileReader();
+    reader.onloadend = () => setPreview(reader.result as string);
+    reader.readAsDataURL(file);
   };
 
   const handleImageUpload = (url: string) => {
@@ -245,37 +256,53 @@ export default function CreateCampaignPage() {
 
   const handleSubmit = async () => {
     setIsLoading(true);
-    const payload = new FormData();
-
-    // Map form fields to API expected field names
-    payload.append("title", formData.title);
-    payload.append("subtitle", formData.subtitle || "");
-    payload.append("description", formData.story); // story -> description
-    payload.append("reason", formData.reason);
-    payload.append("fundraisingFor", formData.fundraisingFor);
-    payload.append("duration", formData.duration || "");
-    payload.append("videoUrl", formData.video || ""); // video -> videoUrl
-    payload.append("goalAmount", formData.goal.toString()); // goal -> goalAmount
-    payload.append("currency", formData.currency);
-    payload.append("minimumDonation", "1"); // Default minimum donation
-    payload.append("chainerCommissionRate", "5"); // Default commission rate
-
-    // Add uploaded file URLs
-    if (uploadedFiles.coverImageUrl) {
-      payload.append("coverImageUrl", uploadedFiles.coverImageUrl);
-    }
     
-    // Convert image URLs to JSON string for galleryImages
-    if (uploadedFiles.imageUrls.length > 0) {
-      payload.append("galleryImages", JSON.stringify(uploadedFiles.imageUrls));
-    }
-    
-    // Convert document URLs to JSON string for documents
-    if (uploadedFiles.documentUrls.length > 0) {
-      payload.append("documents", JSON.stringify(uploadedFiles.documentUrls));
-    }
-
     try {
+      // First upload cover image if selected
+      let coverImageUrl = uploadedFiles.coverImageUrl;
+      if (formData.coverImage && !coverImageUrl) {
+        const coverFormData = new FormData();
+        coverFormData.append('file', formData.coverImage);
+        const coverResponse = await fetch('/api/upload/cover', {
+          method: 'POST',
+          body: coverFormData,
+        });
+        if (coverResponse.ok) {
+          const coverData = await coverResponse.json();
+          coverImageUrl = coverData.url;
+        }
+      }
+
+      const payload = new FormData();
+
+      // Map form fields to API expected field names
+      payload.append("title", formData.title);
+      payload.append("subtitle", formData.subtitle || "");
+      payload.append("description", formData.story); // story -> description
+      payload.append("reason", formData.reason);
+      payload.append("fundraisingFor", formData.fundraisingFor);
+      payload.append("duration", formData.duration || "");
+      payload.append("videoUrl", formData.video || ""); // video -> videoUrl
+      payload.append("goalAmount", formData.goal.toString()); // goal -> goalAmount
+      payload.append("currency", formData.currency);
+      payload.append("minimumDonation", "1"); // Default minimum donation
+      payload.append("chainerCommissionRate", "5"); // Default commission rate
+
+      // Add cover image URL
+      if (coverImageUrl) {
+        payload.append("coverImageUrl", coverImageUrl);
+      }
+    
+      // Convert image URLs to JSON string for galleryImages
+      if (uploadedFiles.imageUrls.length > 0) {
+        payload.append("galleryImages", JSON.stringify(uploadedFiles.imageUrls));
+      }
+      
+      // Convert document URLs to JSON string for documents
+      if (uploadedFiles.documentUrls.length > 0) {
+        payload.append("documents", JSON.stringify(uploadedFiles.documentUrls));
+      }
+
       const res = await fetch("/api/campaigns", {
         method: "POST",
         body: payload,
@@ -303,11 +330,7 @@ export default function CreateCampaignPage() {
       setShowSuccessModal(true);
     } catch (err) {
       console.error("Error creating campaign:", err);
-      if (err instanceof Error) {
-        toast.error(err.message || "Failed to create campaign");
-      } else {
-        toast.error("Failed to create campaign");
-      }
+      alert("Failed to create campaign. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -376,26 +399,31 @@ export default function CreateCampaignPage() {
             {/* Left Side: Image Upload */}
             <div className="w-full md:w-2/5">
               <div className="relative">
-                <Upload
-                  type="imageUpload"
+                <input
+                  type="file"
+                  id="cover-image-upload"
                   accept="image/*"
-                  onUpload={handleCoverImageUpload}
-                  className="relative"
+                  className="hidden"
+                  ref={inputRef}
+                  onChange={handleImageChange}
+                />
+                <label
+                  htmlFor="cover-image-upload"
+                  className="w-[200px] md:w-[360px] h-[200px] md:h-[360px] flex items-center justify-center cursor-pointer bg-center bg-cover border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors"
+                  style={{
+                    backgroundImage: preview
+                      ? `url(${preview})`
+                      : `url('/images/image.png')`,
+                  }}
+                  title="Upload campaign image"
                 >
-                  <div
-                    className="w-[200px] md:w-[360px] h-[200px] md:h-[360px] flex items-center justify-center cursor-pointer bg-center bg-cover"
-                    style={{
-                      backgroundImage: uploadedFiles.coverImageUrl
-                        ? `url(${uploadedFiles.coverImageUrl})`
-                        : `url('/images/image.png')`,
-                    }}
-                    title="Upload campaign image"
-                  >
-                    {!uploadedFiles.coverImageUrl && (
-                      <span className="sr-only">Upload campaign image</span>
-                    )}
-                  </div>
-                </Upload>
+                  {!preview && (
+                    <div className="text-center">
+                      <div className="text-4xl text-gray-400 mb-2">📷</div>
+                      <span className="text-sm text-gray-500">Click to upload</span>
+                    </div>
+                  )}
+                </label>
                 <section className="w-8 md:w-[56px] h-8 md:h-[56px] bg-[#104901] flex items-center justify-center text-white absolute right-[118px] md:right-[160px] 2xl:right-[200px] bottom-6 md:bottom-11">
                   <Plus className="md:text-4xl text-lg" size={36} />
                 </section>
