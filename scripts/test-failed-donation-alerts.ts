@@ -5,11 +5,11 @@
  * This script simulates a failed donation and checks if notifications are created
  */
 
-import { db } from './lib/db';
-import { donations } from './lib/schema/donations';
-import { campaigns } from './lib/schema/campaigns';
-import { notifications } from './lib/schema/notifications';
-import { users } from './lib/schema/users';
+import { db } from '../lib/db';
+import { donations } from '../lib/schema/donations';
+import { campaigns } from '../lib/schema/campaigns';
+import { notifications } from '../lib/schema/notifications';
+import { users } from '../lib/schema/users';
 import { eq } from 'drizzle-orm';
 
 async function testFailedDonationAlert() {

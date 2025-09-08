@@ -89,6 +89,58 @@ async function createSuccessfulDonationNotification(donationId: string, campaign
   }
 }
 
+// Helper function to create notification for failed donation
+async function createFailedDonationNotification(donationId: string, campaignId: string) {
+  try {
+    // Get campaign creator ID
+    const campaign = await db
+      .select({ creatorId: campaigns.creatorId })
+      .from(campaigns)
+      .where(eq(campaigns.id, campaignId))
+      .limit(1);
+
+    if (!campaign.length) {
+      console.error('Campaign not found:', campaignId);
+      return;
+    }
+
+    // Get donation details
+    const donation = await db
+      .select({ 
+        amount: donations.amount, 
+        currency: donations.currency,
+        donorId: donations.donorId 
+      })
+      .from(donations)
+      .where(eq(donations.id, donationId))
+      .limit(1);
+
+    if (!donation.length) {
+      console.error('Donation not found:', donationId);
+      return;
+    }
+
+    // Create notification for campaign creator
+    await db.insert(notifications).values({
+      userId: campaign[0].creatorId,
+      type: 'donation_failed',
+      title: 'Donation Failed',
+      message: `A donation of ${donation[0].currency} ${donation[0].amount} failed to process. Please check your payment settings.`,
+      metadata: JSON.stringify({
+        donationId,
+        campaignId,
+        amount: donation[0].amount,
+        currency: donation[0].currency,
+        donorId: donation[0].donorId
+      })
+    });
+
+    console.log(`Created failed donation notification for campaign creator: ${campaign[0].creatorId}`);
+  } catch (error) {
+    console.error('Error creating failed donation notification:', error);
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.text();

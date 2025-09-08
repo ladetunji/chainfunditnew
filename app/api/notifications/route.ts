@@ -3,17 +3,7 @@ import { db } from '@/lib/db';
 import { notifications } from '@/lib/schema/notifications';
 import { users } from '@/lib/schema/users';
 import { eq, desc } from 'drizzle-orm';
-import { verifyToken } from '@/lib/auth';
-
-async function getUserFromRequest(request: NextRequest) {
-  const token = request.cookies.get('auth-token')?.value;
-  if (!token) return null;
-  
-  const userPayload = verifyToken(token);
-  if (!userPayload) return null;
-
-  return userPayload.email;
-}
+import { getUserFromRequest } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
