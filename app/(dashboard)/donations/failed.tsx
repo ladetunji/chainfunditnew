@@ -1,14 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDonations } from "@/hooks/use-dashboard";
 import { formatCurrency } from "@/lib/utils/currency";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 type Props = {};
 
 const FailedDonations = (props: Props) => {
   const { donations, loading, error, refreshDonations } = useDonations('failed');
   const [retryingDonations, setRetryingDonations] = useState<Set<string>>(new Set());
+  const [hasShownAlert, setHasShownAlert] = useState(false);
+
+  // Show alert when failed donations are detected
+  useEffect(() => {
+    if (!loading && donations.length > 0) {
+      const failedDonations = donations.filter(donation => donation.paymentStatus === 'failed');
+      if (failedDonations.length > 0 && !hasShownAlert) {
+        toast.error(`You have ${failedDonations.length} failed donation${failedDonations.length !== 1 ? 's' : ''} that need attention.`, {
+          duration: 5000,
+          action: {
+            label: 'View Details',
+            onClick: () => {
+              // Scroll to failed donations section or focus on it
+              const failedSection = document.querySelector('[data-failed-donations]');
+              if (failedSection) {
+                failedSection.scrollIntoView({ behavior: 'smooth' });
+              }
+            }
+          }
+        });
+        setHasShownAlert(true);
+      }
+    }
+  }, [donations, loading, hasShownAlert]);
 
   const handleRetryDonation = async (donationId: string) => {
     setRetryingDonations(prev => new Set(prev).add(donationId));
@@ -25,11 +50,14 @@ const FailedDonations = (props: Props) => {
       if (response.ok) {
         // Refresh the donations list
         await refreshDonations();
+        toast.success("Retry initiated for donation. Please check back later.");
         console.log(`Retry initiated for donation ${donationId}`);
       } else {
+        toast.error("Failed to retry donation. Please try again.");
         console.error('Failed to retry donation');
       }
     } catch (error) {
+      toast.error("An error occurred while retrying the donation. Please try again.");
       console.error('Error retrying donation:', error);
     } finally {
       setRetryingDonations(prev => {
@@ -78,7 +106,7 @@ const FailedDonations = (props: Props) => {
   }
 
   return (
-    <div className="flex flex-col gap-4 2xl:container 2xl:mx-auto">
+    <div className="flex flex-col gap-4 2xl:container 2xl:mx-auto" data-failed-donations>
       <div className="mb-6">
         <h3 className="font-semibold text-3xl text-[#104901] mb-2">
           {failedDonations.length} failed donation{failedDonations.length !== 1 ? 's' : ''}

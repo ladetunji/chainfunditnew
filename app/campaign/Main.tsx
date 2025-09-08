@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,6 +12,8 @@ import {
   MessageSquare,
   Send,
   PlusSquare,
+  AlertCircle,
+  X,
 } from "lucide-react";
 import CTA from "./cta";
 import ChainModal from "./chain-modal";
@@ -23,6 +25,7 @@ import { useCampaignDonations } from "@/hooks/use-campaign-donations";
 import { useTopChainers } from "@/hooks/use-top-chainers";
 import ClientToaster from "@/components/ui/client-toaster";
 import { formatCurrency, getCurrencySymbol } from "@/lib/utils/currency";
+import { toast } from "sonner";
 
 interface CampaignData {
   id: string;
@@ -220,12 +223,75 @@ const Main = ({ campaignId }: MainProps) => {
   const [loadingComments, setLoadingComments] = useState(false);
   const [chainCount, setChainCount] = useState(0);
   const [loadingChains, setLoadingChains] = useState(false);
+  const [donationStatusNotification, setDonationStatusNotification] = useState<{
+    status: 'success' | 'failed' | 'pending';
+    donationId?: string;
+    message: string;
+  } | null>(null);
 
   // Fetch donations data
   const { donations, loading: loadingDonations } =
     useCampaignDonations(campaignId);
   const { topChainers, loading: loadingTopChainers } =
     useTopChainers(campaignId);
+
+  // Handle donation status from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const donationStatus = urlParams.get('donation_status');
+    const donationId = urlParams.get('donation_id');
+    const error = urlParams.get('error');
+
+    if (donationStatus) {
+      let message = '';
+      let status: 'success' | 'failed' | 'pending' = 'success';
+
+      switch (donationStatus) {
+        case 'success':
+          status = 'success';
+          message = 'Thank you! Your donation was successful.';
+          toast.success('Donation Successful!', {
+            description: message,
+            duration: 5000,
+          });
+          break;
+        case 'failed':
+          status = 'failed';
+          message = error ? `Donation failed: ${error}` : 'Your donation could not be processed. Please try again.';
+          toast.error('Donation Failed', {
+            description: message,
+            duration: 8000,
+          });
+          break;
+        case 'pending':
+          status = 'pending';
+          message = 'Your donation is being processed. You will be notified once it\'s completed.';
+          toast.info('Donation Pending', {
+            description: message,
+            duration: 6000,
+          });
+          break;
+      }
+
+      setDonationStatusNotification({
+        status,
+        donationId: donationId || undefined,
+        message,
+      });
+
+      // Clean up URL parameters after showing notification
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('donation_status');
+      newUrl.searchParams.delete('donation_id');
+      newUrl.searchParams.delete('error');
+      window.history.replaceState({}, '', newUrl.toString());
+
+      // Auto-hide notification after 10 seconds
+      setTimeout(() => {
+        setDonationStatusNotification(null);
+      }, 10000);
+    }
+  }, []);
 
   // Debug logging
   React.useEffect(() => {
@@ -406,6 +472,45 @@ const Main = ({ campaignId }: MainProps) => {
 
   return (
     <div className="max-w-[1440px] bg-[url('/images/logo-bg.svg')] bg-[length:60%] md:bg-[length:30%] md:h-full bg-no-repeat bg-right-bottom mx-auto mt-16 md:mt-22 h-full p-5 md:p-12 font-source">
+      {/* Donation Status Notification Banner */}
+      {donationStatusNotification && (
+        <div className={`mb-6 p-4 rounded-lg border-2 flex items-center justify-between ${
+          donationStatusNotification.status === 'success' 
+            ? 'bg-green-50 border-green-200 text-green-800' 
+            : donationStatusNotification.status === 'failed'
+            ? 'bg-red-50 border-red-200 text-red-800'
+            : 'bg-yellow-50 border-yellow-200 text-yellow-800'
+        }`}>
+          <div className="flex items-center gap-3">
+            {donationStatusNotification.status === 'success' ? (
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            ) : donationStatusNotification.status === 'failed' ? (
+              <AlertCircle className="h-5 w-5 text-red-600" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-yellow-600" />
+            )}
+            <div>
+              <p className="font-semibold">
+                {donationStatusNotification.status === 'success' 
+                  ? 'Donation Successful!' 
+                  : donationStatusNotification.status === 'failed'
+                  ? 'Donation Failed'
+                  : 'Donation Pending'}
+              </p>
+              <p className="text-sm">{donationStatusNotification.message}</p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setDonationStatusNotification(null)}
+            className="p-1 hover:bg-transparent"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+      
       <div className="flex md:flex-row md:gap-5 flex-col">
         {/* Left Side */}
         <div className="w-full md:w-[70%]">

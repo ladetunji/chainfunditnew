@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { donations } from '@/lib/schema/donations';
 import { campaigns } from '@/lib/schema/campaigns';
+import { notifications } from '@/lib/schema/notifications';
 import { eq, sum, and } from 'drizzle-orm';
 import { handleStripeWebhook } from '@/lib/payments/stripe';
 
@@ -33,6 +34,58 @@ async function updateCampaignAmount(campaignId: string) {
     console.log(`Updated campaign ${campaignId} currentAmount to ${totalAmount}`);
   } catch (error) {
     console.error('Error updating campaign amount:', error);
+  }
+}
+
+// Helper function to create notification for successful donation
+async function createSuccessfulDonationNotification(donationId: string, campaignId: string) {
+  try {
+    // Get campaign creator ID
+    const campaign = await db
+      .select({ creatorId: campaigns.creatorId })
+      .from(campaigns)
+      .where(eq(campaigns.id, campaignId))
+      .limit(1);
+
+    if (!campaign.length) {
+      console.error('Campaign not found:', campaignId);
+      return;
+    }
+
+    // Get donation details
+    const donation = await db
+      .select({ 
+        amount: donations.amount, 
+        currency: donations.currency,
+        donorId: donations.donorId 
+      })
+      .from(donations)
+      .where(eq(donations.id, donationId))
+      .limit(1);
+
+    if (!donation.length) {
+      console.error('Donation not found:', donationId);
+      return;
+    }
+
+    // Create notification for campaign creator
+    await db.insert(notifications).values({
+      userId: campaign[0].creatorId,
+      type: 'donation_received',
+      title: 'New Donation Received!',
+      message: `You received a donation of ${donation[0].currency} ${donation[0].amount}. Thank you for your campaign!`,
+      metadata: JSON.stringify({
+        donationId,
+        campaignId,
+        amount: donation[0].amount,
+        currency: donation[0].currency,
+        donorId: donation[0].donorId
+      })
+    });
+
+    console.log(`Created successful donation notification for campaign creator: ${campaign[0].creatorId}`);
+  } catch (error) {
+    console.error('Error creating successful donation notification:', error);
   }
 }
 
@@ -105,6 +158,9 @@ async function handlePaymentSuccess(paymentIntent: any) {
     // Update campaign currentAmount
     await updateCampaignAmount(donation[0].campaignId);
 
+    // Create notification for successful donation
+    await createSuccessfulDonationNotification(donationId, donation[0].campaignId);
+
     console.log(`Payment completed for donation: ${donationId}`);
   } catch (error) {
     console.error('Error handling payment success:', error);
@@ -120,12 +176,27 @@ async function handlePaymentFailed(paymentIntent: any) {
       return;
     }
 
+    // Get donation to get campaignId
+    const donation = await db
+      .select({ campaignId: donations.campaignId })
+      .from(donations)
+      .where(eq(donations.id, donationId))
+      .limit(1);
+
+    if (!donation.length) {
+      console.error('Donation not found:', donationId);
+      return;
+    }
+
     await db
       .update(donations)
       .set({
         paymentStatus: 'failed',
       })
       .where(eq(donations.id, donationId));
+
+    // Create notification for failed donation
+    await createFailedDonationNotification(donationId, donation[0].campaignId);
 
     console.log(`Payment failed for donation: ${donationId}`);
   } catch (error) {

@@ -110,7 +110,6 @@ type CampaignFormData = {
   video: string;
   documents: File[];
   images: File[];
-  coverImage: File | null;
   story: string;
 };
 
@@ -119,7 +118,6 @@ const tabs = ["S", "M", "L"];
 
 export default function CreateCampaignPage() {
   const [aiInstruction, setAiInstruction] = useState("");
-  const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState(1);
   const { shortenLink } = useShortenLink();
@@ -152,7 +150,6 @@ export default function CreateCampaignPage() {
     video: "",
     documents: [],
     images: [],
-    coverImage: null,
     story: "",
   });
 
@@ -165,15 +162,6 @@ export default function CreateCampaignPage() {
 
   const handleCoverImageUpload = (url: string) => {
     setUploadedFiles(prev => ({ ...prev, coverImageUrl: url }));
-  };
-
-  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setFormData((prev) => ({ ...prev, coverImage: file }));
-    const reader = new FileReader();
-    reader.onloadend = () => setPreview(reader.result as string);
-    reader.readAsDataURL(file);
   };
 
   const handleImageUpload = (url: string) => {
@@ -260,19 +248,6 @@ export default function CreateCampaignPage() {
     setIsLoading(true);
     
     try {
-      // First upload cover image if selected
-      let coverImageUrl = uploadedFiles.coverImageUrl;
-      if (formData.coverImage && !coverImageUrl) {
-        try {
-          const result = await uploadFile(formData.coverImage, 'imageUpload');
-          if (result && result.url) {
-            coverImageUrl = result.url;
-          }
-        } catch (error) {
-          console.error('Cover image upload failed:', error);
-        }
-      }
-
       const payload = new FormData();
 
       // Map form fields to API expected field names
@@ -289,8 +264,8 @@ export default function CreateCampaignPage() {
       payload.append("chainerCommissionRate", "5"); // Default commission rate
 
       // Add cover image URL with fallback to first gallery image
-      if (coverImageUrl) {
-        payload.append("coverImageUrl", coverImageUrl);
+      if (uploadedFiles.coverImageUrl) {
+        payload.append("coverImageUrl", uploadedFiles.coverImageUrl);
       } else if (uploadedFiles.imageUrls.length > 0) {
         // Use first gallery image as cover image fallback
         payload.append("coverImageUrl", uploadedFiles.imageUrls[0]);
@@ -402,30 +377,29 @@ export default function CreateCampaignPage() {
             {/* Left Side: Image Upload */}
             <div className="w-full md:w-2/5">
               <div className="relative">
-                <input
-                  type="file"
-                  id="cover-image-upload"
+                <Upload
+                  type="imageUpload"
+                  onUpload={handleCoverImageUpload}
                   accept="image/*"
-                  className="hidden"
-                  ref={inputRef}
-                  onChange={handleImageChange}
-                />
-                <label
-                  htmlFor="cover-image-upload"
-                  className="w-[200px] md:w-[360px] h-[200px] md:h-[360px] flex items-center justify-center cursor-pointer bg-center bg-cover border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors"
-                  style={{
-                    backgroundImage: preview
-                      ? `url(${preview})`
-                      : `url('/images/image.png')`,
-                  }}
-                  title="Upload campaign image"
                 >
-                  {/* {!preview && (
-                    <div className="text-center">
-                      
-                    </div>
-                  )} */}
-                </label>
+                  <div
+                    className="w-[200px] md:w-[360px] h-[200px] md:h-[360px] flex items-center justify-center cursor-pointer bg-center bg-cover border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors"
+                    style={{
+                      backgroundImage: uploadedFiles.coverImageUrl
+                        ? `url(${uploadedFiles.coverImageUrl})`
+                        : `url('/images/image.png')`,
+                    }}
+                    title="Upload campaign image"
+                  >
+                    {!uploadedFiles.coverImageUrl && (
+                      <div className="text-center">
+                        <LuImage className="mx-auto mb-2 text-gray-400" size={48} />
+                        <p className="text-gray-500 text-sm">Click to upload</p>
+                      </div>
+                    )}
+                  </div>
+                </Upload>
+                
                 <section className="w-8 md:w-[56px] h-8 md:h-[56px] bg-[#104901] flex items-center justify-center text-white absolute right-[118px] md:right-[160px] 2xl:right-[200px] bottom-6 md:bottom-11">
                   <Plus className="md:text-4xl text-lg" size={36} />
                 </section>

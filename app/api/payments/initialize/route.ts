@@ -180,6 +180,7 @@ export async function POST(request: NextRequest) {
             donorName: user[0].fullName,
             campaignTitle: campaign[0].title,
           },
+          callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/payments/paystack/callback`,
         });
       }
 

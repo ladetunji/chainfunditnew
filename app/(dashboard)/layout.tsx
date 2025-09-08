@@ -4,6 +4,7 @@ import React from "react";
 import Navbar from "@/components/dashboard/Navbar";
 import Sidebar from "@/components/dashboard/Sidebar";
 import ClientToaster from "@/components/ui/client-toaster";
+import { NotificationAlert } from "@/components/dashboard/NotificationAlert";
 
 type Props = {};
 
@@ -16,10 +17,15 @@ const layout = ({ children }: { children: React.ReactNode }) => {
           {/* Sidebar Component */}
           <Sidebar />
         </div>
-        <div className="w-full md:w-4/5 px-10">{children}</div>
+        <div className="w-full md:w-4/5 px-10">
+          {/* Notification Alert */}
+          <div className="fixed top-20 right-4 z-40">
+            <NotificationAlert />
+          </div>
+          {children}
+        </div>
       </div>
-     
-     
+      <ClientToaster />
     </div>
   );
 };

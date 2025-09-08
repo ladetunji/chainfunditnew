@@ -26,6 +26,7 @@ import { getSupportedProviders, PaymentProvider } from "@/lib/payments/config";
 import { getCurrencyCode } from "@/lib/utils/currency";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface Campaign {
   id: string;
@@ -58,11 +59,9 @@ const DonateModal: React.FC<DonateModalProps> = ({
   const [comments, setComments] = useState("");
   const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>("stripe");
   const [supportedProviders, setSupportedProviders] = useState<PaymentProvider[]>([]);
-  const [testMode, setTestMode] = useState(false);
-  const [testScenario, setTestScenario] = useState<'success' | 'pending' | 'failed'>('success');
   const [linkCopied, setLinkCopied] = useState(false);
   
-  const { loading: donationLoading, error: donationError, processTestDonation, processDonation, initializeDonation, simulatePaymentStatus } = useDonations();
+  const { loading: donationLoading, error: donationError, initializeDonation } = useDonations();
 
   useEffect(() => {
     if (campaign && open) {
@@ -113,36 +112,27 @@ const DonateModal: React.FC<DonateModalProps> = ({
         isAnonymous: anonymous,
       };
 
-      let result: DonationResult | undefined;
-      if (testMode) {
-        // For test mode, we need to handle different scenarios
-        if (testScenario === 'success') {
-          result = await processTestDonation(donationData);
-        } else {
-          // For pending and failed scenarios, we need to create the donation and then simulate the status
-          const initResult = await initializeDonation(donationData, true);
-          if (initResult.success && initResult.donationId) {
-            if (testScenario === 'pending') {
-              // Leave it as pending (don't simulate completion)
-              result = { success: true, donationId: initResult.donationId };
-            } else if (testScenario === 'failed') {
-              // Simulate failed payment
-              const simulateResult = await simulatePaymentStatus(initResult.donationId, 'failed');
-              result = { success: simulateResult.success, donationId: initResult.donationId };
-            }
-          } else {
-            result = initResult;
-          }
-        }
-      } else {
-        result = await processDonation(donationData);
-      }
+      // Initialize donation and redirect to payment gateway
+      const result = await initializeDonation(donationData, false);
 
       if (result && result.success) {
-        setStep("thankyou");
+        // Close modal and redirect to payment gateway
+        onOpenChange(false);
+        
+        if (result.provider === 'paystack' && result.authorization_url) {
+          // Redirect to Paystack payment page
+          window.location.href = result.authorization_url;
+        } else if (result.provider === 'stripe' && result.clientSecret) {
+          // For Stripe, we would typically handle this with Stripe Elements
+          // For now, we'll show a message to complete payment
+          toast.info("Please complete your payment using Stripe");
+        }
+      } else if (result && !result.success) {
+        toast.error(result.error || "Donation failed. Please try again.");
       }
     } catch (error) {
       console.error('Payment error:', error);
+      toast.error("An error occurred while processing your donation. Please try again.");
     }
   };
 
@@ -158,8 +148,6 @@ const DonateModal: React.FC<DonateModalProps> = ({
     setTaxNumber("");
     setAnonymous(false);
     setComments("");
-    setTestMode(false);
-    setTestScenario('success');
     setLinkCopied(false);
     onOpenChange(false);
   };
@@ -474,65 +462,6 @@ const DonateModal: React.FC<DonateModalProps> = ({
                 </p>
               </div>
 
-              {/* Test Mode Toggle */}
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  id="testMode"
-                  checked={testMode}
-                  onCheckedChange={(checked: boolean) => setTestMode(checked)}
-                />
-                <Label
-                  htmlFor="testMode"
-                  className="text-base font-normal text-[#5F8555]"
-                >
-                  Test Mode
-                </Label>
-              </div>
-
-              {/* Test Mode Options */}
-              {testMode && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-yellow-800 mb-3">Test Payment Scenarios</h4>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Button
-                      onClick={() => setTestScenario('success')}
-                      variant="outline"
-                      className={`text-xs h-8 ${
-                        testScenario === 'success' 
-                          ? 'bg-green-200 border-green-400 text-green-900' 
-                          : 'bg-green-100 border-green-300 text-green-800 hover:bg-green-200'
-                      }`}
-                    >
-                      ✅ Success
-                    </Button>
-                    <Button
-                      onClick={() => setTestScenario('pending')}
-                      variant="outline"
-                      className={`text-xs h-8 ${
-                        testScenario === 'pending' 
-                          ? 'bg-yellow-200 border-yellow-400 text-yellow-900' 
-                          : 'bg-yellow-100 border-yellow-300 text-yellow-800 hover:bg-yellow-200'
-                      }`}
-                    >
-                      ⏳ Pending
-                    </Button>
-                    <Button
-                      onClick={() => setTestScenario('failed')}
-                      variant="outline"
-                      className={`text-xs h-8 ${
-                        testScenario === 'failed' 
-                          ? 'bg-red-200 border-red-400 text-red-900' 
-                          : 'bg-red-100 border-red-300 text-red-800 hover:bg-red-200'
-                      }`}
-                    >
-                      ❌ Failed
-                    </Button>
-                  </div>
-                  <p className="text-xs text-yellow-700 mt-2">
-                    Select a scenario to test different payment outcomes
-                  </p>
-                </div>
-              )}
 
               {/* Donate Button */}
               <Button
@@ -622,7 +551,7 @@ const DonateModal: React.FC<DonateModalProps> = ({
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   ) : (
                     <>
-                      {testMode ? `Test ${testScenario.charAt(0).toUpperCase() + testScenario.slice(1)}` : "Pay Now"} <HandCoins size={20} />
+                      Pay Now <HandCoins size={20} />
                     </>
                   )}
                 </Button>
