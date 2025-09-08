@@ -98,7 +98,7 @@ export function CampaignCard({ campaign, viewMode, geolocation, convertedAmounts
           {/* Image */}
           <div className="md:w-1/3 relative">
             <Image
-              src={campaign.coverImageUrl || '/images/default-campaign.jpg'}
+              src={campaign.coverImageUrl || '/images/card-img1.png'}
               alt={campaign.title}
               width={400}
               height={300}
@@ -199,7 +199,7 @@ export function CampaignCard({ campaign, viewMode, geolocation, convertedAmounts
       {/* Image */}
       <div className="relative">
         <Image
-          src={campaign.coverImageUrl || '/images/default-campaign.jpg'}
+          src={campaign.coverImageUrl || '/images/card-img1.png'}
           alt={campaign.title}
           width={400}
           height={300}

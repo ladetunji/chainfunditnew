@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users, campaigns, donations } from '@/lib/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import { parse } from 'cookie';
 import { verifyUserJWT } from '@/lib/auth';
 
@@ -37,15 +37,36 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
 
-    // Build where clause
-    let conditions = [eq(donations.donorId, userId)];
+    // Get user's campaigns first
+    const userCampaigns = await db
+      .select({ id: campaigns.id })
+      .from(campaigns)
+      .where(eq(campaigns.creatorId, userId));
+
+    if (userCampaigns.length === 0) {
+      return NextResponse.json({ 
+        success: true, 
+        donations: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0
+        }
+      });
+    }
+
+    const campaignIds = userCampaigns.map(c => c.id);
+
+    // Build where clause for donations received by user's campaigns
+    let conditions = [inArray(donations.campaignId, campaignIds)];
     if (status !== 'all') {
       conditions.push(eq(donations.paymentStatus, status));
     }
     const whereClause = conditions.length > 0 ? conditions.reduce((acc, condition) => acc && condition) : undefined;
 
-    // Get user's donations
-    const userDonations = await db
+    // Get donations received by user's campaigns
+    const receivedDonations = await db
       .select({
         id: donations.id,
         amount: donations.amount,
@@ -58,10 +79,14 @@ export async function GET(request: NextRequest) {
         processedAt: donations.processedAt,
         campaignId: campaigns.id,
         campaignTitle: campaigns.title,
-        campaignCoverImage: campaigns.coverImageUrl
+        campaignCoverImage: campaigns.coverImageUrl,
+        donorId: donations.donorId,
+        donorName: users.fullName,
+        donorEmail: users.email
       })
       .from(donations)
       .leftJoin(campaigns, eq(donations.campaignId, campaigns.id))
+      .leftJoin(users, eq(donations.donorId, users.id))
       .where(whereClause)
       .orderBy(desc(donations.createdAt))
       .limit(limit)
@@ -73,7 +98,7 @@ export async function GET(request: NextRequest) {
       .from(donations)
       .where(whereClause);
 
-    const donationsWithStats = userDonations.map(donation => ({
+    const donationsWithStats = receivedDonations.map(donation => ({
       ...donation,
       amount: Number(donation.amount),
       isSuccessful: donation.paymentStatus === 'completed'

@@ -569,9 +569,9 @@ export default function AllCampaignsPage() {
               <div className="text-center mt-8">
                 <Button
                   onClick={loadMore}
-                  className="bg-[#5F8555] hover:bg-[#104901] text-white px-8 py-3"
+                  className="bg-[#5F8555] text-white px-8 py-3"
                 >
-                  Load More Campaigns
+                  More Campaigns
                 </Button>
               </div>
             )}
