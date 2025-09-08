@@ -277,9 +277,6 @@ export default function DashboardPage() {
                     <p className="text-sm font-bold text-[#104901]">
                       {formatCurrency(stats.totalDonations, stats.primaryCurrency)}
                     </p>
-                    <p className="text-xs text-gray-400">
-                      Debug: {stats.totalDonations} {stats.primaryCurrency}
-                    </p>
                   </div>
                   <div className="p-3 bg-gradient-to-br from-[#104901] to-green-500 rounded-xl">
                     <DollarSign className="h-6 w-6 text-white" />
@@ -498,10 +495,6 @@ export default function DashboardPage() {
                             </p>
                             <p className="text-sm text-gray-500">
                               {formatDate(donation.createdAt)}
-                            </p>
-                            {/* Debug info */}
-                            <p className="text-xs text-gray-400">
-                              Debug: {donation.amount} {donation.currency}
                             </p>
                           </div>
                         </div>

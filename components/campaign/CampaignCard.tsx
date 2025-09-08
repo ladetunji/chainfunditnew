@@ -48,7 +48,7 @@ interface CampaignCardProps {
   convertedAmounts?: {
     currentAmount: { amount: number; currency: string; originalAmount?: number; originalCurrency?: string };
     goalAmount: { amount: number; currency: string; originalAmount?: number; originalCurrency?: string };
-  };
+  } | null;
 }
 
 export function CampaignCard({ campaign, viewMode, geolocation, convertedAmounts }: CampaignCardProps) {

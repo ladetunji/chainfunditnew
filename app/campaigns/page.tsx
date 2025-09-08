@@ -238,6 +238,8 @@ export default function AllCampaignsPage() {
     selectedStatus,
     activeTab,
     sortBy,
+    geolocation,
+    shouldShowCampaign,
   ]);
 
   // Handle search with debouncing
@@ -293,6 +295,7 @@ export default function AllCampaignsPage() {
     selectedReason,
     selectedStatus,
     sortBy,
+    campaigns,
   ]);
 
   const tabs = ["All", "Live", "Completed", "Trending"];
