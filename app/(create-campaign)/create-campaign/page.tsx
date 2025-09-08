@@ -417,12 +417,11 @@ export default function CreateCampaignPage() {
                   }}
                   title="Upload campaign image"
                 >
-                  {!preview && (
+                  {/* {!preview && (
                     <div className="text-center">
-                      <div className="text-4xl text-gray-400 mb-2">📷</div>
-                      <span className="text-sm text-gray-500">Click to upload</span>
+                      
                     </div>
-                  )}
+                  )} */}
                 </label>
                 <section className="w-8 md:w-[56px] h-8 md:h-[56px] bg-[#104901] flex items-center justify-center text-white absolute right-[118px] md:right-[160px] 2xl:right-[200px] bottom-6 md:bottom-11">
                   <Plus className="md:text-4xl text-lg" size={36} />
