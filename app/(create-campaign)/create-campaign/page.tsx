@@ -54,6 +54,7 @@ import { Button } from "@/components/ui/button";
 import { LuImage } from "react-icons/lu";
 import Image from "next/image";
 import { useShortenLink } from "@/hooks/use-shorten-link";
+import { useFileUpload } from "@/hooks/use-upload";
 import { toast } from "sonner";
 import { Upload } from '@/components/ui/upload';
 import ClientToaster from "@/components/ui/client-toaster";
@@ -122,6 +123,7 @@ export default function CreateCampaignPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState(1);
   const { shortenLink } = useShortenLink();
+  const { uploadFile } = useFileUpload();
   const [showAiModal, setShowAiModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdCampaign, setCreatedCampaign] = useState<any>(null);
@@ -261,15 +263,13 @@ export default function CreateCampaignPage() {
       // First upload cover image if selected
       let coverImageUrl = uploadedFiles.coverImageUrl;
       if (formData.coverImage && !coverImageUrl) {
-        const coverFormData = new FormData();
-        coverFormData.append('file', formData.coverImage);
-        const coverResponse = await fetch('/api/upload/cover', {
-          method: 'POST',
-          body: coverFormData,
-        });
-        if (coverResponse.ok) {
-          const coverData = await coverResponse.json();
-          coverImageUrl = coverData.url;
+        try {
+          const result = await uploadFile(formData.coverImage, 'imageUpload');
+          if (result && result.url) {
+            coverImageUrl = result.url;
+          }
+        } catch (error) {
+          console.error('Cover image upload failed:', error);
         }
       }
 
@@ -288,9 +288,12 @@ export default function CreateCampaignPage() {
       payload.append("minimumDonation", "1"); // Default minimum donation
       payload.append("chainerCommissionRate", "5"); // Default commission rate
 
-      // Add cover image URL
+      // Add cover image URL with fallback to first gallery image
       if (coverImageUrl) {
         payload.append("coverImageUrl", coverImageUrl);
+      } else if (uploadedFiles.imageUrls.length > 0) {
+        // Use first gallery image as cover image fallback
+        payload.append("coverImageUrl", uploadedFiles.imageUrls[0]);
       }
     
       // Convert image URLs to JSON string for galleryImages
