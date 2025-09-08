@@ -1,6 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import { useDonations } from "@/hooks/use-dashboard";
+import { formatCurrency } from "@/lib/utils/currency";
 
 type Props = {};
 
@@ -73,7 +74,7 @@ const ReceivedDonations = (props: Props) => {
           {receivedDonations.length} donation{receivedDonations.length !== 1 ? 's' : ''} received
         </h3>
         <p className="font-normal text-xl text-[#104901]">
-          Total amount received: ${totalAmount.toFixed(2)}
+          Total amount received: {formatCurrency(totalAmount, 'NGN')}
         </p>
       </section>
 
@@ -103,7 +104,7 @@ const ReceivedDonations = (props: Props) => {
               </div>
               <div className="text-right">
                 <p className="font-bold text-lg text-[#104901]">
-                  ${donation.amount.toFixed(2)}
+                  {formatCurrency(donation.amount, 'NGN')}
                 </p>
                 <p className="text-xs text-green-600">✓ Completed</p>
               </div>

@@ -316,7 +316,7 @@ const Main = (props: Props) => {
           quick
         </p>
         <div className="flex flex-col md:flex-row gap-24 md:gap-5 w-full h-fit my-5">
-          <section className="bg-[url('/images/main-1.png')] bg-cover bg-no-repeat w-full md:w-2/3 h-60 md:h-[500px]">
+          <section className="bg-[url('/images/main-1.jpg')] bg-cover bg-no-repeat w-full md:w-2/3 h-60 md:h-[500px]">
             <section className="bg-[linear-gradient(180deg,rgba(255,255,255,0)_70%,#fff_100%)] h-full px-2 md:px-4 py-4 md:py-6 flex flex-col gap-2 md:gap-3">
               <div className="w-full md:w-[365px] h-fit p-2 md:p-4 rounded-xl bg-white flex items-start gap-2 md:gap-3 font-dm">
                 <Image
@@ -362,7 +362,7 @@ const Main = (props: Props) => {
               </div>
             </section>
           </section>
-          <section className="bg-[url('/images/main-2.png')] bg-cover bg-no-repeat w-full md:w-1/3 h-60 md:h-[500px]">
+          <section className="bg-[url('/images/main-2.jpg')] bg-cover bg-no-repeat w-full md:w-1/3 h-60 md:h-[500px]">
             <section className="bg-[linear-gradient(180deg,rgba(255,255,255,0)_70%,#fff_100%)] h-full px-2 md:px-4 py-4 md:py-6 flex flex-col gap-2 md:gap-3">
               <div className="w-full md:w-[300px] h-fit p-2 md:p-4 rounded-xl bg-white flex items-start gap-2 md:gap-3 font-dm">
                 <Image

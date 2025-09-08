@@ -408,7 +408,7 @@ const Main = ({ campaignId }: MainProps) => {
     <div className="max-w-[1440px] bg-[url('/images/logo-bg.svg')] bg-[length:60%] md:bg-[length:30%] md:h-full bg-no-repeat bg-right-bottom mx-auto mt-16 md:mt-22 h-full p-5 md:p-12 font-source">
       <div className="flex md:flex-row md:gap-5 flex-col">
         {/* Left Side */}
-        <div className="w-full md:w-3/4">
+        <div className="w-full md:w-3/5">
           <div className="flex flex-col gap-2">
             <h1 className="md:text-4xl text-2xl font-semibold text-black">
               {campaignData.title}
@@ -749,7 +749,7 @@ const Main = ({ campaignId }: MainProps) => {
         </div>
 
         {/* Right side */}
-        <div className="w-full md:w-1/4 space-y-10">
+        <div className="w-full md:w-2/5 space-y-10">
           <div className="mb-5 py-3 px-2 bg-[#E7EDE6] rounded-2xl">
             <section className="w-full flex gap-3 mb-5">
               <Button

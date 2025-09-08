@@ -20,14 +20,14 @@ const CustomerStories = (props: Props) => {
     {
       id: 2,
       name: "Bolu",
-      image: "/images/story-2.png",
+      image: "/images/story-2.jpg",
       description:
         "Hearing aids help a young girl experience the world for the first time.",
     },
     {
       id: 3,
       name: "Mariam",
-      image: "/images/story-3.png",
+      image: "/images/story-3.jpg",
       description:
         "Mariam raised funds for a prosthetic arm. Just taking part in life is truly a win for her!",
     },
