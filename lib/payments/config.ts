@@ -17,8 +17,35 @@ export type PaymentProvider = 'stripe' | 'paystack';
 
 // Currency support by provider
 export const CURRENCY_SUPPORT: Record<PaymentProvider, string[]> = {
-  stripe: ['USD', 'EUR', 'GBP', 'CAD', 'AUD'],
+  stripe: ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'CHF', 'JPY', 'SGD', 'HKD', 'NZD'],
   paystack: ['NGN', 'USD', 'GHS', 'ZAR', 'KES'],
+};
+
+// Preferred provider for each currency (for intelligent routing)
+export const PREFERRED_PROVIDER: Record<string, PaymentProvider> = {
+  // International currencies → Stripe
+  'USD': 'stripe',
+  'EUR': 'stripe', 
+  'GBP': 'stripe',
+  'CAD': 'stripe',
+  'AUD': 'stripe',
+  'CHF': 'stripe',
+  'JPY': 'stripe',
+  'SGD': 'stripe',
+  'HKD': 'stripe',
+  'NZD': 'stripe',
+  
+  // African currencies → Paystack
+  'NGN': 'paystack',
+  'GHS': 'paystack',
+  'ZAR': 'paystack',
+  'KES': 'paystack',
+};
+
+// Provider descriptions for UI
+export const PROVIDER_DESCRIPTIONS: Record<PaymentProvider, string> = {
+  stripe: 'Credit/Debit Card, Apple Pay, Google Pay',
+  paystack: 'Bank Transfer, Card, USSD',
 };
 
 // Get supported payment providers for a currency
@@ -34,6 +61,26 @@ export function getSupportedProviders(currency: string): PaymentProvider[] {
   }
   
   return providers;
+}
+
+// Get the preferred provider for a currency (intelligent routing)
+export function getPreferredProvider(currency: string): PaymentProvider | null {
+  return PREFERRED_PROVIDER[currency] || null;
+}
+
+// Get intelligent provider recommendations for a currency
+export function getIntelligentProviders(currency: string): {
+  primary: PaymentProvider | null;
+  alternatives: PaymentProvider[];
+} {
+  const primary = getPreferredProvider(currency);
+  const allSupported = getSupportedProviders(currency);
+  const alternatives = allSupported.filter(provider => provider !== primary);
+  
+  return {
+    primary,
+    alternatives
+  };
 }
 
 // Environment validation

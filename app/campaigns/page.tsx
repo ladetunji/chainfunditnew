@@ -324,7 +324,7 @@ export default function AllCampaignsPage() {
               <MapPin className="h-4 w-4" />
               <span className="font-medium">
                 Showing campaigns for {geolocation.country} 
-                {geolocation.canSeeAllCurrencies ? ' (All currencies)' : ` (${geolocation.currency} only)`}
+                
               </span>
             </div>
           </div>

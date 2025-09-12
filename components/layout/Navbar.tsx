@@ -50,10 +50,10 @@ const Navbar = (props: Props) => {
             <Link href="#">For Charities</Link>
           </li>
           <li>
-            <Link href="#">Virtual Giving Mall</Link>
+            <Link href="/virtual-giving-mall">Virtual Giving Mall</Link>
           </li>
           <li>
-            <Link href="#" className="">
+            <Link href="/faqs" className="">
               FAQs
             </Link>
           </li>
@@ -82,10 +82,10 @@ const Navbar = (props: Props) => {
               <Link href="#" onClick={() => setMenuOpen(false)}>For Charities</Link>
             </li>
             <li>
-              <Link href="#" onClick={() => setMenuOpen(false)}>Virtual Giving Mall</Link>
+              <Link href="/virtual-giving-mall" onClick={() => setMenuOpen(false)}>Virtual Giving Mall</Link>
             </li>
             <li>
-              <Link href="#" onClick={() => setMenuOpen(false)}>FAQs</Link>
+              <Link href="/faqs" onClick={() => setMenuOpen(false)}>FAQs</Link>
             </li>
           </ul>
           <div className="flex flex-col gap-2">

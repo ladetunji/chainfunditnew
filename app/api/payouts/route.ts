@@ -1,0 +1,179 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getUserFromRequest } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { campaigns, donations } from '@/lib/schema';
+import { eq, and, sum } from 'drizzle-orm';
+import { getPayoutProvider, getPayoutConfig, isPayoutSupported } from '@/lib/payments/payout-config';
+import { getCurrencyCode } from '@/lib/utils/currency';
+
+export async function GET(request: NextRequest) {
+  try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user's campaigns with their total raised amounts
+    const userCampaigns = await db
+      .select({
+        id: campaigns.id,
+        title: campaigns.title,
+        currency: campaigns.currency,
+        targetAmount: campaigns.targetAmount,
+        currentAmount: campaigns.currentAmount,
+        status: campaigns.status,
+        createdAt: campaigns.createdAt,
+      })
+      .from(campaigns)
+      .where(eq(campaigns.userId, user.id));
+
+    // Calculate available payout amounts for each campaign
+    const campaignsWithPayouts = await Promise.all(
+      userCampaigns.map(async (campaign) => {
+        // Get total completed donations for this campaign
+        const totalDonations = await db
+          .select({ total: sum(donations.amount) })
+          .from(donations)
+          .where(
+            and(
+              eq(donations.campaignId, campaign.id),
+              eq(donations.paymentStatus, 'completed')
+            )
+          );
+
+        const totalRaised = parseFloat(totalDonations[0]?.total || '0');
+        const currencyCode = getCurrencyCode(campaign.currency);
+        
+        // Check if payout is supported for this currency
+        const payoutSupported = isPayoutSupported(currencyCode);
+        const payoutProvider = payoutSupported ? getPayoutProvider(currencyCode) : null;
+        const payoutConfig = payoutProvider ? getPayoutConfig(payoutProvider) : null;
+
+        return {
+          ...campaign,
+          totalRaised,
+          currencyCode,
+          payoutSupported,
+          payoutProvider,
+          payoutConfig,
+          availableForPayout: payoutSupported && totalRaised > 0,
+        };
+      })
+    );
+
+    // Calculate total available for payout across all campaigns
+    const totalAvailableForPayout = campaignsWithPayouts.reduce((total, campaign) => {
+      if (campaign.availableForPayout) {
+        return total + campaign.totalRaised;
+      }
+      return total;
+    }, 0);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        campaigns: campaignsWithPayouts,
+        totalAvailableForPayout,
+        summary: {
+          totalCampaigns: campaignsWithPayouts.length,
+          campaignsWithPayouts: campaignsWithPayouts.filter(c => c.availableForPayout).length,
+          totalRaised: campaignsWithPayouts.reduce((sum, c) => sum + c.totalRaised, 0),
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error fetching payout data:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch payout data' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const user = await getUserFromRequest(request);
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { campaignId, amount, currency, payoutProvider } = body;
+
+    if (!campaignId || !amount || !currency || !payoutProvider) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Verify the campaign belongs to the user
+    const campaign = await db
+      .select()
+      .from(campaigns)
+      .where(and(eq(campaigns.id, campaignId), eq(campaigns.userId, user.id)))
+      .limit(1);
+
+    if (!campaign.length) {
+      return NextResponse.json(
+        { error: 'Campaign not found or unauthorized' },
+        { status: 404 }
+      );
+    }
+
+    // Get total available for payout
+    const totalDonations = await db
+      .select({ total: sum(donations.amount) })
+      .from(donations)
+      .where(
+        and(
+          eq(donations.campaignId, campaignId),
+          eq(donations.paymentStatus, 'completed')
+        )
+      );
+
+    const totalRaised = parseFloat(totalDonations[0]?.total || '0');
+    
+    if (amount > totalRaised) {
+      return NextResponse.json(
+        { error: 'Payout amount exceeds available funds' },
+        { status: 400 }
+      );
+    }
+
+    const currencyCode = getCurrencyCode(currency);
+    const recommendedProvider = getPayoutProvider(currencyCode);
+    
+    if (payoutProvider !== recommendedProvider) {
+      return NextResponse.json(
+        { error: `Recommended payout provider for ${currencyCode} is ${recommendedProvider}` },
+        { status: 400 }
+      );
+    }
+
+    // TODO: Implement actual payout processing based on provider
+    // For now, return success with mock data
+    const payoutId = `payout_${Date.now()}`;
+    
+    return NextResponse.json({
+      success: true,
+      data: {
+        payoutId,
+        amount,
+        currency: currencyCode,
+        provider: payoutProvider,
+        status: 'processing',
+        estimatedDelivery: payoutProvider === 'stripe' ? '2-7 business days' : '1-3 business days',
+        message: `Payout of ${currency} ${amount} initiated via ${payoutProvider}. You will receive a confirmation email shortly.`
+      }
+    });
+
+  } catch (error) {
+    console.error('Error processing payout:', error);
+    return NextResponse.json(
+      { error: 'Failed to process payout' },
+      { status: 500 }
+    );
+  }
+}

@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useDonations, DonationResult } from "@/hooks/use-donations";
-import { getSupportedProviders, PaymentProvider } from "@/lib/payments/config";
+import { getSupportedProviders, getIntelligentProviders, PROVIDER_DESCRIPTIONS, PaymentProvider } from "@/lib/payments/config";
 import { getCurrencyCode } from "@/lib/utils/currency";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -69,21 +69,44 @@ const DonateModal: React.FC<DonateModalProps> = ({
       setSelectedCurrency(campaign.currency || "₦");
       
       const currencyCode = getCurrencyCode(campaign.currency);
-      const providers = getSupportedProviders(currencyCode);
+      const { primary, alternatives } = getIntelligentProviders(currencyCode);
+      
       console.log('Campaign currency symbol:', campaign.currency);
       console.log('Mapped currency code:', currencyCode);
-      console.log('Supported providers:', providers);
+      console.log('Primary provider:', primary);
+      console.log('Alternative providers:', alternatives);
       
-      // Fallback to default providers if none are returned
-      const fallbackProviders: PaymentProvider[] = providers.length > 0 ? providers : ['stripe', 'paystack'];
-      setSupportedProviders(fallbackProviders);
+      // Set supported providers (primary first, then alternatives)
+      const allProviders = primary ? [primary, ...alternatives] : alternatives;
+      setSupportedProviders(allProviders);
       
-      // Set default payment provider
-      if (fallbackProviders.length > 0) {
-        setPaymentProvider(fallbackProviders[0]);
+      // Set default payment provider to the intelligent choice
+      if (primary) {
+        setPaymentProvider(primary);
+      } else if (alternatives.length > 0) {
+        setPaymentProvider(alternatives[0]);
       }
     }
   }, [campaign, open]);
+
+  const handleCurrencyChange = (currency: string) => {
+    setSelectedCurrency(currency);
+    
+    // Update providers based on new currency
+    const currencyCode = getCurrencyCode(currency);
+    const { primary, alternatives } = getIntelligentProviders(currencyCode);
+    
+    // Set supported providers (primary first, then alternatives)
+    const allProviders = primary ? [primary, ...alternatives] : alternatives;
+    setSupportedProviders(allProviders);
+    
+    // Set default payment provider to the intelligent choice
+    if (primary) {
+      setPaymentProvider(primary);
+    } else if (alternatives.length > 0) {
+      setPaymentProvider(alternatives[0]);
+    }
+  };
 
   const handleDonate = () => {
     setStep("payment");
@@ -315,8 +338,7 @@ const DonateModal: React.FC<DonateModalProps> = ({
                   <div className="relative">
                     <Select
                       value={selectedCurrency}
-                        onValueChange={(value) => setSelectedCurrency(value)}
-                      // className="h-11 px-4 bg-[#F2F1E9] rounded-lg border border-[#C0BFC4] text-[#5F8555] text-xl shadow-none appearance-none cursor-pointer pr-8 hover:border-[#104901] transition-colors"
+                      onValueChange={handleCurrencyChange}
                     >
                       <SelectTrigger className="h-11 bg-[#F2F1E9] rounded-lg border border-[#C0BFC4] text-[#5F8555] text-xl shadow-none appearance-none cursor-pointer hover:border-[#104901] transition-colors">
                         <SelectValue placeholder="$" />
@@ -458,7 +480,7 @@ const DonateModal: React.FC<DonateModalProps> = ({
               <div className="">
                 <p className="text-xl font-medium text-[#104901]">
                   Complete by payment by clicking below and paying through
-                  Stripe. (Charges may apply)
+                  Stripe or Paystack. (Charges may apply)
                 </p>
               </div>
 
@@ -494,28 +516,40 @@ const DonateModal: React.FC<DonateModalProps> = ({
                 </Label>
                 <div className="grid grid-cols-1 gap-3">
                   {supportedProviders.length > 0 ? (
-                    supportedProviders.map((provider) => (
-                      <Button
-                        key={provider}
-                        variant={paymentProvider === provider ? "default" : "outline"}
-                        className={`p-4 h-auto text-left flex items-center gap-3 ${
-                          paymentProvider === provider
-                            ? "bg-[#F2F1E9] border border-[#C0BFC4] hover:bg-[#F2F1E9] text-[#5F8555]"
-                            : "border border-[#C0BFC4] bg-transparent hover:bg-[#F2F1E9] text-[#5F8555]"
-                        }`}
-                        onClick={() => setPaymentProvider(provider)}
-                      >
-                        {provider === "stripe" && <CreditCard size={24} />}
-                        {provider === "paystack" && <Smartphone size={24} />}
-                        <div>
-                          <div className="font-semibold capitalize">{provider}</div>
-                          <div className="text-sm opacity-70">
-                            {provider === "stripe" && "Credit/Debit Card"}
-                            {provider === "paystack" && "Bank Transfer, Card, USSD"}
+                    supportedProviders.map((provider, index) => {
+                      const currencyCode = getCurrencyCode(selectedCurrency);
+                      const { primary } = getIntelligentProviders(currencyCode);
+                      const isRecommended = provider === primary;
+                      
+                      return (
+                        <Button
+                          key={provider}
+                          variant={paymentProvider === provider ? "default" : "outline"}
+                          className={`p-4 h-auto text-left flex items-center gap-3 relative ${
+                            paymentProvider === provider
+                              ? "bg-[#F2F1E9] border border-[#C0BFC4] hover:bg-[#F2F1E9] text-[#5F8555]"
+                              : "border border-[#C0BFC4] bg-transparent hover:bg-[#F2F1E9] text-[#5F8555]"
+                          }`}
+                          onClick={() => setPaymentProvider(provider)}
+                        >
+                          {provider === "stripe" && <CreditCard size={24} />}
+                          {provider === "paystack" && <Smartphone size={24} />}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <div className="font-semibold capitalize">{provider}</div>
+                              {isRecommended && (
+                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                  Recommended
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-sm opacity-70">
+                              {PROVIDER_DESCRIPTIONS[provider]}
+                            </div>
                           </div>
-                        </div>
-                      </Button>
-                    ))
+                        </Button>
+                      );
+                    })
                   ) : (
                     <div className="text-center py-8 text-[#5F8555]">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#104901] mx-auto mb-3"></div>
