@@ -38,13 +38,18 @@ interface Donation {
   amount: number;
   currency: string;
   paymentStatus: string;
-  paymentMethod: string;
+  paymentProvider: string;
+  transactionId?: string;
   message: string;
   isAnonymous: boolean;
+  donorName?: string;
+  donorEmail?: string;
+  donorAvatar?: string;
   createdAt: string;
   processedAt: string;
   campaignId: string;
   campaignTitle: string;
+  campaignCurrency: string;
   campaignCoverImage: string;
   isSuccessful: boolean;
 }

@@ -2,6 +2,8 @@ import React from "react";
 import Image from "next/image";
 import { useDonations } from "@/hooks/use-dashboard";
 import { formatCurrency } from "@/lib/utils/currency";
+import { Badge } from "@/components/ui/badge";
+import { CreditCard, Smartphone, CheckCircle } from "lucide-react";
 
 type Props = {};
 
@@ -81,32 +83,68 @@ const ReceivedDonations = (props: Props) => {
       {/* Donations List */}
       <div className="mt-6 space-y-4">
         {receivedDonations.map((donation) => (
-          <div key={donation.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+          <div key={donation.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-[#104901] rounded-full flex items-center justify-center text-white font-semibold">
-                    {donation.isAnonymous ? 'A' : 'D'}
-                  </div>
+                <div className="flex items-center gap-3 mb-3">
+                  {donation.donorAvatar ? (
+                    <Image
+                      src={donation.donorAvatar}
+                      alt={donation.isAnonymous ? 'Anonymous' : donation.donorName || 'Donor'}
+                      width={40}
+                      height={40}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-gradient-to-br from-[#104901] to-green-600 rounded-full flex items-center justify-center text-white font-semibold">
+                      {donation.isAnonymous ? 'A' : (donation.donorName?.[0] || 'D').toUpperCase()}
+                    </div>
+                  )}
                   <div>
                     <h4 className="font-semibold text-[#104901]">
-                      {donation.isAnonymous ? 'Anonymous Donation' : 'Your Donation'}
+                      {donation.isAnonymous ? 'Anonymous Donation' : (donation.donorName || 'Donor')}
                     </h4>
                     <p className="text-sm text-gray-600">{donation.campaignTitle}</p>
                   </div>
                 </div>
+                
                 {donation.message && (
-                  <p className="text-gray-700 text-sm mb-2">"{donation.message}"</p>
+                  <p className="text-gray-700 text-sm mb-3 italic">&ldquo;{donation.message}&rdquo;</p>
                 )}
-                <p className="text-xs text-gray-500">
-                  {new Date(donation.createdAt).toLocaleDateString()} • {donation.paymentMethod}
-                </p>
+                
+                <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <span>{new Date(donation.createdAt).toLocaleDateString()}</span>
+                  <span>•</span>
+                  <div className="flex items-center gap-1">
+                    {donation.paymentProvider === 'stripe' ? (
+                      <CreditCard className="h-3 w-3" />
+                    ) : (
+                      <Smartphone className="h-3 w-3" />
+                    )}
+                    <span className="capitalize">{donation.paymentProvider}</span>
+                  </div>
+                  {donation.transactionId && (
+                    <>
+                      <span>•</span>
+                      <span className="font-mono text-xs">#{donation.transactionId.slice(-8)}</span>
+                    </>
+                  )}
+                </div>
               </div>
+              
               <div className="text-right">
                 <p className="font-bold text-lg text-[#104901]">
-                  {formatCurrency(donation.amount, 'NGN')}
+                  {formatCurrency(donation.amount, donation.currency)}
                 </p>
-                <p className="text-xs text-green-600">✓ Completed</p>
+                <Badge variant="default" className="bg-green-100 text-green-800 mt-1">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Completed
+                </Badge>
+                {donation.processedAt && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Processed: {new Date(donation.processedAt).toLocaleDateString()}
+                  </p>
+                )}
               </div>
             </div>
           </div>

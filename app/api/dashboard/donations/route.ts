@@ -72,17 +72,19 @@ export async function GET(request: NextRequest) {
         amount: donations.amount,
         currency: donations.currency,
         paymentStatus: donations.paymentStatus,
-        paymentMethod: donations.paymentMethod,
+        paymentProvider: donations.paymentMethod,
+        transactionId: donations.paymentIntentId,
         message: donations.message,
         isAnonymous: donations.isAnonymous,
+        donorName: users.fullName,
+        donorEmail: users.email,
+        donorAvatar: users.avatar,
         createdAt: donations.createdAt,
         processedAt: donations.processedAt,
         campaignId: campaigns.id,
         campaignTitle: campaigns.title,
+        campaignCurrency: campaigns.currency,
         campaignCoverImage: campaigns.coverImageUrl,
-        donorId: donations.donorId,
-        donorName: users.fullName,
-        donorEmail: users.email
       })
       .from(donations)
       .leftJoin(campaigns, eq(donations.campaignId, campaigns.id))

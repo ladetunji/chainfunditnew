@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
+
 import { 
   DollarSign, 
   TrendingUp, 
@@ -264,7 +264,7 @@ const PayoutsPage = () => {
                 <DollarSign className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No Campaigns Found</h3>
                 <p className="text-gray-600 mb-6">
-                  You don't have any campaigns yet. Create your first campaign to start receiving donations.
+                  You don&apos;t have any campaigns yet. Create your first campaign to start receiving donations.
                 </p>
                 <Button asChild>
                   <a href="/create-campaign">Create Campaign</a>

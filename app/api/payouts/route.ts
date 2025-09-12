@@ -1,16 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { campaigns, donations } from '@/lib/schema';
+import { campaigns, donations, users } from '@/lib/schema';
 import { eq, and, sum } from 'drizzle-orm';
 import { getPayoutProvider, getPayoutConfig, isPayoutSupported } from '@/lib/payments/payout-config';
 import { getCurrencyCode } from '@/lib/utils/currency';
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getUserFromRequest(request);
-    if (!user) {
+    const userEmail = await getUserFromRequest(request);
+    if (!userEmail) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user from database
+    const user = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, userEmail))
+      .limit(1);
+
+    if (!user.length) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Get user's campaigns with their total raised amounts
@@ -19,13 +30,13 @@ export async function GET(request: NextRequest) {
         id: campaigns.id,
         title: campaigns.title,
         currency: campaigns.currency,
-        targetAmount: campaigns.targetAmount,
+        targetAmount: campaigns.goalAmount,
         currentAmount: campaigns.currentAmount,
         status: campaigns.status,
         createdAt: campaigns.createdAt,
       })
       .from(campaigns)
-      .where(eq(campaigns.userId, user.id));
+      .where(eq(campaigns.creatorId, user[0].id));
 
     // Calculate available payout amounts for each campaign
     const campaignsWithPayouts = await Promise.all(
@@ -93,9 +104,20 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = await getUserFromRequest(request);
-    if (!user) {
+    const userEmail = await getUserFromRequest(request);
+    if (!userEmail) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Get user from database
+    const user = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, userEmail))
+      .limit(1);
+
+    if (!user.length) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const body = await request.json();
@@ -112,7 +134,7 @@ export async function POST(request: NextRequest) {
     const campaign = await db
       .select()
       .from(campaigns)
-      .where(and(eq(campaigns.id, campaignId), eq(campaigns.userId, user.id)))
+      .where(and(eq(campaigns.id, campaignId), eq(campaigns.creatorId, user[0].id)))
       .limit(1);
 
     if (!campaign.length) {
