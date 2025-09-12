@@ -31,7 +31,7 @@ export async function GET(
       .from(donations)
       .leftJoin(users, eq(donations.donorId, users.id))
       .where(eq(donations.campaignId, campaignId))
-      .orderBy(desc(donations.createdAt))
+      .orderBy(desc(donations.amount))
       .limit(limit);
 
     // Ensure we have valid data
