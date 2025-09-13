@@ -100,15 +100,27 @@ export async function verifyPaystackTransaction(reference: string): Promise<Pays
 }
 
 export async function handlePaystackWebhook(
-  payload: any
+  payload: any,
+  signature?: string
 ): Promise<{ success: boolean; event?: any; error?: string }> {
   try {
-    // Verify the webhook signature
-    const hash = require('crypto')
-      .createHmac('sha512', paystackConfig.secretKey)
-      .update(JSON.stringify(payload))
-      .digest('hex');
+    // Verify the webhook signature if provided
+    if (signature) {
+      const hash = require('crypto')
+        .createHmac('sha512', paystackConfig.secretKey)
+        .update(JSON.stringify(payload))
+        .digest('hex');
+      
+      if (hash !== signature) {
+        console.error('❌ Invalid webhook signature');
+        return {
+          success: false,
+          error: 'Invalid webhook signature',
+        };
+      }
+    }
 
+    console.log('✅ Paystack webhook signature verified');
     return { success: true, event: payload };
   } catch (error) {
     console.error('Error handling Paystack webhook:', error);

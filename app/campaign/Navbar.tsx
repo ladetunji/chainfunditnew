@@ -1,5 +1,6 @@
 "use client";
 
+import { NotificationAlert } from "@/components/dashboard/NotificationAlert";
 import { Button } from "@/components/ui/button";
 import { Bell, Search } from "lucide-react";
 import Image from "next/image";
@@ -60,7 +61,8 @@ const Navbar = (props: Props) => {
             </Button>
           </Link>
           <Search color="#757575" size={24} />
-          <Bell color="#757575" size={24} />
+          <NotificationAlert />
+         
           <Link href="/settings">
             <Image
               src="/images/user.png"
@@ -108,6 +110,7 @@ const Navbar = (props: Props) => {
             </Link>
             <div className="flex items-center gap-4">
               <Search color="#757575" size={24} />
+              <NotificationAlert />
               <Bell color="#757575" size={24} />
             </div>
             <Link href="/settings">

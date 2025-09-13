@@ -18,10 +18,7 @@ const layout = ({ children }: { children: React.ReactNode }) => {
           <Sidebar />
         </div>
         <div className="w-full md:w-4/5 px-10">
-          {/* Notification Alert */}
-          <div className="fixed top-20 right-4 z-40">
-            <NotificationAlert />
-          </div>
+         
           {children}
         </div>
       </div>

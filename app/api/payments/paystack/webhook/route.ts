@@ -196,9 +196,12 @@ async function createPendingDonationNotification(donationId: string, campaignId:
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('🔔 Paystack webhook received:', JSON.stringify(body, null, 2));
+    const signature = request.headers.get('x-paystack-signature');
     
-    const { success, event, error } = await handlePaystackWebhook(body);
+    console.log('🔔 Paystack webhook received:', JSON.stringify(body, null, 2));
+    console.log('🔐 Webhook signature:', signature ? 'Present' : 'Missing');
+    
+    const { success, event, error } = await handlePaystackWebhook(body, signature || undefined);
 
     if (!success) {
       console.error('Paystack webhook error:', error);

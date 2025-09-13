@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect } from 'react';
-import { Bell, X, AlertCircle, CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useNotifications, Notification } from '@/hooks/use-notifications';
-import { toast } from 'sonner';
+import React, { useEffect } from "react";
+import { Bell, X, AlertCircle, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNotifications, Notification } from "@/hooks/use-notifications";
+import { toast } from "sonner";
 
 interface NotificationAlertProps {
   className?: string;
@@ -17,34 +17,35 @@ export function NotificationAlert({ className }: NotificationAlertProps) {
   // Show toast for failed donation notifications
   useEffect(() => {
     const failedDonationNotifications = notifications.filter(
-      notification => notification.type === 'donation_failed' && !notification.isRead
+      (notification) =>
+        notification.type === "donation_failed" && !notification.isRead
     );
 
-    failedDonationNotifications.forEach(notification => {
+    failedDonationNotifications.forEach((notification) => {
       toast.error(notification.title, {
         description: notification.message,
         duration: 8000,
         action: {
-          label: 'View Details',
+          label: "View Details",
           onClick: () => {
             setIsOpen(true);
             markAsRead([notification.id]);
-          }
-        }
+          },
+        },
       });
     });
   }, [notifications, markAsRead]);
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
   const failedDonationCount = notifications.filter(
-    n => n.type === 'donation_failed' && !n.isRead
+    (n) => n.type === "donation_failed" && !n.isRead
   ).length;
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'donation_failed':
+      case "donation_failed":
         return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case 'donation_received':
+      case "donation_received":
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       default:
         return <Bell className="h-4 w-4 text-blue-500" />;
@@ -53,12 +54,16 @@ export function NotificationAlert({ className }: NotificationAlertProps) {
 
   const getNotificationStyle = (type: string, isRead: boolean) => {
     const baseStyle = "p-3 rounded-lg border transition-colors";
-    
-    if (type === 'donation_failed') {
-      return `${baseStyle} ${isRead ? 'bg-red-50 border-red-200' : 'bg-red-100 border-red-300'}`;
+
+    if (type === "donation_failed") {
+      return `${baseStyle} ${
+        isRead ? "bg-red-50 border-red-200" : "bg-red-100 border-red-300"
+      }`;
     }
-    
-    return `${baseStyle} ${isRead ? 'bg-gray-50 border-gray-200' : 'bg-white border-gray-300'}`;
+
+    return `${baseStyle} ${
+      isRead ? "bg-gray-50 border-gray-200" : "bg-white border-gray-300"
+    }`;
   };
 
   return (
@@ -70,10 +75,10 @@ export function NotificationAlert({ className }: NotificationAlertProps) {
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 hover:bg-gray-100"
       >
-        <Bell className="h-5 w-5" />
+        <Bell color="#757575" size={24} />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-            {unreadCount > 9 ? '9+' : unreadCount}
+            {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </Button>
@@ -97,7 +102,7 @@ export function NotificationAlert({ className }: NotificationAlertProps) {
                   variant="ghost"
                   size="sm"
                   onClick={markAllAsRead}
-                  className="text-xs text-blue-600 hover:text-blue-800"
+                  className="text-xs text-[#5F8555] hover:text-[#104901]"
                 >
                   Mark all read
                 </Button>
@@ -124,25 +129,45 @@ export function NotificationAlert({ className }: NotificationAlertProps) {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={getNotificationStyle(notification.type, notification.isRead)}
+                    className={getNotificationStyle(
+                      notification.type,
+                      notification.isRead
+                    )}
                   >
                     <div className="flex items-start gap-3">
                       {getNotificationIcon(notification.type)}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <h4 className={`text-sm font-medium ${notification.isRead ? 'text-gray-700' : 'text-gray-900'}`}>
+                          <h4
+                            className={`text-sm font-medium ${
+                              notification.isRead
+                                ? "text-gray-700"
+                                : "text-gray-900"
+                            }`}
+                          >
                             {notification.title}
                           </h4>
                           {!notification.isRead && (
                             <div className="h-2 w-2 bg-blue-500 rounded-full flex-shrink-0"></div>
                           )}
                         </div>
-                        <p className={`text-sm mt-1 ${notification.isRead ? 'text-gray-500' : 'text-gray-700'}`}>
+                        <p
+                          className={`text-sm mt-1 ${
+                            notification.isRead
+                              ? "text-gray-500"
+                              : "text-gray-700"
+                          }`}
+                        >
                           {notification.message}
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
-                          {new Date(notification.createdAt).toLocaleDateString()} at{' '}
-                          {new Date(notification.createdAt).toLocaleTimeString()}
+                          {new Date(
+                            notification.createdAt
+                          ).toLocaleDateString()}{" "}
+                          at{" "}
+                          {new Date(
+                            notification.createdAt
+                          ).toLocaleTimeString()}
                         </p>
                       </div>
                     </div>

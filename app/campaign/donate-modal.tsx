@@ -27,6 +27,7 @@ import { getCurrencyCode } from "@/lib/utils/currency";
 import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import StripePaymentForm from "@/components/payments/StripePaymentForm";
 
 interface Campaign {
   id: string;
@@ -47,7 +48,7 @@ const DonateModal: React.FC<DonateModalProps> = ({
   onOpenChange,
   campaign,
 }) => {
-  const [step, setStep] = useState<"donate" | "payment" | "thankyou">("donate");
+  const [step, setStep] = useState<"donate" | "payment" | "stripe-payment" | "thankyou">("donate");
   const [period, setPeriod] = useState("one-time");
   const [amount, setAmount] = useState("");
   const [selectedCurrency, setSelectedCurrency] = useState("");
@@ -60,6 +61,12 @@ const DonateModal: React.FC<DonateModalProps> = ({
   const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>("stripe");
   const [supportedProviders, setSupportedProviders] = useState<PaymentProvider[]>([]);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [stripePaymentData, setStripePaymentData] = useState<{
+    clientSecret: string;
+    donationId: string;
+    amount: number;
+    currency: string;
+  } | null>(null);
   
   const { loading: donationLoading, error: donationError, initializeDonation } = useDonations();
 
@@ -139,16 +146,18 @@ const DonateModal: React.FC<DonateModalProps> = ({
       const result = await initializeDonation(donationData, false);
 
       if (result && result.success) {
-        // Close modal and redirect to payment gateway
-        onOpenChange(false);
-        
         if (result.provider === 'paystack' && result.authorization_url) {
           // Redirect to Paystack payment page
           window.location.href = result.authorization_url;
         } else if (result.provider === 'stripe' && result.clientSecret) {
-          // For Stripe, we would typically handle this with Stripe Elements
-          // For now, we'll show a message to complete payment
-          toast.info("Please complete your payment using Stripe");
+          // Store Stripe payment data and show payment form
+          setStripePaymentData({
+            clientSecret: result.clientSecret,
+            donationId: result.donationId,
+            amount: amountNum,
+            currency: selectedCurrency,
+          });
+          setStep("stripe-payment");
         }
       } else if (result && !result.success) {
         toast.error(result.error || "Donation failed. Please try again.");
@@ -161,6 +170,21 @@ const DonateModal: React.FC<DonateModalProps> = ({
 
 
 
+  const handleStripePaymentSuccess = () => {
+    setStep("thankyou");
+  };
+
+  const handleStripePaymentError = (error: string) => {
+    toast.error(error);
+    setStep("payment");
+    setStripePaymentData(null);
+  };
+
+  const handleStripePaymentCancel = () => {
+    setStep("payment");
+    setStripePaymentData(null);
+  };
+
   const handleClose = () => {
     setStep("donate");
     setAmount("");
@@ -172,6 +196,7 @@ const DonateModal: React.FC<DonateModalProps> = ({
     setAnonymous(false);
     setComments("");
     setLinkCopied(false);
+    setStripePaymentData(null);
     onOpenChange(false);
   };
 
@@ -269,6 +294,7 @@ const DonateModal: React.FC<DonateModalProps> = ({
             <h2 className="text-3xl font-medium text-[#5F8555]">
               {step === "donate" && "Make a donation"}
               {step === "payment" && "Choose Payment Method"}
+              {step === "stripe-payment" && "Complete Payment"}
               {step === "thankyou" && "Thank you for your donation!"}
             </h2>
             <p className="text-base font-normal text-[#5F8555] mt-1">
@@ -276,6 +302,8 @@ const DonateModal: React.FC<DonateModalProps> = ({
                 "Select a period and a payment channel to complete your donation."}
               {step === "payment" &&
                 "Select your preferred payment provider to complete the donation."}
+              {step === "stripe-payment" &&
+                "Enter your card details to complete the donation securely."}
               {step === "thankyou" &&
                 "We are glad you supported this campaign."}
             </p>
@@ -590,6 +618,20 @@ const DonateModal: React.FC<DonateModalProps> = ({
                   )}
                 </Button>
               </div>
+            </div>
+          )}
+
+          {step === "stripe-payment" && stripePaymentData && (
+            <div className="space-y-6">
+              <StripePaymentForm
+                clientSecret={stripePaymentData.clientSecret}
+                amount={stripePaymentData.amount}
+                currency={stripePaymentData.currency}
+                donationId={stripePaymentData.donationId}
+                onSuccess={handleStripePaymentSuccess}
+                onError={handleStripePaymentError}
+                onCancel={handleStripePaymentCancel}
+              />
             </div>
           )}
 
