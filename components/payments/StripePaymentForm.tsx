@@ -177,7 +177,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       <div className="text-center py-8">
         <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
         <h3 className="text-xl font-semibold text-red-600 mb-2">Payment Failed</h3>
-        <p className="text-[#5F8555] mb-4">There was an issue processing your payment.</p>
+        <p className="text-[#5F8555] mb-4">Sorry, there was an issue processing your payment.</p>
         <div className="flex gap-3 justify-center">
           <Button
             onClick={onCancel}
