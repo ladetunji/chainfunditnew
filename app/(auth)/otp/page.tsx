@@ -112,11 +112,9 @@ function OtpPageInner() {
     if (email) {
       setIdentifier(email);
       setLoginType("email");
-      console.log('OTP Page: identifier set from email param:', email);
     } else if (phone) {
       setIdentifier(phone);
       setLoginType("phone");
-      console.log('OTP Page: identifier set from phone param:', phone);
     } else {
       // fallback to login localStorage
       const t = localStorage.getItem("otp_login_type");
@@ -124,7 +122,6 @@ function OtpPageInner() {
       if (t === "email" || t === "phone") {
         setLoginType(t);
         setIdentifier(id);
-        console.log('OTP Page: identifier set from localStorage:', { t, id });
       }
     }
   }, [searchParams]);
@@ -167,7 +164,6 @@ function OtpPageInner() {
   const handleResendOtp = async () => {
     if (isResending || !identifier || !loginType) return;
     setIsResending(true);
-    console.log('OTP Page: Resending OTP for', { identifier, loginType });
     try {
       let payload, endpoint;
       if (loginType === "email") {
@@ -210,7 +206,6 @@ function OtpPageInner() {
   const handleOtpSubmit = async () => {
     if (otp.length !== 6 || isLoading || !identifier || !loginType) return;
     setIsLoading(true);
-    console.log('OTP Page: Submitting OTP', { otp, identifier, loginType, mode });
     try {
       let payload, endpoint;
       if (loginType === "email") {

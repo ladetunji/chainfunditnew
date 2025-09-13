@@ -20,12 +20,10 @@ export const useCampaignChains = (campaignIds: string[]) => {
     
     // Prevent duplicate fetches
     if (lastFetchRef.current === campaignIdsKey || isFetchingRef.current) {
-      console.log('useCampaignChains: Skipping duplicate fetch or already fetching');
       return;
     }
 
     try {
-      console.log('useCampaignChains: Starting fetch for campaigns:', campaignIds);
       isFetchingRef.current = true;
       setLoading(true);
       setError(null);
@@ -51,7 +49,6 @@ export const useCampaignChains = (campaignIds: string[]) => {
 
       setChainCounts(counts);
       lastFetchRef.current = campaignIdsKey;
-      console.log('useCampaignChains: Fetch completed, setting counts:', counts);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch chain counts';
       setError(errorMessage);
@@ -62,14 +59,11 @@ export const useCampaignChains = (campaignIds: string[]) => {
   }, [campaignIds]);
 
   useEffect(() => {
-    console.log('useCampaignChains: useEffect triggered with campaignIds:', campaignIds);
-    
     // Create a stable key for comparison
     const currentCampaignIdsKey = campaignIds.sort().join(',');
     
     // Skip if campaignIds haven't meaningfully changed
     if (lastCampaignIdsRef.current === currentCampaignIdsKey) {
-      console.log('useCampaignChains: Skipping - campaignIds unchanged');
       return;
     }
     

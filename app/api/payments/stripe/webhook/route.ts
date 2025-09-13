@@ -31,7 +31,6 @@ async function updateCampaignAmount(campaignId: string) {
       })
       .where(eq(campaigns.id, campaignId));
 
-    console.log(`Updated campaign ${campaignId} currentAmount to ${totalAmount}`);
   } catch (error) {
     console.error('Error updating campaign amount:', error);
   }
@@ -83,7 +82,6 @@ async function createSuccessfulDonationNotification(donationId: string, campaign
       })
     });
 
-    console.log(`Created successful donation notification for campaign creator: ${campaign[0].creatorId}`);
   } catch (error) {
     console.error('Error creating successful donation notification:', error);
   }
@@ -135,7 +133,6 @@ async function createFailedDonationNotification(donationId: string, campaignId: 
       })
     });
 
-    console.log(`Created failed donation notification for campaign creator: ${campaign[0].creatorId}`);
   } catch (error) {
     console.error('Error creating failed donation notification:', error);
   }
@@ -149,7 +146,6 @@ export async function POST(request: NextRequest) {
     const { success, event, error } = await handleStripeWebhook(body, signature);
 
     if (!success) {
-      console.error('Stripe webhook error:', error);
       return NextResponse.json({ error }, { status: 400 });
     }
 
@@ -164,7 +160,6 @@ export async function POST(request: NextRequest) {
         break;
       
       default:
-        console.log(`Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });
@@ -183,7 +178,6 @@ async function handlePaymentSuccess(paymentIntent: any) {
     const donationId = paymentIntent.metadata.donationId;
     
     if (!donationId) {
-      console.error('No donation ID found in payment intent metadata');
       return;
     }
 
@@ -195,7 +189,6 @@ async function handlePaymentSuccess(paymentIntent: any) {
       .limit(1);
 
     if (!donation.length) {
-      console.error('Donation not found:', donationId);
       return;
     }
 
@@ -213,7 +206,6 @@ async function handlePaymentSuccess(paymentIntent: any) {
     // Create notification for successful donation
     await createSuccessfulDonationNotification(donationId, donation[0].campaignId);
 
-    console.log(`Payment completed for donation: ${donationId}`);
   } catch (error) {
     console.error('Error handling payment success:', error);
   }
@@ -224,7 +216,6 @@ async function handlePaymentFailed(paymentIntent: any) {
     const donationId = paymentIntent.metadata.donationId;
     
     if (!donationId) {
-      console.error('No donation ID found in payment intent metadata');
       return;
     }
 
@@ -236,7 +227,6 @@ async function handlePaymentFailed(paymentIntent: any) {
       .limit(1);
 
     if (!donation.length) {
-      console.error('Donation not found:', donationId);
       return;
     }
 
@@ -249,8 +239,6 @@ async function handlePaymentFailed(paymentIntent: any) {
 
     // Create notification for failed donation
     await createFailedDonationNotification(donationId, donation[0].campaignId);
-
-    console.log(`Payment failed for donation: ${donationId}`);
   } catch (error) {
     console.error('Error handling payment failure:', error);
   }

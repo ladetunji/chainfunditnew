@@ -6,8 +6,6 @@ import { eq, desc } from 'drizzle-orm';
 
 async function testPaystackDonations() {
   try {
-    console.log('🔍 Checking Paystack donations...\n');
-
     // Get all Paystack donations
     const paystackDonations = await db
       .select({
@@ -30,10 +28,7 @@ async function testPaystackDonations() {
       .where(eq(donations.paymentMethod, 'paystack'))
       .orderBy(desc(donations.createdAt));
 
-    console.log(`📊 Found ${paystackDonations.length} Paystack donations:\n`);
-
     if (paystackDonations.length === 0) {
-      console.log('❌ No Paystack donations found in database');
       return;
     }
 
@@ -46,12 +41,10 @@ async function testPaystackDonations() {
     }, {} as Record<string, any[]>);
 
     // Display summary
-    console.log('📈 Summary by Status:');
     Object.entries(byStatus).forEach(([status, donations]) => {
       console.log(`  ${status}: ${donations.length} donations`);
     });
 
-    console.log('\n📋 Recent Paystack Donations:');
     paystackDonations.slice(0, 10).forEach((donation, index) => {
       console.log(`\n${index + 1}. Donation ID: ${donation.id}`);
       console.log(`   Amount: ${donation.currency} ${donation.amount}`);
@@ -70,14 +63,13 @@ async function testPaystackDonations() {
     );
 
     if (stuckDonations.length > 0) {
-      console.log(`\n⚠️  Found ${stuckDonations.length} donations stuck in pending status for more than 24 hours:`);
       stuckDonations.forEach(donation => {
         console.log(`   - ${donation.id}: ${donation.currency} ${donation.amount} (${donation.createdAt})`);
       });
     }
 
   } catch (error) {
-    console.error('❌ Error checking Paystack donations:', error);
+    console.error('Error checking Paystack donations:', error);
   } finally {
     process.exit(0);
   }

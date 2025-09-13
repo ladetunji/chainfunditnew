@@ -117,11 +117,8 @@ export default function TestPage() {
 
       setMessage(`Campaign logic test completed. Found ${results.length} campaigns with different statuses.`);
       
-      // Log results to console for inspection
-      console.log('Campaign Status Test Results:', results);
-      
     } catch (error) {
-      setMessage(`Error testing campaign logic: ${error}`);
+      setMessage(`Error testing campaign logic: ${error as string}`);
     } finally {
       setLoading(false);
     }
@@ -155,7 +152,6 @@ export default function TestPage() {
       { id: 3, status: 'failed', amount: '30000', donor: 'Bob Johnson', message: 'Card declined' },
     ];
 
-    console.log('Donation Status Test Data:', testDonations);
     setMessage(`Donation status test completed. Check console for ${testDonations.length} test donations.`);
   };
 
@@ -176,13 +172,12 @@ export default function TestPage() {
       
       if (result.success) {
         setMessage(`Test campaign created successfully! Campaign ID: ${result.data.campaign.id}. Creator: ${result.data.user.fullName}`);
-        console.log('Test campaign created:', result.data);
         setTestCampaignId(result.data.campaign.id); // Auto-fill the campaign ID for testing
       } else {
         setMessage(`Error: ${result.error}`);
       }
     } catch (error) {
-      setMessage(`Error creating test campaign: ${error}`);
+      setMessage(`Error creating test campaign: ${error as string}`);
     } finally {
       setLoading(false);
     }
@@ -200,7 +195,6 @@ export default function TestPage() {
       
       if (result.success) {
         setMessage(`Direct Creator API Success! Creator: ${result.data.creator.fullName} (${result.data.creator.email})`);
-        console.log('Direct Creator API result:', result.data);
       } else {
         setMessage(`Direct Creator API Error: ${result.error}`);
       }

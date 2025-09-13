@@ -10,8 +10,6 @@ export async function GET(
   try {
     const { id: campaignId } = await params;
     
-    console.log('Direct Creator API: Fetching creator info for campaign:', campaignId);
-    
     // Direct approach: Get campaign and user info in separate queries
     const campaignQuery = await db
       .select({ 
@@ -25,7 +23,6 @@ export async function GET(
       .limit(1);
 
     if (!campaignQuery.length) {
-      console.log('Direct Creator API: Campaign not found');
       return NextResponse.json(
         { success: false, error: 'Campaign not found' },
         { status: 404 }
@@ -33,20 +30,12 @@ export async function GET(
     }
 
     const campaign = campaignQuery[0];
-    console.log('Direct Creator API: Campaign found:', { 
-      id: campaign.id, 
-      title: campaign.title, 
-      creatorId: campaign.creatorId 
-    });
-
     if (!campaign.creatorId) {
-      console.log('Direct Creator API: Campaign has no creatorId');
       return NextResponse.json(
         { success: false, error: 'Campaign has no creator' },
         { status: 400 }
       );
     }
-
     // Now directly query the users table
     const userQuery = await db
       .select({
@@ -60,14 +49,7 @@ export async function GET(
       .where(eq(users.id, campaign.creatorId))
       .limit(1);
 
-    console.log('Direct Creator API: User query result:', { 
-      creatorId: campaign.creatorId, 
-      userFound: userQuery.length > 0,
-      userData: userQuery[0] || null
-    });
-
     if (!userQuery.length) {
-      console.log('Direct Creator API: No user found for creatorId:', campaign.creatorId);
       return NextResponse.json(
         { success: false, error: 'Creator not found' },
         { status: 404 }
@@ -91,7 +73,6 @@ export async function GET(
       }
     };
 
-    console.log('Direct Creator API: Successfully assembled data:', campaignStats);
 
     return NextResponse.json({
       success: true,
@@ -99,7 +80,6 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Direct Creator API: Error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch creator info' },
       { status: 500 }

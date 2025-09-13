@@ -4,18 +4,13 @@ import { eq, isNull } from 'drizzle-orm';
 
 async function fixCampaignImages() {
   try {
-    console.log('🔧 Fixing campaign images...\n');
-
     // Get campaigns with missing cover images
     const campaignsWithMissingImages = await db
       .select()
       .from(campaigns)
       .where(isNull(campaigns.coverImageUrl));
 
-    console.log(`📊 Found ${campaignsWithMissingImages.length} campaigns with missing cover images\n`);
-
     if (campaignsWithMissingImages.length === 0) {
-      console.log('✅ All campaigns have cover images');
       return;
     }
 
@@ -23,7 +18,6 @@ async function fixCampaignImages() {
 
     for (const campaign of campaignsWithMissingImages) {
       try {
-        console.log(`🔍 Fixing campaign: ${campaign.title}`);
         
         // Set placeholder cover image
         const placeholderCoverImage = '/images/card-img1.png';
@@ -45,19 +39,13 @@ async function fixCampaignImages() {
           })
           .where(eq(campaigns.id, campaign.id));
 
-        console.log(`✅ Fixed campaign: ${campaign.title}`);
         fixedCount++;
       } catch (error) {
-        console.error(`❌ Error fixing campaign ${campaign.id}:`, error);
+        console.error(`Error fixing campaign ${campaign.id}:`, error);
       }
     }
-
-    console.log(`\n📈 Summary:`);
-    console.log(`✅ Fixed: ${fixedCount} campaigns`);
-    console.log(`❌ Errors: ${campaignsWithMissingImages.length - fixedCount} campaigns`);
-
   } catch (error) {
-    console.error('❌ Error fixing campaign images:', error);
+    console.error('Error fixing campaign images:', error);
   } finally {
     process.exit(0);
   }

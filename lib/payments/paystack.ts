@@ -120,7 +120,6 @@ export async function handlePaystackWebhook(
       }
     }
 
-    console.log('✅ Paystack webhook signature verified');
     return { success: true, event: payload };
   } catch (error) {
     console.error('Error handling Paystack webhook:', error);

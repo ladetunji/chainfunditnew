@@ -10,12 +10,9 @@ export async function GET(
   try {
     const { id: userId } = await params;
     
-    console.log('User API: Fetching user with ID:', userId);
-    
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(userId)) {
-      console.log('User API: Invalid UUID format:', userId);
       return NextResponse.json(
         { success: false, error: 'Invalid user ID format' },
         { status: 400 }
@@ -35,8 +32,6 @@ export async function GET(
       .where(eq(users.id, userId))
       .limit(1);
 
-    console.log('User API: Query result:', { userId, userFound: user.length > 0, userData: user[0] });
-
     if (!user.length) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
@@ -50,7 +45,7 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('User API: Error fetching user:', error);
+    console.error('Error fetching user:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch user' },
       { status: 500 }

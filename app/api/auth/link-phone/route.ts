@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       
       try {
         // First attempt: Send via WhatsApp
-        console.log('Attempting WhatsApp OTP for phone linking:', {
+        await twilioClient.messages.create({
           from: process.env.TWILIO_WHATSAPP_FROM,
           to: `whatsapp:${phone}`,
           body: `Your OTP code is: ${generatedOtp}`

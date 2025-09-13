@@ -17,8 +17,6 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log('🔍 Debug: Looking for donation:', donationId);
-
     // Get donation details
     const donation = await db
       .select()
@@ -86,7 +84,6 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    console.log('🔧 Debug: Manual action:', action, 'for donation:', donationId);
 
     let result;
     

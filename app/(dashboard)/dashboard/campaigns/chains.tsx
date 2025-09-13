@@ -29,10 +29,6 @@ const Chains = ({ campaigns }: Props) => {
     [campaigns]
   );
 
-  // Debug logging
-  console.log("Chains: campaigns prop changed, length:", campaigns.length);
-  console.log("Chains: campaignIds:", campaignIds);
-
   const { chainCounts, loading: chainsLoading } =
     useCampaignChains(campaignIds);
 

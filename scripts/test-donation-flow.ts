@@ -17,8 +17,6 @@ config({ path: '.env.local' });
 async function testDonationFlow() {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   
-  console.log('🧪 Testing Donation Flow...\n');
-
   try {
     // Test data
     const testDonation = {
@@ -31,7 +29,6 @@ async function testDonationFlow() {
       simulate: true,
     };
 
-    console.log('1. Initializing donation...');
     const initResponse = await fetch(`${baseUrl}/api/payments/initialize`, {
       method: 'POST',
       headers: {
@@ -42,18 +39,12 @@ async function testDonationFlow() {
     });
 
     const initResult = await initResponse.json();
-    console.log('Init result:', initResult);
 
     if (!initResult.success) {
       console.error('❌ Failed to initialize donation:', initResult.error);
       return;
     }
-
-    console.log('✅ Donation initialized successfully');
-    console.log(`   Donation ID: ${initResult.donationId}`);
-
     // Simulate payment
-    console.log('\n2. Simulating payment...');
     const simulateResponse = await fetch(`${baseUrl}/api/payments/simulate`, {
       method: 'POST',
       headers: {
@@ -66,30 +57,22 @@ async function testDonationFlow() {
     });
 
     const simulateResult = await simulateResponse.json();
-    console.log('Simulate result:', simulateResult);
 
     if (!simulateResult.success) {
       console.error('❌ Failed to simulate payment:', simulateResult.error);
       return;
     }
 
-    console.log('✅ Payment simulated successfully');
-
     // Verify donation status
-    console.log('\n3. Verifying donation...');
     const verifyResponse = await fetch(`${baseUrl}/api/donations?donationId=${initResult.donationId}`);
     const verifyResult = await verifyResponse.json();
 
     if (verifyResult.success && verifyResult.data.length > 0) {
       const donation = verifyResult.data[0];
-      console.log('✅ Donation verified');
-      console.log(`   Status: ${donation.paymentStatus}`);
-      console.log(`   Amount: ${donation.currency} ${donation.amount}`);
+    
     } else {
       console.error('❌ Failed to verify donation');
     }
-
-    console.log('\n🎉 Donation flow test completed successfully!');
 
   } catch (error) {
     console.error('❌ Test failed:', error);
@@ -98,7 +81,6 @@ async function testDonationFlow() {
 
 // Payment provider configuration test
 async function testPaymentConfig() {
-  console.log('\n🔧 Testing Payment Configuration...\n');
 
   const requiredEnvVars = [
     'STRIPE_SECRET_KEY',
@@ -111,52 +93,35 @@ async function testPaymentConfig() {
 
   requiredEnvVars.forEach(envVar => {
     if (process.env[envVar]) {
-      console.log(`✅ ${envVar}: Configured`);
+    
     } else {
-      console.log(`❌ ${envVar}: Missing`);
       allConfigured = false;
     }
   });
 
-  if (allConfigured) {
-    console.log('\n✅ All payment environment variables are configured');
-  } else {
-    console.log('\n❌ Some payment environment variables are missing');
-    console.log('Please check your .env file');
-  }
 }
 
 // Currency support test
 function testCurrencySupport() {
-  console.log('\n💱 Testing Currency Support...\n');
+ 
 
   const currencies = ['USD', 'EUR', 'GBP', 'NGN', 'CAD'];
   
   currencies.forEach(currency => {
-    // This would use the actual getSupportedProviders function
-    console.log(`${currency}: Testing...`);
-    // Mock results for now
     if (currency === 'NGN') {
-      console.log(`   ✅ Supported by: paystack`);
     } else {
-      console.log(`   ✅ Supported by: stripe`);
+      console.log(`Supported by: stripe`);
     }
   });
 }
 
 // Main test runner
 async function runTests() {
-  console.log('🚀 ChainFundIt Donation Flow Test Suite\n');
-  console.log('='.repeat(50) + '\n');
-
   await testPaymentConfig();
   testCurrencySupport();
   
   // Uncomment to test actual donation flow (requires auth)
   await testDonationFlow();
-
-  console.log('\n' + '='.repeat(50));
-  console.log('Tests completed! 🎯');
 }
 
 // Run if called directly

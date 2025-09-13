@@ -20,7 +20,6 @@ export function useFileUpload() {
 
       // If R2 fails, try local upload
       if (!response.ok) {
-        console.log('R2 upload failed, trying local upload...');
         response = await fetch('/api/upload-local', {
           method: 'POST',
           body: formData,

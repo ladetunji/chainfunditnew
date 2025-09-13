@@ -29,8 +29,6 @@ async function updateCampaignAmount(campaignId: string) {
         updatedAt: new Date(),
       })
       .where(eq(campaigns.id, campaignId));
-
-    console.log(`Updated campaign ${campaignId} currentAmount to ${totalAmount}`);
   } catch (error) {
     console.error('Error updating campaign amount:', error);
   }

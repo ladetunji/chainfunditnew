@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface Campaign {
   id: string;
@@ -45,108 +45,106 @@ export function useAllCampaigns() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
-  const [filters, setFilters] = useState<UseAllCampaignsFilters>({ 
-    limit: 20, 
-    offset: 0 
+  const [filters, setFilters] = useState<UseAllCampaignsFilters>({
+    limit: 20,
+    offset: 0,
   });
-  
+
   const abortControllerRef = useRef<AbortController | null>(null);
   const isMountedRef = useRef(true);
 
   // Fetch campaigns from the API
-  const fetchCampaigns = useCallback(async (reset: boolean = false) => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    abortControllerRef.current = new AbortController();
-    
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Build query parameters
-      const params = new URLSearchParams();
-      if (filters.status) params.append('status', filters.status);
-      if (filters.reason) params.append('reason', filters.reason);
-      params.append('limit', filters.limit?.toString() || '20');
-      params.append('offset', reset ? '0' : (filters.offset?.toString() || '0'));
-
-      const response = await fetch(`/api/campaigns?${params.toString()}`, {
-        signal: abortControllerRef.current.signal,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch campaigns: ${response.status}`);
+  const fetchCampaigns = useCallback(
+    async (reset: boolean = false) => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
 
-      const data = await response.json();
-      
-      if (!isMountedRef.current) return;
+      abortControllerRef.current = new AbortController();
 
-      // Fix: API returns data.data, not data.campaigns
-      const campaignsData = data.data || [];
-      
-      if (reset) {
-        setCampaigns(campaignsData);
-        setFilters(prev => ({ ...prev, offset: 0 }));
-      } else {
-        setCampaigns(prev => [...prev, ...campaignsData]);
-      }
+      try {
+        setLoading(true);
+        setError(null);
 
-      // Check if there are more campaigns
-      setHasMore(campaignsData.length === (filters.limit || 20));
-      
-    } catch (err: any) {
-      if (err.name === 'AbortError') return;
-      
-      if (!isMountedRef.current) return;
-      
-      console.error('Error fetching campaigns:', err);
-      setError(err.message || 'Failed to fetch campaigns');
-    } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
+        // Build query parameters
+        const params = new URLSearchParams();
+        if (filters.status) params.append("status", filters.status);
+        if (filters.reason) params.append("reason", filters.reason);
+        params.append("limit", filters.limit?.toString() || "20");
+        params.append(
+          "offset",
+          reset ? "0" : filters.offset?.toString() || "0"
+        );
+
+        const response = await fetch(`/api/campaigns?${params.toString()}`, {
+          signal: abortControllerRef.current.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch campaigns: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (!isMountedRef.current) return;
+
+        // Fix: API returns data.data, not data.campaigns
+        const campaignsData = data.data || [];
+
+        if (reset) {
+          setCampaigns(campaignsData);
+          setFilters((prev) => ({ ...prev, offset: 0 }));
+        } else {
+          setCampaigns((prev) => [...prev, ...campaignsData]);
+        }
+
+        // Check if there are more campaigns
+        setHasMore(campaignsData.length === (filters.limit || 20));
+      } catch (err: any) {
+        if (err.name === "AbortError") return;
+
+        if (!isMountedRef.current) return;
+
+        console.error("Error fetching campaigns:", err);
+        setError(err.message || "Failed to fetch campaigns");
+      } finally {
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
       }
-    }
-  }, [filters]);
+    },
+    [filters]
+  );
 
   // Load more campaigns
   const loadMore = useCallback(() => {
     if (loading || !hasMore) return;
-    
-    setFilters(prev => ({
+
+    setFilters((prev) => ({
       ...prev,
-      offset: (prev.offset || 0) + (prev.limit || 20)
+      offset: (prev.offset || 0) + (prev.limit || 20),
     }));
   }, [loading, hasMore]);
 
   // Update filters and reset campaigns
-  const updateFilters = useCallback((newFilters: Partial<UseAllCampaignsFilters>) => {
-    setFilters(prev => {
-      const updatedFilters = { ...prev, ...newFilters, offset: 0 };
-      // Only update if there is a change
-      if (JSON.stringify(updatedFilters) !== JSON.stringify(prev)) {
-        return updatedFilters;
-      }
-      return prev;
-    });
-  }, []);
+  const updateFilters = useCallback(
+    (newFilters: Partial<UseAllCampaignsFilters>) => {
+      setFilters((prev) => {
+        const updatedFilters = { ...prev, ...newFilters, offset: 0 };
+        // Only update if there is a change
+        if (JSON.stringify(updatedFilters) !== JSON.stringify(prev)) {
+          return updatedFilters;
+        }
+        return prev;
+      });
+    },
+    []
+  );
 
   // Initial fetch
   useEffect(() => {
     fetchCampaigns(true);
   }, []); // Only run once on mount
-
-  // Debug logging for filter changes
-  useEffect(() => {
-    console.log('Filters changed:', filters);
-  }, [filters]);
-
-  // Debug logging for fetchCampaigns calls
-  useEffect(() => {
-    console.log('fetchCampaigns called with reset:', true);
-  }, [fetchCampaigns]);
 
   // Fetch more when offset changes - but don't depend on fetchCampaigns
   useEffect(() => {
@@ -159,47 +157,38 @@ export function useAllCampaigns() {
         }
 
         abortControllerRef.current = new AbortController();
-        
+
         try {
-          console.log('Fetching more campaigns with offset:', currentOffset);
           setLoading(true);
           setError(null);
 
           // Build query parameters
           const params = new URLSearchParams();
-          if (filters.status) params.append('status', filters.status);
-          if (filters.reason) params.append('reason', filters.reason);
-          params.append('limit', filters.limit?.toString() || '20');
-          params.append('offset', currentOffset.toString());
+          if (filters.status) params.append("status", filters.status);
+          if (filters.reason) params.append("reason", filters.reason);
+          params.append("limit", filters.limit?.toString() || "20");
+          params.append("offset", currentOffset.toString());
 
           const url = `/api/campaigns?${params.toString()}`;
-          console.log('Fetching more from URL:', url);
 
           const response = await fetch(url, {
             signal: abortControllerRef.current.signal,
           });
-
           if (!response.ok) {
             throw new Error(`Failed to fetch campaigns: ${response.status}`);
           }
-
           const data = await response.json();
-          
+          if (!isMountedRef.current) return;
+          const campaignsData = data.data || [];
+          setCampaigns((prev) => [...prev, ...campaignsData]);
+          setHasMore(campaignsData.length === (filters.limit || 20));
+        } catch (err: any) {
+          if (err.name === "AbortError") return;
+
           if (!isMountedRef.current) return;
 
-          const campaignsData = data.data || [];
-          console.log('More campaigns data:', campaignsData);
-          
-          setCampaigns(prev => [...prev, ...campaignsData]);
-          setHasMore(campaignsData.length === (filters.limit || 20));
-          
-        } catch (err: any) {
-          if (err.name === 'AbortError') return;
-          
-          if (!isMountedRef.current) return;
-          
-          console.error('Error fetching more campaigns:', err);
-          setError(err.message || 'Failed to fetch more campaigns');
+          console.error("Error fetching more campaigns:", err);
+          setError(err.message || "Failed to fetch more campaigns");
         } finally {
           if (isMountedRef.current) {
             setLoading(false);
@@ -229,6 +218,6 @@ export function useAllCampaigns() {
     fetchCampaigns: () => fetchCampaigns(true),
     loadMore,
     updateFilters,
-    filters
+    filters,
   };
 }

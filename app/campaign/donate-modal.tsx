@@ -78,11 +78,6 @@ const DonateModal: React.FC<DonateModalProps> = ({
       const currencyCode = getCurrencyCode(campaign.currency);
       const { primary, alternatives } = getIntelligentProviders(currencyCode);
       
-      console.log('Campaign currency symbol:', campaign.currency);
-      console.log('Mapped currency code:', currencyCode);
-      console.log('Primary provider:', primary);
-      console.log('Alternative providers:', alternatives);
-      
       // Set supported providers (primary first, then alternatives)
       const allProviders = primary ? [primary, ...alternatives] : alternatives;
       setSupportedProviders(allProviders);
@@ -163,7 +158,6 @@ const DonateModal: React.FC<DonateModalProps> = ({
         toast.error(result.error || "Donation failed. Please try again.");
       }
     } catch (error) {
-      console.error('Payment error:', error);
       toast.error("An error occurred while processing your donation. Please try again.");
     }
   };

@@ -37,12 +37,6 @@ const SessionTimeoutProvider: React.FC<SessionTimeoutProviderProps> = ({
   if (!isClient) {
     return <>{children}</>;
   }
-
-  console.log('SessionTimeoutProvider: Starting component initialization');
-  console.log('SessionTimeoutProvider: Config received:', config);
-  
-  console.log('SessionTimeoutProvider: useSessionTimeout called successfully:', sessionTimeoutData);
-
   // Destructure with safe defaults
   const {
     showTimeoutModal = false,
@@ -53,26 +47,13 @@ const SessionTimeoutProvider: React.FC<SessionTimeoutProviderProps> = ({
     handleSessionExpired = () => {},
   } = sessionTimeoutData || {};
 
-  console.log('SessionTimeoutProvider: Data destructured successfully:', {
-    showTimeoutModal,
-    showWarningModal,
-    timeRemaining,
-    extendSession: typeof extendSession,
-    closeTimeoutModal: typeof closeTimeoutModal,
-    handleSessionExpired: typeof handleSessionExpired,
-  });
-
   const handleLogin = () => {
-    console.log('SessionTimeoutProvider: handleLogin called');
     if (typeof handleSessionExpired === 'function') {
-      console.log('SessionTimeoutProvider: Calling handleSessionExpired');
       handleSessionExpired();
     } else {
       console.warn('SessionTimeoutProvider: handleSessionExpired is not a function:', typeof handleSessionExpired);
     }
   };
-
-  console.log('SessionTimeoutProvider: About to render with modals');
 
   return (
     <>

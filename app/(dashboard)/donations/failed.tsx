@@ -53,14 +53,11 @@ const FailedDonations = (props: Props) => {
         // Refresh the donations list
         await refreshDonations();
         toast.success("Retry initiated for donation. Please check back later.");
-        console.log(`Retry initiated for donation ${donationId}`);
       } else {
         toast.error("Failed to retry donation. Please try again.");
-        console.error('Failed to retry donation');
       }
     } catch (error) {
       toast.error("An error occurred while retrying the donation. Please try again.");
-      console.error('Error retrying donation:', error);
     } finally {
       setRetryingDonations(prev => {
         const newSet = new Set(prev);

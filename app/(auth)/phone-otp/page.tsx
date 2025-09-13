@@ -204,7 +204,6 @@ function PhoneOtpPageInner() {
     if (otp.length !== 6 || isLoading || !phone || !email) return;
     setIsLoading(true);
     try {
-      console.log("Verifying OTP with:", { phone, otp, email });
       const res = await fetch("/api/auth/link-phone", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

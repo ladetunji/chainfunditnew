@@ -46,47 +46,18 @@ function parseCSV(content: string): any[] {
 }
 
 async function bulkImportCampaignsCSV() {
-  console.log('📊 Bulk Importing Campaigns from CSV...\n');
 
   try {
     // Check if CSV file exists
     const csvPath = path.join(process.cwd(), 'campaigns-data.csv');
-    
-    if (!fs.existsSync(csvPath)) {
-      console.log('❌ CSV file not found!');
-      console.log('📋 Please create a file named "campaigns-data.csv" in the project root with the following columns:');
-      console.log('   • title (required)');
-      console.log('   • subtitle (optional)');
-      console.log('   • description (required)');
-      console.log('   • reason (optional)');
-      console.log('   • fundraisingFor (optional)');
-      console.log('   • duration (optional)');
-      console.log('   • goalAmount (required)');
-      console.log('   • currency (required)');
-      console.log('   • minimumDonation (required)');
-      console.log('   • chainerCommissionRate (required)');
-      console.log('   • videoUrl (optional)');
-      console.log('   • coverImageUrl (optional)');
-      console.log('   • galleryImages (optional, comma-separated URLs)');
-      console.log('   • documents (optional, comma-separated URLs)');
-      console.log('   • creatorEmail (required)');
-      console.log('\n💡 Example CSV format:');
-      console.log('title,description,goalAmount,currency,minimumDonation,chainerCommissionRate,creatorEmail');
-      console.log('"Save the Planet","Help save our environment",10000,"NGN",100,5.0,"admin@example.com"');
-      return;
-    }
 
     // Read CSV file
-    console.log('📖 Reading CSV file...');
     const csvContent = fs.readFileSync(csvPath, 'utf-8');
     const jsonData = parseCSV(csvContent);
 
     if (jsonData.length === 0) {
-      console.log('❌ No data found in CSV file');
       return;
     }
-
-    console.log(`📋 Found ${jsonData.length} rows of data`);
 
     // Validate and process each row
     const validCampaigns: CampaignData[] = [];
@@ -162,22 +133,17 @@ async function bulkImportCampaignsCSV() {
 
     // Show validation results
     if (errors.length > 0) {
-      console.log('\n❌ Validation Errors:');
       errors.forEach(error => console.log(`   ${error}`));
-      console.log(`\n📊 ${validCampaigns.length} valid campaigns found`);
       
       if (validCampaigns.length === 0) {
-        console.log('❌ No valid campaigns to import');
         return;
       }
     }
 
     // Get unique creator emails
     const creatorEmails = [...new Set(validCampaigns.map(c => c.creatorEmail))];
-    console.log(`\n👥 Found ${creatorEmails.length} unique creators`);
 
     // Verify all creators exist, create if they don't
-    console.log('🔍 Verifying creators exist...');
     const userMap = new Map<string, string>();
     
     for (const email of creatorEmails) {
@@ -189,10 +155,8 @@ async function bulkImportCampaignsCSV() {
       
       if (user.length > 0) {
         userMap.set(email, user[0].id);
-        console.log(`   ✅ Found creator: ${email}`);
       } else {
         // Create the user
-        console.log(`   🔨 Creating new user: ${email}`);
         try {
           const newUser = await db.insert(users).values({
             email: email,
@@ -205,7 +169,6 @@ async function bulkImportCampaignsCSV() {
           }).returning();
           
           userMap.set(email, newUser[0].id);
-          console.log(`   ✅ Created user: ${email} (ID: ${newUser[0].id})`);
         } catch (error) {
           console.log(`❌ Failed to create user: ${email} - ${error instanceof Error ? error.message : 'Unknown error'}`);
           return;
@@ -213,10 +176,7 @@ async function bulkImportCampaignsCSV() {
       }
     }
 
-    console.log('✅ All creators verified');
-
     // Import campaigns
-    console.log('\n📥 Importing campaigns...');
     const importedCampaigns = [];
     const importErrors = [];
 
@@ -250,32 +210,20 @@ async function bulkImportCampaignsCSV() {
         }).returning();
 
         importedCampaigns.push(newCampaign[0]);
-        console.log(`   ✅ Imported: ${campaignData.title}`);
       } catch (error) {
         const errorMsg = `Failed to import "${campaignData.title}": ${error instanceof Error ? error.message : 'Unknown error'}`;
         importErrors.push(errorMsg);
-        console.log(`   ❌ ${errorMsg}`);
       }
     }
 
-    // Summary
-    console.log('\n🎉 Import Complete!');
-    console.log(`📊 Summary:`);
-    console.log(`   • Total rows processed: ${jsonData.length}`);
-    console.log(`   • Valid campaigns: ${validCampaigns.length}`);
-    console.log(`   • Successfully imported: ${importedCampaigns.length}`);
-    console.log(`   • Errors: ${errors.length + importErrors.length}`);
-
-    if (importedCampaigns.length > 0) {
-      console.log('\n✅ Successfully imported campaigns:');
+      if (importedCampaigns.length > 0) {
       importedCampaigns.forEach(campaign => {
-        console.log(`   • ${campaign.title} (ID: ${campaign.id})`);
+        console.log(`${campaign.title} (ID: ${campaign.id})`);
       });
     }
 
     if (importErrors.length > 0) {
-      console.log('\n❌ Import errors:');
-      importErrors.forEach(error => console.log(`   ${error}`));
+        importErrors.forEach(error => console.log(`   ${error}`));
     }
 
   } catch (error) {

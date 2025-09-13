@@ -138,9 +138,6 @@ export function useCampaigns() {
         setLoading(true);
         setError(null);
       }
-
-      console.log('useCampaigns: fetchCampaigns - Starting fetch');
-      
       const params = new URLSearchParams();
       if (currentFilters?.status) params.append('status', currentFilters.status);
       if (currentFilters?.reason) params.append('reason', currentFilters.reason);
@@ -149,7 +146,6 @@ export function useCampaigns() {
       if (currentFilters?.offset) params.append('offset', currentFilters.offset.toString());
 
       const url = `/api/dashboard/campaigns?${params}`;
-      console.log('useCampaigns: fetchCampaigns - Fetching URL:', url);
 
       const response = await fetch(url, {
         signal: abortControllerRef.current.signal,
@@ -158,11 +154,9 @@ export function useCampaigns() {
         },
       });
       
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
       const data = await response.json();
 
       if (data.success && isMountedRef.current) {

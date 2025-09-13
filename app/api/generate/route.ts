@@ -29,8 +29,6 @@ export async function POST(req: NextRequest) {
     });
 
     const data = await response.json();
-    console.log("🔍 OpenRouter response:", JSON.stringify(data, null, 2));
-
     return NextResponse.json(data);
   } catch (err) {
     console.error("❌ OpenRouter error:", err);

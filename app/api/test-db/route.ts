@@ -4,13 +4,9 @@ import { campaigns } from '@/lib/schema';
 
 export async function GET() {
   try {
-    console.log('Testing database connection...');
-    
     // Try to count campaigns
     const result = await db.select({ count: campaigns.id }).from(campaigns);
     const count = result.length;
-    
-    console.log('Database connection successful, campaigns count:', count);
     
     return NextResponse.json({
       success: true,

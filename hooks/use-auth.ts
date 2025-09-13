@@ -26,14 +26,11 @@ export function useAuth() {
         const userData = await response.json();
         if (userData.success && userData.user) {
           setUser(userData.user);
-          console.log('User authenticated:', userData.user);
         } else {
           setUser(null);
-          console.log('Failed to get user data');
         }
       } else {
         setUser(null);
-        console.log('Auth token invalid or expired');
       }
     } catch (error) {
       console.error('Error getting current user:', error);
@@ -50,7 +47,6 @@ export function useAuth() {
   const login = useCallback(async (email: string, password: string) => {
     try {
       // This would typically call the Better Auth login endpoint
-      console.log("Sign in:", { email, password });
       // After successful login, refresh user data
       await getCurrentUser();
     } catch (error) {
@@ -62,7 +58,6 @@ export function useAuth() {
     try {
       // Clear user state
       setUser(null);
-      console.log('User logged out');
       
       // Redirect to signin page
       window.location.href = '/signin';
@@ -74,9 +69,6 @@ export function useAuth() {
 
   const signup = useCallback(async (email: string, password: string, fullName: string) => {
     try {
-      // This would typically call the Better Auth signup endpoint
-      console.log("Signup:", { email, password, fullName });
-      // After successful signup, refresh user data
       await getCurrentUser();
     } catch (error) {
       console.error('Error in signup:', error);

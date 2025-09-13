@@ -293,17 +293,6 @@ const Main = ({ campaignId }: MainProps) => {
     }
   }, []);
 
-  // Debug logging
-  React.useEffect(() => {
-    console.log('🔍 Campaign Main Debug:', {
-      campaignId,
-      donations: donations?.length || 0,
-      loadingDonations,
-      topChainers: topChainers?.length || 0,
-      loadingTopChainers,
-    });
-  }, [campaignId, donations, loadingDonations, topChainers, loadingTopChainers]);
-
   // Fetch campaign updates
   const fetchUpdates = React.useCallback(async () => {
     try {
@@ -336,7 +325,6 @@ const Main = ({ campaignId }: MainProps) => {
         }
       }
     } catch (err) {
-      console.error("Error fetching comments:", err);
     } finally {
       setLoadingComments(false);
     }
@@ -355,7 +343,6 @@ const Main = ({ campaignId }: MainProps) => {
         }
       }
     } catch (err) {
-      console.error("Error fetching chain count:", err);
     } finally {
       setLoadingChains(false);
     }
@@ -366,9 +353,7 @@ const Main = ({ campaignId }: MainProps) => {
     try {
       setLoading(true);
       setError(null);
-      console.log("Fetching campaign with ID:", campaignId);
       const response = await fetch(`/api/campaigns/${campaignId}`);
-      console.log("Response status:", response.status);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -378,7 +363,6 @@ const Main = ({ campaignId }: MainProps) => {
       }
 
       const result = await response.json();
-      console.log("API response:", result);
 
       if (!result.success) {
         throw new Error(result.error || "Failed to fetch campaign");
@@ -400,7 +384,6 @@ const Main = ({ campaignId }: MainProps) => {
       // Fetch campaign updates, comments, and chain count
       await Promise.all([fetchUpdates(), fetchComments(), fetchChainCount()]);
     } catch (err) {
-      console.error("Error fetching campaign:", err);
       setError(err instanceof Error ? err.message : "Failed to fetch campaign");
     } finally {
       setLoading(false);

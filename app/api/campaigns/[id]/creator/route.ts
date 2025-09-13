@@ -9,9 +9,6 @@ export async function GET(
 ) {
   try {
     const { id: campaignId } = await params;
-    
-    console.log('Creator API: Fetching creator info for campaign:', campaignId);
-    
     // First, get the campaign to find the creatorId
     const campaign = await db
       .select({ creatorId: campaigns.creatorId })
@@ -34,9 +31,6 @@ export async function GET(
         { status: 400 }
       );
     }
-
-    console.log('Creator API: Found creatorId:', creatorId);
-
     // Now fetch the creator's information
     const creator = await db
       .select({
@@ -49,8 +43,6 @@ export async function GET(
       .from(users)
       .where(eq(users.id, creatorId))
       .limit(1);
-
-    console.log('Creator API: User lookup result:', { creatorId, userFound: creator.length > 0 });
 
     if (!creator.length) {
       return NextResponse.json(

@@ -31,7 +31,6 @@ export async function GET(
     
     // Validate UUID format
     if (!isValidUUID(campaignId)) {
-      console.log('Invalid UUID format:', campaignId);
       return NextResponse.json(
         { success: false, error: 'Invalid campaign ID format' },
         { status: 400 }
@@ -84,11 +83,9 @@ export async function GET(
 
     // If JOIN didn't work or creator info is missing, fetch user info separately
     if (campaignData.length > 0 && campaignData[0].creatorId && !campaignData[0].creatorName) {
-      console.log('JOIN failed, fetching user info separately for creatorId:', campaignData[0].creatorId);
-      
       try {
         const userInfo = await db
-          .select({
+           .select({
             fullName: users.fullName,
             avatar: users.avatar,
           })
@@ -103,42 +100,9 @@ export async function GET(
             creatorName: userInfo[0].fullName,
             creatorAvatar: userInfo[0].avatar,
           };
-          console.log('Successfully fetched user info separately:', userInfo[0]);
         } else {
-          console.log('No user found for creatorId:', campaignData[0].creatorId);
         }
       } catch (userErr) {
-        console.error('Error fetching user info separately:', userErr);
-      }
-    }
-
-    // Debug logging
-    console.log('Campaign API Debug:', {
-      campaignId,
-      campaignData: campaignData[0],
-      creatorId: campaignData[0]?.creatorId,
-      creatorName: campaignData[0]?.creatorName,
-      fundraisingFor: campaignData[0]?.fundraisingFor,
-      hasCreatorId: !!campaignData[0]?.creatorId,
-      hasCreatorName: !!campaignData[0]?.creatorName
-    });
-
-    // Additional debug: Check if the JOIN is working
-    if (campaignData[0]?.creatorId) {
-      try {
-        const userCheck = await db
-          .select({ fullName: users.fullName })
-          .from(users)
-          .where(eq(users.id, campaignData[0].creatorId))
-          .limit(1);
-        
-        console.log('User lookup debug:', {
-          creatorId: campaignData[0].creatorId,
-          userFound: userCheck.length > 0,
-          userName: userCheck[0]?.fullName
-        });
-      } catch (userErr) {
-        console.error('User lookup error:', userErr);
       }
     }
 

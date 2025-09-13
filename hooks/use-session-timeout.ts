@@ -22,16 +22,6 @@ export const useSessionTimeout = (config: SessionTimeoutConfig = {}) => {
     logout = () => Promise.resolve(),
   } = config;
 
-
-  // Hooks must be called at the top level - no try-catch around hook calls
-  // const authData = useAuth(); // This line is removed as per the edit hint
-  // console.log('useSessionTimeout: Auth data loaded successfully:', authData); // This line is removed as per the edit hint
-
-  // Safely destructure auth data with fallbacks
-  // const user = authData?.user || null; // This line is removed as per the edit hint
-  // const logout = authData?.logout || (() => Promise.resolve()); // This line is removed as per the edit hint
-  
-  
   const [showTimeoutModal, setShowTimeoutModal] = useState(false);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);

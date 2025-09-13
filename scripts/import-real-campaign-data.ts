@@ -82,29 +82,21 @@ function parseProgress(progressStr: string): number {
 }
 
 async function importRealCampaignData() {
-  console.log('📊 Importing Real Campaign Data...\n');
-
   try {
     // Read CSV file
     const csvPath = path.join(process.cwd(), 'campaigns-data.csv');
     
     if (!fs.existsSync(csvPath)) {
-      console.log('❌ campaigns-data.csv file not found!');
       return;
     }
 
-    console.log('📖 Reading CSV file...');
     const csvContent = fs.readFileSync(csvPath, 'utf-8');
     const jsonData = parseCSV(csvContent);
 
     if (jsonData.length === 0) {
-      console.log('❌ No data found in CSV file');
       return;
     }
-
-    console.log(`📋 Found ${jsonData.length} rows of data`);
-
-    // Process campaigns and donations
+        // Process campaigns and donations
     const campaignsMap = new Map<string, CampaignData>();
     const donationsList: DonationData[] = [];
     const creatorEmails = new Set<string>();
@@ -123,10 +115,6 @@ async function importRealCampaignData() {
       if (campaignNumber && row['Campaign Title']) {
         const goalAmount = parseAmount(row['Goal']);
         const progress = parseProgress(row['Progress']);
-        
-        console.log(`Processing campaign: ${row['Campaign Title']}`);
-        console.log(`  Goal: ${row['Goal']} -> ${goalAmount}`);
-        console.log(`  Progress: ${row['Progress']} -> ${progress}`);
         
         // Generate email from creator name
         const creatorEmail = `${row['Creator'].toLowerCase().replace(/\s+/g, '.')}@example.com`;
@@ -163,11 +151,7 @@ async function importRealCampaignData() {
       }
     }
 
-    console.log(`📊 Found ${campaignsMap.size} campaigns and ${donationsList.length} donations`);
-    console.log(`👥 Found ${creatorEmails.size} unique creators`);
-
     // Create users for creators
-    console.log('\n🔨 Creating creators...');
     const userMap = new Map<string, string>();
     
     for (const email of creatorEmails) {
@@ -179,7 +163,6 @@ async function importRealCampaignData() {
       
       if (user.length > 0) {
         userMap.set(email, user[0].id);
-        console.log(`   ✅ Found creator: ${email}`);
       } else {
         try {
           const newUser = await db.insert(users).values({
@@ -193,15 +176,13 @@ async function importRealCampaignData() {
           }).returning();
           
           userMap.set(email, newUser[0].id);
-          console.log(`   ✅ Created creator: ${email}`);
         } catch (error) {
-          console.log(`❌ Failed to create creator: ${email}`);
+          console.log(`Failed to create creator: ${email}`);
         }
       }
     }
 
     // Import campaigns
-    console.log('\n📥 Importing campaigns...');
     const campaignIdMap = new Map<string, string>();
     const importedCampaigns = [];
 
@@ -211,7 +192,6 @@ async function importRealCampaignData() {
         const creatorId = userMap.get(creatorEmail);
         
         if (!creatorId) {
-          console.log(`❌ Creator not found for campaign: ${campaignData.title}`);
           continue;
         }
 
@@ -241,14 +221,12 @@ async function importRealCampaignData() {
 
         campaignIdMap.set(campaignNumber, newCampaign[0].id);
         importedCampaigns.push(newCampaign[0]);
-        console.log(`   ✅ Imported: ${campaignData.title}`);
       } catch (error) {
-        console.log(`❌ Failed to import campaign: ${campaignData.title} - ${error instanceof Error ? error.message : 'Unknown error'}`);
+        console.log(`Failed to import campaign: ${campaignData.title} - ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
     // Import donations
-    console.log('\n💰 Importing donations...');
     const importedDonations = [];
     const donationErrors = [];
 
@@ -299,32 +277,20 @@ async function importRealCampaignData() {
         }).returning();
 
         importedDonations.push(newDonation[0]);
-        console.log(`   ✅ Imported donation: ${donationData.amount} ${donationData.status}`);
       } catch (error) {
         donationErrors.push(`Failed to import donation ${donationData.donationNumber}: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
 
-    // Summary
-    console.log('\n🎉 Import Complete!');
-    console.log(`📊 Summary:`);
-    console.log(`   • Campaigns imported: ${importedCampaigns.length}`);
-    console.log(`   • Donations imported: ${importedDonations.length}`);
-    console.log(`   • Donation errors: ${donationErrors.length}`);
-
-    if (importedCampaigns.length > 0) {
-      console.log('\n✅ Successfully imported campaigns:');
+      if (importedCampaigns.length > 0) {
       importedCampaigns.forEach(campaign => {
         console.log(`   • ${campaign.title} (ID: ${campaign.id})`);
       });
     }
 
     if (donationErrors.length > 0) {
-      console.log('\n❌ Donation errors:');
       donationErrors.forEach(error => console.log(`   ${error}`));
     }
-
-    console.log('\n💡 You can now view these campaigns and donations in your dashboard!');
 
   } catch (error) {
     console.error('❌ Import failed:', error);

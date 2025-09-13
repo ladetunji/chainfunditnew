@@ -43,7 +43,6 @@ export async function getUserFromRequest(request: NextRequest) {
     // Check cache first
     const cached = userCache.get(userPayload.email);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      console.log(`Auth cache hit for ${userPayload.email} (${Date.now() - startTime}ms)`);
       return userPayload.email;
     }
     
@@ -53,13 +52,11 @@ export async function getUserFromRequest(request: NextRequest) {
     if (user.length > 0) {
       // Cache the result
       userCache.set(userPayload.email, { user: user[0], timestamp: Date.now() });
-      console.log(`Auth cache miss for ${userPayload.email} (${Date.now() - startTime}ms)`);
       return userPayload.email;
     }
     
     return null;
   } catch (error) {
-    console.error('Error in getUserFromRequest:', error);
     return null;
   }
 }

@@ -138,21 +138,9 @@ export default function AllCampaignsPage() {
   const filteredCampaigns = useMemo(() => {
     let filtered = campaigns;
 
-    console.log("Starting filtering with:", {
-      totalCampaigns: campaigns.length,
-      searchQuery,
-      selectedReason,
-      selectedStatus,
-      activeTab,
-      sortBy,
-      geolocation: geolocation?.country,
-      userCurrency: geolocation?.currency,
-    });
-
     // Filter by geolocation/currency
     if (geolocation) {
       filtered = filtered.filter((campaign) => shouldShowCampaign(campaign.currency));
-      console.log("After geolocation filter:", filtered.length);
     }
 
     // Filter by search query
@@ -165,7 +153,6 @@ export default function AllCampaignsPage() {
             .includes(searchQuery.toLowerCase()) ||
           campaign.creatorName.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      console.log("After search filter:", filtered.length);
     }
 
     // Filter by reason
@@ -173,7 +160,6 @@ export default function AllCampaignsPage() {
       filtered = filtered.filter(
         (campaign) => campaign.reason === selectedReason
       );
-      console.log("After reason filter:", filtered.length);
     }
 
     // Filter by status
@@ -181,16 +167,13 @@ export default function AllCampaignsPage() {
       filtered = filtered.filter(
         (campaign) => campaign.status === selectedStatus
       );
-      console.log("After status filter:", filtered.length);
     }
 
     // Filter by active tab
     if (activeTab === "Live") {
       filtered = filtered.filter((campaign) => campaign.status === "active");
-      console.log("After Live tab filter:", filtered.length);
     } else if (activeTab === "Completed") {
       filtered = filtered.filter((campaign) => campaign.status === "completed");
-      console.log("After Completed tab filter:", filtered.length);
     } else if (activeTab === "Trending") {
       // Show campaigns with high engagement (you can customize this logic)
       filtered = filtered.filter(
@@ -198,10 +181,8 @@ export default function AllCampaignsPage() {
           campaign.status === "active" &&
           (campaign.stats?.totalDonations || 0) > 10
       );
-      console.log("After Trending tab filter:", filtered.length);
     }
 
-    console.log("Final filtered campaigns:", filtered.length);
 
     // Sort campaigns
     switch (sortBy) {
@@ -258,45 +239,9 @@ export default function AllCampaignsPage() {
   // Handle errors
   useEffect(() => {
     if (error) {
-      console.error("Campaigns error:", error);
       toast.error(`Failed to load campaigns: ${error}`);
     }
   }, [error]);
-
-  // Debug logging
-  useEffect(() => {
-    console.log("Campaigns state:", {
-      loading,
-      error,
-      campaignsCount: campaigns.length,
-      filteredCount: filteredCampaigns.length,
-      hasMore,
-      activeTab,
-      selectedReason,
-      selectedStatus,
-      sortBy,
-    });
-
-    // Log individual campaigns to see their structure
-    if (campaigns.length > 0) {
-      console.log("First campaign:", campaigns[0]);
-      console.log(
-        "All campaign statuses:",
-        campaigns.map((c) => ({ id: c.id, status: c.status, reason: c.reason }))
-      );
-    }
-  }, [
-    loading,
-    error,
-    campaigns.length,
-    filteredCampaigns.length,
-    hasMore,
-    activeTab,
-    selectedReason,
-    selectedStatus,
-    sortBy,
-    campaigns,
-  ]);
 
   const tabs = ["All", "Live", "Completed", "Trending"];
 

@@ -20,12 +20,6 @@ export function PerformanceMonitor() {
           for (const entry of list.getEntries()) {
             if (entry.entryType === 'navigation') {
               const navEntry = entry as PerformanceNavigationTiming;
-              console.log('Navigation Performance:', {
-                domContentLoaded: navEntry.domContentLoadedEventEnd - navEntry.domContentLoadedEventStart,
-                loadComplete: navEntry.loadEventEnd - navEntry.loadEventStart,
-                domInteractive: navEntry.domInteractive,
-                firstByte: navEntry.responseStart - navEntry.requestStart,
-              });
             }
           }
         });
@@ -35,21 +29,11 @@ export function PerformanceMonitor() {
         // Memory usage monitoring (if available)
         if ('memory' in performance) {
           const memory = (performance as any).memory;
-          console.log('Memory Usage:', {
-            usedJSHeapSize: Math.round(memory.usedJSHeapSize / 1048576) + ' MB',
-            totalJSHeapSize: Math.round(memory.totalJSHeapSize / 1048576) + ' MB',
-            jsHeapSizeLimit: Math.round(memory.jsHeapSizeLimit / 1048576) + ' MB',
-          });
         }
 
         // Network information (if available)
         if ('connection' in navigator) {
           const connection = (navigator as any).connection;
-          console.log('Network Info:', {
-            effectiveType: connection.effectiveType,
-            downlink: connection.downlink + ' Mbps',
-            rtt: connection.rtt + ' ms',
-          });
         }
 
         return () => {
@@ -57,7 +41,6 @@ export function PerformanceMonitor() {
         };
       }).catch(() => {
         // web-vitals not available, skip monitoring
-        console.log('Performance monitoring not available');
       });
     }
   }, []);
@@ -72,7 +55,6 @@ export const performanceUtils = {
     const start = performance.now();
     const result = fn();
     const end = performance.now();
-    console.log(`${name} took ${(end - start).toFixed(2)}ms`);
     return result;
   },
 

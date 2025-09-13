@@ -292,8 +292,6 @@ export default function CreateCampaignPage() {
         console.error("Campaign creation failed:", data);
         throw new Error(data.error || "Failed to create campaign");
       }
-
-      console.log("Success:", data);
       const campaignUrl = `${window.location.origin}/campaign/${data.data.id}`;
       let shortUrl = null;
       try {

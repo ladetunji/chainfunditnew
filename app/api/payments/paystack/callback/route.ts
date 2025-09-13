@@ -29,8 +29,6 @@ async function updateCampaignAmount(campaignId: string) {
         updatedAt: new Date(),
       })
       .where(eq(campaigns.id, campaignId));
-
-    console.log(`Updated campaign ${campaignId} currentAmount to ${totalAmount}`);
   } catch (error) {
     console.error('Error updating campaign amount:', error);
   }
@@ -38,33 +36,25 @@ async function updateCampaignAmount(campaignId: string) {
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔄 Paystack callback received');
     const { searchParams } = new URL(request.url);
     const reference = searchParams.get('reference');
     
-    console.log('🔍 Callback reference:', reference);
-    
     if (!reference) {
-      console.error('❌ No reference in callback');
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/campaigns?donation_status=failed&error=missing_reference`
       );
     }
 
     // Verify the transaction
-    console.log('🔐 Verifying transaction with reference:', reference);
     const verification = await verifyPaystackTransaction(reference);
-    console.log('🔐 Verification result:', verification);
     
     if (!verification.success) {
-      console.error('❌ Transaction verification failed:', verification.error);
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/campaigns?donation_status=failed&error=verification_failed`
       );
     }
 
     // Find donation by payment intent ID (reference)
-    console.log('🔍 Looking for donation with payment intent ID:', reference);
     const donation = await db
       .select()
       .from(donations)
@@ -72,16 +62,13 @@ export async function GET(request: NextRequest) {
       .limit(1);
 
     if (!donation.length) {
-      console.error('❌ Donation not found with reference:', reference);
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/campaigns?donation_status=failed&error=donation_not_found`
       );
     }
 
-    console.log('✅ Found donation:', donation[0].id, 'Campaign:', donation[0].campaignId);
 
     // Update donation status
-    console.log('📝 Updating donation status to completed');
     await db
       .update(donations)
       .set({
@@ -90,22 +77,17 @@ export async function GET(request: NextRequest) {
       })
       .where(eq(donations.id, donation[0].id));
 
-    console.log('✅ Donation status updated');
 
     // Update campaign currentAmount
-    console.log('📈 Updating campaign amount');
     await updateCampaignAmount(donation[0].campaignId);
 
-    console.log('✅ Campaign amount updated');
 
     // Redirect to campaign page with success status
     const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/campaign/${donation[0].campaignId}?donation_status=success&donation_id=${donation[0].id}`;
-    console.log('🔄 Redirecting to:', redirectUrl);
     
     return NextResponse.redirect(redirectUrl);
 
   } catch (error) {
-    console.error('💥 Error processing Paystack callback:', error);
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/campaigns?donation_status=failed&error=callback_error`
     );

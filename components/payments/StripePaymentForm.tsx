@@ -82,7 +82,6 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         setPaymentStatus('error');
         toast.error(error.message || 'Payment failed. Please try again.');
       } else if (paymentIntent.status === 'succeeded') {
-        console.log('Payment succeeded:', paymentIntent);
         setPaymentStatus('success');
         toast.success('Payment successful! Thank you for your donation.');
         onSuccess();

@@ -5,8 +5,6 @@ import { donations, campaigns, users } from '../lib/schema';
 import { eq } from 'drizzle-orm';
 
 async function createTestPendingFailedDonations() {
-  console.log('🧪 Creating test pending and failed donations...\n');
-
   try {
     // Use specific campaign: Save the Planet
     const campaignId = 'a9ac811e-e98a-43ba-9f3e-409111db5258';
@@ -18,7 +16,6 @@ async function createTestPendingFailedDonations() {
       .limit(1);
 
     if (testCampaigns.length === 0) {
-      console.log('❌ Campaign "Save the Planet" not found. Please check the campaign ID.');
       return;
     }
 
@@ -29,17 +26,11 @@ async function createTestPendingFailedDonations() {
       .limit(3);
 
     if (testUsers.length === 0) {
-      console.log('❌ No users found. Please create a user first.');
       return;
     }
 
     const campaign = testCampaigns[0];
     const user = testUsers[0];
-
-    console.log(`📋 Using campaign: ${campaign.title}`);
-    console.log(`👤 Using user: ${user.email}`);
-    console.log(`💰 Campaign currency: ${campaign.currency}\n`);
-
     // Create test pending donations
     const pendingDonations = [
       {
@@ -99,31 +90,16 @@ async function createTestPendingFailedDonations() {
     ];
 
     // Insert pending donations
-    console.log('⏳ Creating pending donations...');
     for (const donation of pendingDonations) {
       const result = await db.insert(donations).values(donation).returning();
-      console.log(`   ✅ Created pending donation: ${donation.amount} ${donation.currency} (ID: ${result[0].id})`);
     }
 
     // Insert failed donations
-    console.log('\n❌ Creating failed donations...');
     for (const donation of failedDonations) {
       const result = await db.insert(donations).values(donation).returning();
-      console.log(`   ✅ Created failed donation: ${donation.amount} ${donation.currency} (ID: ${result[0].id})`);
     }
 
-    console.log('\n🎉 Test donations created successfully!');
-    console.log('\n📊 Summary:');
-    console.log(`   • ${pendingDonations.length} pending donations`);
-    console.log(`   • ${failedDonations.length} failed donations`);
-    console.log(`   • Campaign: ${campaign.title}`);
-    console.log(`   • Currency: ${campaign.currency}`);
-    console.log('\n💡 You can now view these donations in the dashboard under:');
-    console.log('   • Donations → Pending tab');
-    console.log('   • Donations → Failed tab');
-
   } catch (error) {
-    console.error('❌ Error creating test donations:', error);
   } finally {
     process.exit(0);
   }

@@ -28,15 +28,13 @@ async function updateCampaignAmount(campaignId: string) {
       })
       .where(eq(campaigns.id, campaignId));
 
-    console.log(`✅ Updated campaign ${campaignId} currentAmount to ${totalAmount}`);
   } catch (error) {
-    console.error('❌ Error updating campaign amount:', error);
+    console.error('Error updating campaign amount:', error);
   }
 }
 
 async function fixPaystackDonations() {
   try {
-    console.log('🔧 Fixing Paystack donations...\n');
 
     // Get all pending Paystack donations
     const pendingDonations = await db
@@ -47,10 +45,7 @@ async function fixPaystackDonations() {
         eq(donations.paymentStatus, 'pending')
       ));
 
-    console.log(`📊 Found ${pendingDonations.length} pending Paystack donations\n`);
-
     if (pendingDonations.length === 0) {
-      console.log('✅ No pending Paystack donations to fix');
       return;
     }
 
@@ -59,10 +54,7 @@ async function fixPaystackDonations() {
 
     for (const donation of pendingDonations) {
       try {
-        console.log(`🔍 Checking donation ${donation.id} with reference ${donation.paymentIntentId}`);
-        
         if (!donation.paymentIntentId) {
-          console.log(`⚠️  No payment reference found for donation ${donation.id}`);
           continue;
         }
 
@@ -70,9 +62,7 @@ async function fixPaystackDonations() {
         const verification = await verifyPaystackTransaction(donation.paymentIntentId);
         
         if (verification.success) {
-          console.log(`✅ Payment verified for donation ${donation.id}`);
-          
-          // Update donation status
+            // Update donation status
           await db
             .update(donations)
             .set({
@@ -85,10 +75,7 @@ async function fixPaystackDonations() {
           await updateCampaignAmount(donation.campaignId);
           
           fixedCount++;
-          console.log(`✅ Fixed donation ${donation.id}`);
         } else {
-          console.log(`❌ Payment verification failed for donation ${donation.id}: ${verification.error}`);
-          
           // Mark as failed if verification fails
           await db
             .update(donations)
@@ -100,17 +87,13 @@ async function fixPaystackDonations() {
           errorCount++;
         }
       } catch (error) {
-        console.error(`❌ Error processing donation ${donation.id}:`, error);
+        console.error(`Error processing donation ${donation.id}:`, error);
         errorCount++;
       }
     }
 
-    console.log(`\n📈 Summary:`);
-    console.log(`✅ Fixed: ${fixedCount} donations`);
-    console.log(`❌ Errors: ${errorCount} donations`);
-
   } catch (error) {
-    console.error('❌ Error fixing Paystack donations:', error);
+    console.error('Error fixing Paystack donations:', error);
   } finally {
     process.exit(0);
   }
