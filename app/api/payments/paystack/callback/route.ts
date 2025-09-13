@@ -67,6 +67,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log('Paystack callback: Found donation', donation[0].id, 'for reference', reference);
 
     // Update donation status
     await db
@@ -74,12 +75,15 @@ export async function GET(request: NextRequest) {
       .set({
         paymentStatus: 'completed',
         processedAt: new Date(),
+        updatedAt: new Date(),
       })
       .where(eq(donations.id, donation[0].id));
 
+    console.log('Paystack callback: Updated donation status to completed');
 
     // Update campaign currentAmount
     await updateCampaignAmount(donation[0].campaignId);
+    console.log('Paystack callback: Updated campaign amount');
 
 
     // Redirect to campaign page with success status

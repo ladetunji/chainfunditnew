@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
@@ -13,7 +13,9 @@ import { toast } from 'sonner';
 import { HandCoins, CheckCircle, XCircle } from 'lucide-react';
 
 // Initialize Stripe
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+console.log('Stripe publishable key:', stripePublishableKey ? 'Set' : 'Missing');
+const stripePromise = loadStripe(stripePublishableKey!);
 
 interface StripePaymentFormProps {
   clientSecret: string;
@@ -49,6 +51,12 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
 
+  // Debug Stripe loading
+  useEffect(() => {
+    console.log('Stripe loaded:', !!stripe);
+    console.log('Elements loaded:', !!elements);
+  }, [stripe, elements]);
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -82,9 +90,37 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         setPaymentStatus('error');
         toast.error(error.message || 'Payment failed. Please try again.');
       } else if (paymentIntent.status === 'succeeded') {
-        setPaymentStatus('success');
-        toast.success('Payment successful! Thank you for your donation.');
-        onSuccess();
+        // Call our callback endpoint to update the donation status
+        try {
+          const callbackResponse = await fetch('/api/payments/stripe/callback', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              donationId,
+              paymentIntentId: paymentIntent.id,
+              status: paymentIntent.status,
+            }),
+          });
+
+          if (callbackResponse.ok) {
+            const callbackResult = await callbackResponse.json();
+            console.log('Donation status updated:', callbackResult);
+            setPaymentStatus('success');
+            toast.success('Payment successful! Thank you for your donation.');
+            onSuccess();
+          } else {
+            const errorData = await callbackResponse.json();
+            console.error('Failed to update donation status:', errorData);
+            onError('Payment succeeded but failed to update donation status. Please contact support.');
+            setPaymentStatus('error');
+          }
+        } catch (callbackError) {
+          console.error('Callback error:', callbackError);
+          onError('Payment succeeded but failed to update donation status. Please contact support.');
+          setPaymentStatus('error');
+        }
       } else {
         onError('Payment was not completed. Please try again.');
         setPaymentStatus('error');
@@ -157,6 +193,16 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
             Try Again
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  // Show loading state if Stripe isn't ready
+  if (!stripe || !elements) {
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#104901] mx-auto mb-4"></div>
+        <p className="text-[#5F8555]">Loading payment form...</p>
       </div>
     );
   }

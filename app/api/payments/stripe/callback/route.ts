@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { donations } from '@/lib/schema/donations';
 import { campaigns } from '@/lib/schema/campaigns';
+import { notifications } from '@/lib/schema/notifications';
 import { eq, sum, and } from 'drizzle-orm';
 
 // Helper function to update campaign currentAmount based on completed donations
@@ -33,54 +34,131 @@ async function updateCampaignAmount(campaignId: string) {
   }
 }
 
-export async function GET(request: NextRequest) {
+// Helper function to create notification for successful donation
+async function createSuccessfulDonationNotification(donationId: string, campaignId: string) {
   try {
-    const { searchParams } = new URL(request.url);
-    const payment_intent = searchParams.get('payment_intent');
-    const payment_intent_client_secret = searchParams.get('payment_intent_client_secret');
-    
-    if (!payment_intent) {
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/campaigns?donation_status=failed&error=missing_payment_intent`
-      );
+    // Get campaign creator ID
+    const campaign = await db
+      .select({ creatorId: campaigns.creatorId })
+      .from(campaigns)
+      .where(eq(campaigns.id, campaignId))
+      .limit(1);
+
+    if (!campaign.length) {
+      console.error('Campaign not found:', campaignId);
+      return;
     }
 
-    // Find donation by payment intent ID
+    // Get donation details
     const donation = await db
-      .select()
+      .select({ 
+        amount: donations.amount, 
+        currency: donations.currency,
+        donorId: donations.donorId 
+      })
       .from(donations)
-      .where(eq(donations.paymentIntentId, payment_intent))
+      .where(eq(donations.id, donationId))
       .limit(1);
 
     if (!donation.length) {
-      return NextResponse.redirect(
-        `${process.env.NEXT_PUBLIC_APP_URL}/campaigns?donation_status=failed&error=donation_not_found`
+      console.error('Donation not found:', donationId);
+      return;
+    }
+
+    // Create notification for campaign creator
+    await db.insert(notifications).values({
+      userId: campaign[0].creatorId,
+      type: 'donation_received',
+      title: 'New Donation Received!',
+      message: `You received a donation of ${donation[0].currency} ${donation[0].amount} for your campaign.`,
+      metadata: JSON.stringify({
+        donationId,
+        campaignId,
+        amount: donation[0].amount,
+        currency: donation[0].currency,
+        donorId: donation[0].donorId
+      }),
+      createdAt: new Date(),
+    });
+
+    console.log('Success notification created for donation:', donationId);
+  } catch (error) {
+    console.error('Error creating success notification:', error);
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { donationId, paymentIntentId, status } = body;
+
+    if (!donationId || !paymentIntentId) {
+      return NextResponse.json(
+        { error: 'Missing required fields: donationId and paymentIntentId' },
+        { status: 400 }
       );
     }
 
-    // Check if payment was successful by looking at the payment status
-    // In a real implementation, you would verify with Stripe API
-    // For now, we'll assume success if we reach this point
+    console.log('Stripe callback received:', { donationId, paymentIntentId, status });
+
+    // Find the donation
+    const donation = await db
+      .select()
+      .from(donations)
+      .where(eq(donations.id, donationId))
+      .limit(1);
+
+    if (!donation.length) {
+      return NextResponse.json(
+        { error: 'Donation not found' },
+        { status: 404 }
+      );
+    }
+
+    const donationRecord = donation[0];
+
+    // Update donation status based on payment status
+    let newStatus: 'pending' | 'completed' | 'failed' = 'pending';
+    
+    if (status === 'succeeded') {
+      newStatus = 'completed';
+    } else if (status === 'requires_payment_method' || status === 'requires_confirmation' || status === 'requires_action') {
+      newStatus = 'pending';
+    } else {
+      newStatus = 'failed';
+    }
+
+    // Update the donation
     await db
       .update(donations)
       .set({
-        paymentStatus: 'completed',
-        processedAt: new Date(),
+        paymentStatus: newStatus,
+        paymentIntentId: paymentIntentId,
+        updatedAt: new Date(),
       })
-      .where(eq(donations.id, donation[0].id));
+      .where(eq(donations.id, donationId));
 
-    // Update campaign currentAmount
-    await updateCampaignAmount(donation[0].campaignId);
+    console.log(`Donation ${donationId} updated to status: ${newStatus}`);
 
-    // Redirect to campaign page with success status
-    return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/campaign/${donation[0].campaignId}?donation_status=success&donation_id=${donation[0].id}`
-    );
+    // If payment succeeded, update campaign amount and create notification
+    if (newStatus === 'completed') {
+      await updateCampaignAmount(donationRecord.campaignId);
+      await createSuccessfulDonationNotification(donationId, donationRecord.campaignId);
+      console.log(`Campaign ${donationRecord.campaignId} amount updated and notification created`);
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      donationId, 
+      status: newStatus,
+      message: `Donation ${donationId} updated to ${newStatus}` 
+    });
 
   } catch (error) {
-    console.error('Error processing Stripe callback:', error);
-    return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/campaigns?donation_status=failed&error=callback_error`
+    console.error('Stripe callback error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
 }
