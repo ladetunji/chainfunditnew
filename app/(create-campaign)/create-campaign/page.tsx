@@ -390,7 +390,7 @@ export default function CreateCampaignPage() {
                   />
                   <label
                     htmlFor="campaign-image-upload"
-                    className="w-[200px] md:w-[360px] h-[200px] md:h-[360px] flex items-center justify-center cursor-pointer bg-center bg-cover border-2 border-dashed border-gray-300 rounded-lg hover:border-gray-400 transition-colors"
+                    className="w-[200px] md:w-[360px] h-[200px] md:h-[360px] flex items-center justify-center cursor-pointer bg-center bg-cover transition-colors"
                     style={{
                       backgroundImage: uploadedFiles.coverImageUrl
                         ? `url(${uploadedFiles.coverImageUrl})`
@@ -400,8 +400,7 @@ export default function CreateCampaignPage() {
                   >
                     {!uploadedFiles.coverImageUrl && (
                       <div className="text-center">
-                        <LuImage className="mx-auto mb-2 text-gray-400" size={48} />
-                        <p className="text-gray-500 text-sm">Click to upload</p>
+                        
                       </div>
                     )}
                   </label>
@@ -409,7 +408,7 @@ export default function CreateCampaignPage() {
                   {/* Plus button positioned to match original design */}
                   <button
                     type="button"
-                    className="w-8 md:w-[56px] h-8 md:h-[56px] bg-[#104901] flex items-center justify-center text-white absolute right-[118px] md:right-[160px] 2xl:right-[200px] bottom-6 md:bottom-11"
+                    className="w-8 md:w-[56px] h-8 md:h-[56px] bg-[#104901] flex items-center justify-center text-white absolute right-[118px] md:right-[190px] 2xl:right-[200px] bottom-6 md:bottom-11"
                     onClick={() => {
                       const fileInput = document.getElementById('campaign-image-upload') as HTMLInputElement;
                       fileInput?.click();
