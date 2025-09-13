@@ -13,6 +13,12 @@ interface NotificationAlertProps {
 export function NotificationAlert({ className }: NotificationAlertProps) {
   const { notifications, markAsRead, markAllAsRead } = useNotifications();
   const [isOpen, setIsOpen] = React.useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('NotificationAlert mounted, notifications:', notifications.length);
+  }, [notifications]);
 
   // Show toast for failed donation notifications
   useEffect(() => {
@@ -35,6 +41,23 @@ export function NotificationAlert({ className }: NotificationAlertProps) {
       });
     });
   }, [notifications, markAsRead]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
   const failedDonationCount = notifications.filter(
@@ -72,8 +95,12 @@ export function NotificationAlert({ className }: NotificationAlertProps) {
       <Button
         variant="ghost"
         size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 hover:bg-gray-100"
+        onClick={() => {
+          console.log('Notification bell clicked, isOpen:', isOpen);
+          setIsOpen(!isOpen);
+        }}
+        className="relative p-2 hover:bg-gray-100 cursor-pointer"
+        aria-label="Notifications"
       >
         <Bell color="#757575" size={24} />
         {unreadCount > 0 && (
@@ -85,7 +112,10 @@ export function NotificationAlert({ className }: NotificationAlertProps) {
 
       {/* Notification Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-hidden">
+        <div 
+          ref={dropdownRef}
+          className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-hidden"
+        >
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <h3 className="font-semibold text-gray-900">
@@ -129,10 +159,25 @@ export function NotificationAlert({ className }: NotificationAlertProps) {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={getNotificationStyle(
+                    className={`${getNotificationStyle(
                       notification.type,
                       notification.isRead
-                    )}
+                    )} cursor-pointer hover:shadow-md transition-all duration-200`}
+                    onClick={() => {
+                      // Mark as read when clicked
+                      if (!notification.isRead) {
+                        markAsRead([notification.id]);
+                      }
+                      
+                      // Handle navigation based on notification type
+                      if (notification.type === 'donation_failed' || notification.type === 'donation_received') {
+                        // Navigate to donations page
+                        window.location.href = '/donations';
+                      } else if (notification.type === 'campaign_created') {
+                        // Navigate to campaigns page
+                        window.location.href = '/dashboard/campaigns';
+                      }
+                    }}
                   >
                     <div className="flex items-start gap-3">
                       {getNotificationIcon(notification.type)}
@@ -168,6 +213,10 @@ export function NotificationAlert({ className }: NotificationAlertProps) {
                           {new Date(
                             notification.createdAt
                           ).toLocaleTimeString()}
+                        </p>
+                        {/* Click indicator */}
+                        <p className="text-xs text-[#5F8555] mt-1 font-medium">
+                          Click to view details →
                         </p>
                       </div>
                     </div>

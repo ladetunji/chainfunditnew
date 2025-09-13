@@ -4,9 +4,10 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import { Bell, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import UserAvatar from "@/components/ui/user-avatar";
 import SessionStatusIndicator from "./SessionStatusIndicator";
+import { NotificationAlert } from "./NotificationAlert";
 
 type Props = {};
 
@@ -66,7 +67,7 @@ const Navbar = (props: Props) => {
           </Link>
         </Button>
         <Search color="#757575" size={24} />
-        <Bell color="#757575" size={24} />
+        <NotificationAlert />
         <Link href="/settings">
           <UserAvatar size={32} className="w-8 h-8" />
         </Link>
@@ -105,7 +106,7 @@ const Navbar = (props: Props) => {
             <Button className="w-full">Create Campaign</Button>
             <div className="flex gap-3 items-center justify-center">
               <Search color="#757575" size={24} />
-              <Bell color="#757575" size={24} />
+              <NotificationAlert />
               <Link href="/settings">
                 <UserAvatar size={32} className="w-8 h-8" />
               </Link>

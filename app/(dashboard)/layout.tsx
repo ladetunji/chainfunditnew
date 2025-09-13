@@ -4,7 +4,6 @@ import React from "react";
 import Navbar from "@/components/dashboard/Navbar";
 import Sidebar from "@/components/dashboard/Sidebar";
 import ClientToaster from "@/components/ui/client-toaster";
-import { NotificationAlert } from "@/components/dashboard/NotificationAlert";
 
 type Props = {};
 

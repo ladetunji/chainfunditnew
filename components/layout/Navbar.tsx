@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useState } from "react";
 import UserAvatar from "@/components/ui/user-avatar";
+import { NotificationAlert } from "@/components/dashboard/NotificationAlert";
 
 type Props = {};
 
@@ -60,6 +61,7 @@ const Navbar = (props: Props) => {
         </ul>
         <section className="hidden md:flex items-center gap-3">
           <Link href='/signin' className="font-medium text-base text-black">Sign in</Link>
+          <NotificationAlert />
           <Button
             className="px-4 py-3 border-2 border-white text-base font-semibold rounded-none"
             onClick={handleCreateCampaign}
@@ -90,6 +92,9 @@ const Navbar = (props: Props) => {
           </ul>
           <div className="flex flex-col gap-2">
             <Link href='/signin' className="font-medium text-base text-black">Signin</Link>
+            <div className="flex items-center justify-center gap-3">
+              <NotificationAlert />
+            </div>
             <Button className="w-full px-4 py-3 border-2 border-white text-base font-semibold rounded-none">Create Campaign</Button>
           </div>
         </div>
