@@ -166,22 +166,68 @@ export default function CreateCampaignPage() {
     console.log('📸 Cover image URL updated');
   };
 
-  const handleImageUpload = (url: string) => {
-    console.log('🖼️ Gallery image uploaded successfully:', url);
-    setUploadedFiles(prev => ({ 
-      ...prev, 
-      imageUrls: [...prev.imageUrls, url] 
-    }));
-    console.log('📸 Updated image URLs:', [...uploadedFiles.imageUrls, url]);
+  const handleImageFileSelect = async (files: FileList | null) => {
+    if (!files) return;
+    
+    console.log('📁 Image files selected:', files.length);
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      console.log(`📤 Uploading image ${i + 1}/${files.length}:`, file.name);
+      
+      try {
+        const result = await uploadFile(file, 'imageUpload');
+        if (result && result.url) {
+          console.log('✅ Image uploaded successfully:', result.url);
+          setUploadedFiles(prev => ({ 
+            ...prev, 
+            imageUrls: [...prev.imageUrls, result.url] 
+          }));
+        }
+      } catch (error) {
+        console.error('❌ Image upload failed:', error);
+      }
+    }
   };
 
-  const handleDocumentUpload = (url: string) => {
-    console.log('📄 Document uploaded successfully:', url);
-    setUploadedFiles(prev => ({ 
-      ...prev, 
-      documentUrls: [...prev.documentUrls, url] 
+  const handleDocumentFileSelect = async (files: FileList | null) => {
+    if (!files) return;
+    
+    console.log('📁 Document files selected:', files.length);
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      console.log(`📤 Uploading document ${i + 1}/${files.length}:`, file.name);
+      
+      try {
+        const result = await uploadFile(file, 'documentUpload');
+        if (result && result.url) {
+          console.log('✅ Document uploaded successfully:', result.url);
+          setUploadedFiles(prev => ({ 
+            ...prev, 
+            documentUrls: [...prev.documentUrls, result.url] 
+          }));
+        }
+      } catch (error) {
+        console.error('❌ Document upload failed:', error);
+      }
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    console.log('🗑️ Removing image at index:', index);
+    setUploadedFiles(prev => ({
+      ...prev,
+      imageUrls: prev.imageUrls.filter((_, i) => i !== index)
     }));
-    console.log('📋 Updated document URLs:', [...uploadedFiles.documentUrls, url]);
+  };
+
+  const handleRemoveDocument = (index: number) => {
+    console.log('🗑️ Removing document at index:', index);
+    setUploadedFiles(prev => ({
+      ...prev,
+      documentUrls: prev.documentUrls.filter((_, i) => i !== index)
+    }));
   };
 
 
@@ -634,22 +680,24 @@ export default function CreateCampaignPage() {
               </p>
 
               <div className="grid md:grid-cols-3 grid-cols-1 gap-4 my-2">
-                {/* Upload component for adding new images */}
-                <div className="col-span-1">
-                  <Upload
-                    type="imageUpload"
-                    onUpload={handleImageUpload}
-                    accept="image/*"
-                    maxSize={1024 * 1024} // 1MB
-                  >
-                    <div className="bg-[#E5ECDE] flex gap-3 items-center px-8 py-4 rounded-2xl text-xl text-[#5F8555] cursor-pointer">
-                      <LuImage size={32} />
-                      Choose image
-                    </div>
-                  </Upload>
-                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  id="campaign-images"
+                  onChange={(e) => handleImageFileSelect(e.target.files)}
+                />
 
-                {/* Preview uploaded images */}
+                <label
+                  htmlFor="campaign-images"
+                  className="bg-[#E5ECDE] flex gap-3 items-center px-8 py-4 rounded-2xl text-xl text-[#5F8555] cursor-pointer col-span-1"
+                >
+                  <LuImage size={32} />
+                  Choose image
+                </label>
+
+                {/* Preview selected images */}
                 {uploadedFiles.imageUrls.length > 0 ? (
                   uploadedFiles.imageUrls.map((url, index) => (
                     <div
@@ -658,17 +706,14 @@ export default function CreateCampaignPage() {
                     >
                       <Image
                         src={url}
-                        alt={`uploaded-image-${index}`}
+                        alt={`preview-${index}`}
                         width={200}
                         height={120}
                         className="object-cover w-full h-[120px]"
                       />
                       <button
                         type="button"
-                        onClick={() => {
-                          const newUrls = uploadedFiles.imageUrls.filter((_, i) => i !== index);
-                          setUploadedFiles(prev => ({ ...prev, imageUrls: newUrls }));
-                        }}
+                        onClick={() => handleRemoveImage(index)}
                         className="absolute top-2 right-2 bg-red-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center"
                       >
                         ×
@@ -677,7 +722,7 @@ export default function CreateCampaignPage() {
                   ))
                 ) : (
                   <>
-                    {[...Array(4)].map((_, index) => (
+                    {[...Array(5)].map((_, index) => (
                       <section
                         key={index}
                         className="bg-[#E5ECDE] flex gap-3 items-center px-8 py-4 rounded-2xl text-xl text-[#5F8555]"
@@ -703,22 +748,24 @@ export default function CreateCampaignPage() {
               </p>
 
               <div className="grid md:grid-cols-3 grid-cols-1 gap-4 my-2">
-                {/* Upload component for adding new documents */}
-                <div className="col-span-1">
-                  <Upload
-                    type="documentUpload"
-                    onUpload={handleDocumentUpload}
-                    accept=".pdf,.doc,.docx"
-                    maxSize={10 * 1024 * 1024} // 10MB
-                  >
-                    <div className="bg-[#E5ECDE] flex gap-3 items-center px-8 py-4 rounded-2xl text-xl text-[#5F8555] cursor-pointer">
-                      <Paperclip size={32} />
-                      Choose file
-                    </div>
-                  </Upload>
-                </div>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  multiple
+                  className="hidden"
+                  id="supporting-documents"
+                  onChange={(e) => handleDocumentFileSelect(e.target.files)}
+                />
 
-                {/* Preview uploaded documents */}
+                <label
+                  htmlFor="supporting-documents"
+                  className="bg-[#E5ECDE] flex gap-3 items-center px-8 py-4 rounded-2xl text-xl text-[#5F8555] cursor-pointer col-span-1"
+                >
+                  <Paperclip size={32} />
+                  Choose file
+                </label>
+
+                {/* Preview selected documents */}
                 {uploadedFiles.documentUrls.length > 0 ? (
                   uploadedFiles.documentUrls.map((url, index) => {
                     // Extract filename from URL
@@ -734,10 +781,7 @@ export default function CreateCampaignPage() {
                           : filename}
                         <button
                           type="button"
-                          onClick={() => {
-                            const newUrls = uploadedFiles.documentUrls.filter((_, i) => i !== index);
-                            setUploadedFiles(prev => ({ ...prev, documentUrls: newUrls }));
-                          }}
+                          onClick={() => handleRemoveDocument(index)}
                           className="absolute top-2 right-2 bg-red-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center"
                         >
                           ×
