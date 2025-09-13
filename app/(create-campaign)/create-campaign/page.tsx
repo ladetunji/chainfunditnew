@@ -374,54 +374,17 @@ export default function CreateCampaignPage() {
           <div className="w-full flex md:flex-row flex-col gap-5 md:gap-10">
               {/* Left Side: Image Upload */}
               <div className="w-full md:w-2/5 flex flex-col gap-4">
-                <div className="relative">
-                  <input
-                    type="file"
-                    id="campaign-image-upload"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const url = URL.createObjectURL(file);
-                        handleCoverImageUpload(url);
-                      }
-                    }}
-                  />
-                  <label
-                    htmlFor="campaign-image-upload"
-                    className="w-[200px] md:w-[360px] h-[200px] md:h-[360px] flex items-center justify-center cursor-pointer bg-center bg-cover transition-colors"
-                    style={{
-                      backgroundImage: uploadedFiles.coverImageUrl
-                        ? `url(${uploadedFiles.coverImageUrl})`
-                        : `url('/images/image.png')`,
-                    }}
-                    title="Upload campaign image"
-                  >
-                    {!uploadedFiles.coverImageUrl && (
-                      <div className="text-center">
-                        
-                      </div>
-                    )}
-                  </label>
-                  
-                  {/* Plus button positioned to match original design */}
-                  <button
-                    type="button"
-                    className="w-8 md:w-[56px] h-8 md:h-[56px] bg-[#104901] flex items-center justify-center text-white absolute right-[118px] md:right-[190px] 2xl:right-[200px] bottom-6 md:bottom-11"
-                    onClick={() => {
-                      const fileInput = document.getElementById('campaign-image-upload') as HTMLInputElement;
-                      fileInput?.click();
-                    }}
-                  >
-                    <Plus className="md:text-4xl text-lg" size={36} />
-                  </button>
-                </div>
+                <Upload
+                  type="imageUpload"
+                  onUpload={handleCoverImageUpload}
+                  accept="image/*"
+                  previewUrl={uploadedFiles.coverImageUrl}
+                />
                 
                 <p className="font-medium text-sm md:text-xl text-[#104901]">
-                Upload your main campaign image
-              </p>
-            </div>
+                  Upload your main campaign image
+                </p>
+              </div>
 
             <div className="md:w-3/5 w-full flex flex-col gap-3">
               {/* Campaign Title */}
