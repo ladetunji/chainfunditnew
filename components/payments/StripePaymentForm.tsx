@@ -15,7 +15,9 @@ import { HandCoins, CheckCircle, XCircle } from 'lucide-react';
 // Initialize Stripe
 const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 console.log('Stripe publishable key:', stripePublishableKey ? 'Set' : 'Missing');
-const stripePromise = loadStripe(stripePublishableKey!);
+
+// Only initialize Stripe if we have a valid key
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
 
 interface StripePaymentFormProps {
   clientSecret: string;
@@ -197,6 +199,17 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
     );
   }
 
+  // Show error if Stripe key is missing
+  if (!stripePublishableKey) {
+    return (
+      <div className="text-center py-8">
+        <XCircle className="h-8 w-8 text-red-500 mx-auto mb-4" />
+        <p className="text-red-600">Stripe configuration error</p>
+        <p className="text-sm text-gray-500 mt-2">Please contact support</p>
+      </div>
+    );
+  }
+
   // Show loading state if Stripe isn't ready
   if (!stripe || !elements) {
     return (
@@ -261,6 +274,17 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 };
 
 const StripePaymentForm: React.FC<StripePaymentFormProps> = (props) => {
+  // Don't render if Stripe key is missing
+  if (!stripePublishableKey) {
+    return (
+      <div className="text-center py-8">
+        <XCircle className="h-8 w-8 text-red-500 mx-auto mb-4" />
+        <p className="text-red-600">Stripe configuration error</p>
+        <p className="text-sm text-gray-500 mt-2">Please contact support</p>
+      </div>
+    );
+  }
+
   return (
     <Elements stripe={stripePromise}>
       <PaymentForm {...props} />

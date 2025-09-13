@@ -1,4 +1,4 @@
-import { stripe } from './config';
+import { getStripe } from './config';
 import { Donation } from '@/lib/schema/donations';
 
 export interface CreatePaymentIntentParams {
@@ -23,6 +23,7 @@ export async function createStripePaymentIntent(
   try {
     const { amount, currency, donationId, campaignId, donorEmail, metadata = {} } = params;
 
+    const stripe = getStripe();
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: currency.toLowerCase(),
@@ -51,6 +52,7 @@ export async function createStripePaymentIntent(
 
 export async function confirmStripePayment(paymentIntentId: string): Promise<StripePaymentResult> {
   try {
+    const stripe = getStripe();
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     
     return {
@@ -71,6 +73,7 @@ export async function handleStripeWebhook(
   signature: string
 ): Promise<{ success: boolean; event?: any; error?: string }> {
   try {
+    const stripe = getStripe();
     const event = stripe.webhooks.constructEvent(
       payload,
       signature,
