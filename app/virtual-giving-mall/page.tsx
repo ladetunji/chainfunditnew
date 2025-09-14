@@ -282,7 +282,7 @@ export default function VirtualGivingMallPage() {
 
         {/* Results Header */}
         <div className="flex justify-between items-center mb-6">
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-1 items-end">
             <h2 className="text-2xl font-bold text-gray-900">
               {filteredCharities.length} Charities Found
             </h2>

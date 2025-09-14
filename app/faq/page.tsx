@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from 'react';
-import Navbar from '@/components/layout/Navbar';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Search, 
-  ChevronDown, 
+import React, { useState } from "react";
+import Navbar from "@/components/layout/Navbar";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Search,
+  ChevronDown,
   ChevronUp,
   HelpCircle,
   MessageCircle,
@@ -15,98 +15,111 @@ import {
   Phone,
   Clock,
   Users,
-  Heart
-} from 'lucide-react';
+  Heart,
+} from "lucide-react";
+import {
+  Select,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+} from "@/components/ui/select";
 
 // FAQ data - you can replace this with your actual content later
 const faqCategories = [
-  { id: 'general', name: 'General', icon: HelpCircle },
-  { id: 'donations', name: 'Donations', icon: Heart },
-  { id: 'campaigns', name: 'Campaigns', icon: Users },
-  { id: 'account', name: 'Account', icon: MessageCircle },
+  { id: "general", name: "General", icon: HelpCircle },
+  { id: "donations", name: "Donations", icon: Heart },
+  { id: "campaigns", name: "Campaigns", icon: Users },
+  { id: "account", name: "Account", icon: MessageCircle },
 ];
 
 const faqData = [
   {
     id: 1,
-    category: 'general',
-    question: 'What is ChainFundIt?',
-    answer: 'ChainFundIt is a crowdfunding platform that connects donors with meaningful causes. We make it easy to discover, support, and share campaigns that matter to you.',
+    category: "general",
+    question: "What is ChainFundIt?",
+    answer:
+      "ChainFundIt is a crowdfunding platform that connects donors with meaningful causes. We make it easy to discover, support, and share campaigns that matter to you.",
   },
   {
     id: 2,
-    category: 'general',
-    question: 'How does the platform work?',
-    answer: 'Users can create campaigns, donate to existing ones, or "chain" campaigns by sharing them with their network. Our platform facilitates secure transactions and transparent fundraising.',
+    category: "general",
+    question: "How does the platform work?",
+    answer:
+      'Users can create campaigns, donate to existing ones, or "chain" campaigns by sharing them with their network. Our platform facilitates secure transactions and transparent fundraising.',
   },
   {
     id: 3,
-    category: 'donations',
-    question: 'How do I make a donation?',
-    answer: 'Simply browse campaigns, select one you want to support, and click the donate button. You can donate using various payment methods including credit cards, bank transfers, and digital wallets.',
+    category: "donations",
+    question: "How do I make a donation?",
+    answer:
+      "Simply browse campaigns, select one you want to support, and click the donate button. You can donate using various payment methods including credit cards, bank transfers, and digital wallets.",
   },
   {
     id: 4,
-    category: 'donations',
-    question: 'Are donations secure?',
-    answer: 'Yes, we use industry-standard encryption and work with trusted payment processors to ensure all transactions are secure and your financial information is protected.',
+    category: "donations",
+    question: "Are donations secure?",
+    answer:
+      "Yes, we use industry-standard encryption and work with trusted payment processors to ensure all transactions are secure and your financial information is protected.",
   },
   {
     id: 5,
-    category: 'campaigns',
-    question: 'How do I create a campaign?',
-    answer: 'Click the "Create Campaign" button, fill in your campaign details, upload images, set your funding goal, and submit for review. Once approved, your campaign will go live.',
+    category: "campaigns",
+    question: "How do I create a campaign?",
+    answer:
+      'Click the "Create Campaign" button, fill in your campaign details, upload images, set your funding goal, and submit for review. Once approved, your campaign will go live.',
   },
   {
     id: 6,
-    category: 'campaigns',
-    question: 'What fees do you charge?',
-    answer: 'We charge a small platform fee to cover payment processing and operational costs. The exact fee structure is transparent and displayed before you create or donate to campaigns.',
+    category: "campaigns",
+    question: "What fees do you charge?",
+    answer:
+      "We charge a small platform fee to cover payment processing and operational costs. The exact fee structure is transparent and displayed before you create or donate to campaigns.",
   },
   {
     id: 7,
-    category: 'account',
-    question: 'How do I update my profile?',
-    answer: 'Go to your dashboard, click on "Settings" or "Profile", and update your information. You can change your display name, profile picture, and contact preferences.',
+    category: "account",
+    question: "How do I update my profile?",
+    answer:
+      'Go to your dashboard, click on "Settings" or "Profile", and update your information. You can change your display name, profile picture, and contact preferences.',
   },
   {
     id: 8,
-    category: 'account',
-    question: 'Can I delete my account?',
-    answer: 'Yes, you can delete your account from the settings page. Please note that this action is irreversible and will remove all your campaign and donation history.',
+    category: "account",
+    question: "Can I delete my account?",
+    answer:
+      "Yes, you can delete your account from the settings page. Please note that this action is irreversible and will remove all your campaign and donation history.",
   },
 ];
 
 export default function FAQPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [openItems, setOpenItems] = useState<number[]>([]);
 
   // Filter FAQs based on search and category
-  const filteredFAQs = faqData.filter(faq => {
-    const matchesSearch = faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || faq.category === selectedCategory;
+  const filteredFAQs = faqData.filter((faq) => {
+    const matchesSearch =
+      faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      selectedCategory === "all" || faq.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   const toggleItem = (id: number) => {
-    setOpenItems(prev => 
-      prev.includes(id) 
-        ? prev.filter(item => item !== id)
-        : [...prev, id]
+    setOpenItems((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
 
-  const categories = [
-    { id: 'all', name: 'All Categories' },
-    ...faqCategories
-  ];
+  const categories = [{ id: "all", name: "All Categories" }, ...faqCategories];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
       <Navbar />
-      
+
       {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-green-600 to-[#104901] mt-16 text-white py-16">
         <div className="container mx-auto px-4 text-center">
@@ -132,30 +145,40 @@ export default function FAQPage() {
                   placeholder="Search FAQ..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
             </div>
 
             {/* Category Filter */}
             <div className="lg:w-64">
-              <select
+              <Select
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                onValueChange={(value) => setSelectedCategory(value)}
               >
-                {categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                  <SelectValue placeholder="Select Category" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#E7EDE6]">
+                  <SelectGroup>
+                    {categories.map((category) => (
+                      <SelectItem
+                        key={category.id}
+                        value={category.id}
+                        className="flex items-center font-normal text-2xl text-[#5F8555]"
+                      >
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
           {/* Category Pills */}
           <div className="mt-6 flex flex-wrap gap-2">
-            {faqCategories.map(category => {
+            {faqCategories.map((category) => {
               const Icon = category.icon;
               return (
                 <button
@@ -163,8 +186,8 @@ export default function FAQPage() {
                   onClick={() => setSelectedCategory(category.id)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                     selectedCategory === category.id
-                      ? 'bg-green-600 text-white shadow-lg'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? "bg-green-600 text-white shadow-lg"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -176,12 +199,16 @@ export default function FAQPage() {
         </div>
 
         {/* Results Header */}
-        <div className="mb-6">
+        <div className="mb-6 flex gap-1 items-end">
           <h2 className="text-2xl font-bold text-gray-900">
             {filteredFAQs.length} Questions Found
           </h2>
-          <p className="text-gray-600">
-            {selectedCategory !== 'all' ? `in ${faqCategories.find(c => c.id === selectedCategory)?.name}` : 'across all categories'}
+          <p className="text-gray-600 text-base">
+            {selectedCategory !== "all"
+              ? `in ${
+                  faqCategories.find((c) => c.id === selectedCategory)?.name
+                }`
+              : ""}
           </p>
         </div>
 
@@ -189,11 +216,16 @@ export default function FAQPage() {
         <div className="space-y-4">
           {filteredFAQs.map((faq) => {
             const isOpen = openItems.includes(faq.id);
-            const categoryInfo = faqCategories.find(c => c.id === faq.category);
+            const categoryInfo = faqCategories.find(
+              (c) => c.id === faq.category
+            );
             const Icon = categoryInfo?.icon || HelpCircle;
-            
+
             return (
-              <Card key={faq.id} className="hover:shadow-lg transition-all duration-200">
+              <Card
+                key={faq.id}
+                className="hover:shadow-lg transition-all duration-200"
+              >
                 <CardContent className="p-0">
                   <button
                     onClick={() => toggleItem(faq.id)}
@@ -220,7 +252,7 @@ export default function FAQPage() {
                       )}
                     </div>
                   </button>
-                  
+
                   {isOpen && (
                     <div className="px-6 pb-6 pt-2 border-t border-gray-100">
                       <p className="text-gray-700 leading-relaxed">
@@ -248,8 +280,8 @@ export default function FAQPage() {
             </p>
             <Button
               onClick={() => {
-                setSearchQuery('');
-                setSelectedCategory('all');
+                setSearchQuery("");
+                setSelectedCategory("all");
               }}
               variant="outline"
               className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white"
@@ -266,7 +298,8 @@ export default function FAQPage() {
               Still have questions?
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Can't find what you're looking for? Our support team is here to help you.
+              Can't find what you're looking for? Our support team is here to
+              help you.
             </p>
           </div>
 
@@ -277,7 +310,10 @@ export default function FAQPage() {
               </div>
               <h3 className="font-semibold text-lg mb-2">Email Support</h3>
               <p className="text-gray-600 mb-4">Get help via email</p>
-              <Button variant="outline" className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white">
+              <Button
+                variant="outline"
+                className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white"
+              >
                 support@chainfundit.com
               </Button>
             </div>
@@ -288,7 +324,10 @@ export default function FAQPage() {
               </div>
               <h3 className="font-semibold text-lg mb-2">Phone Support</h3>
               <p className="text-gray-600 mb-4">Speak with our team</p>
-              <Button variant="outline" className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white">
+              <Button
+                variant="outline"
+                className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white"
+              >
                 +1 (555) 123-4567
               </Button>
             </div>
