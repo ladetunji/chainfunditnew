@@ -137,7 +137,7 @@ const Main = (props: Props) => {
             </span>
           </section>
 
-          <Select>
+          <Select value={selectedFilter} onValueChange={setSelectedFilter}>
             <SelectTrigger className="w-full md:w-[250px] h-12 md:h-14 px-4 md:px-6 font-source font-normal text-base text-black border-2 border-[#0F4201] rounded-none">
               <SelectValue placeholder="Happening worldwide" />
             </SelectTrigger>
@@ -226,7 +226,7 @@ const Main = (props: Props) => {
           {/* Campaign Cards */}
           {!campaignsLoading && !campaignsError && cardDetails.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-8">
-              {cardDetails.slice(3, 6).map((card, idx) => (
+              {cardDetails.slice(0, 3).map((card, idx) => (
                 <div
                   key={card.id}
                   className="group relative overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 cursor-pointer"

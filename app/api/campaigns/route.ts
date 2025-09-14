@@ -37,9 +37,8 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(campaigns.creatorId, creatorId));
     }
     
-    
-    // Get campaigns with creator details and donation stats
-    const campaignsWithDetails = await db
+    // Build the query
+    let query = db
       .select({
         id: campaigns.id,
         title: campaigns.title,
@@ -67,8 +66,15 @@ export async function GET(request: NextRequest) {
         creatorAvatar: users.avatar,
       })
       .from(campaigns)
-      .leftJoin(users, eq(campaigns.creatorId, users.id))
-      .where(and(...conditions))
+      .leftJoin(users, eq(campaigns.creatorId, users.id));
+
+    // Apply conditions only if there are any
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    // Get campaigns with creator details and donation stats
+    const campaignsWithDetails = await query
       .limit(limit)
       .offset(offset);
 

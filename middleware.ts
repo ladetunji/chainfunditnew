@@ -9,8 +9,6 @@ export function middleware(request: NextRequest) {
     '/create-campaign',
     '/dashboard',
     '/api/dashboard',
-    '/api/campaigns', // POST, PUT, DELETE operations
-    '/api/donations', // POST operations
     '/api/payouts',
     '/api/user/profile'
   ];
