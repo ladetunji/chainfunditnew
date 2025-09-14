@@ -4,14 +4,15 @@ import { useDonations } from "@/hooks/use-dashboard";
 import { formatCurrency } from "@/lib/utils/currency";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, AlertCircle, CreditCard, Smartphone } from "lucide-react";
+import { RefreshCw, AlertCircle, CreditCard, Smartphone, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 type Props = {};
 
 const FailedDonations = (props: Props) => {
   console.log('FailedDonations component rendered');
-  const { donations, loading, error, refreshDonations } = useDonations('failed');
+  const [currentPage, setCurrentPage] = useState(1);
+  const { donations, loading, error, pagination, refreshDonations } = useDonations('failed', currentPage);
   const [retryingDonations, setRetryingDonations] = useState<Set<string>>(new Set());
   const [hasShownAlert, setHasShownAlert] = useState(false);
 
@@ -198,6 +199,27 @@ const FailedDonations = (props: Props) => {
           </div>
         ))}
       </div>
+
+      {/* Load More Button */}
+      {pagination && pagination.totalPages > pagination.page && (
+        <div className="flex justify-center mt-6">
+          <Button
+            onClick={() => setCurrentPage(prev => prev + 1)}
+            variant="outline"
+            className="text-[#104901] border-[#104901] hover:bg-[#104901] hover:text-white"
+          >
+            Load More ({pagination.total - (pagination.page * pagination.limit)} remaining)
+            <ChevronDown className="h-4 w-4 ml-2" />
+          </Button>
+        </div>
+      )}
+
+      {/* Pagination Info */}
+      {pagination && (
+        <div className="text-center text-sm text-gray-500 mt-4">
+          Showing {donations.length} of {pagination.total} failed donations
+        </div>
+      )}
     </div>
   );
 };

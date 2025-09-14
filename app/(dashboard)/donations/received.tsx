@@ -1,15 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { useDonations } from "@/hooks/use-dashboard";
 import { formatCurrency } from "@/lib/utils/currency";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, Smartphone, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CreditCard, Smartphone, CheckCircle, ChevronDown } from "lucide-react";
 
 type Props = {};
 
 const ReceivedDonations = (props: Props) => {
   console.log('ReceivedDonations component rendered');
-  const { donations, loading, error } = useDonations('completed');
+  const [currentPage, setCurrentPage] = useState(1);
+  const { donations, loading, error, pagination, refreshDonations } = useDonations('completed', currentPage);
 
   if (loading) {
     return (
@@ -63,7 +65,7 @@ const ReceivedDonations = (props: Props) => {
 
   return (
     <div className="flex flex-col gap-4 2xl:container 2xl:mx-auto">
-      <section className="relative w-fit">
+      {/* <section className="relative w-fit">
         <Image src="/images/frame.png" alt="" width={232} height={216} />
         <section
           className="absolute -top-5 -right-4 w-[70px] h-[78px] bg-white flex items-center justify-center font-bold text-[64px] text-[#104901] rounded-2xl"
@@ -71,7 +73,7 @@ const ReceivedDonations = (props: Props) => {
         >
           {receivedDonations.length}
         </section>
-      </section>
+      </section> */}
 
       <section>
         <h3 className="font-semibold text-3xl text-[#104901]">
@@ -152,6 +154,27 @@ const ReceivedDonations = (props: Props) => {
           </div>
         ))}
       </div>
+
+      {/* Load More Button */}
+      {pagination && pagination.totalPages > pagination.page && (
+        <div className="flex justify-center mt-6">
+          <Button
+            onClick={() => setCurrentPage(prev => prev + 1)}
+            variant="outline"
+            className="text-[#104901] border-[#104901] hover:bg-[#104901] hover:text-white"
+          >
+            Load More ({pagination.total - (pagination.page * pagination.limit)} remaining)
+            <ChevronDown className="h-4 w-4 ml-2" />
+          </Button>
+        </div>
+      )}
+
+      {/* Pagination Info */}
+      {pagination && (
+        <div className="text-center text-sm text-gray-500 mt-4">
+          Showing {donations.length} of {pagination.total} donations
+        </div>
+      )}
     </div>
   );
 };

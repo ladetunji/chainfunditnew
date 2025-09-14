@@ -63,7 +63,16 @@ export async function GET(request: NextRequest) {
     // Build where clause for donations received by user's campaigns
     let conditions = [inArray(donations.campaignId, campaignIds)];
     if (status !== 'all') {
-      conditions.push(eq(donations.paymentStatus, status));
+      // Map status to actual database values
+      let dbStatus = status;
+      if (status === 'completed') {
+        dbStatus = 'completed';
+      } else if (status === 'failed') {
+        dbStatus = 'failed';
+      } else if (status === 'pending') {
+        dbStatus = 'pending';
+      }
+      conditions.push(eq(donations.paymentStatus, dbStatus));
     }
     const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
     
@@ -72,6 +81,21 @@ export async function GET(request: NextRequest) {
       status,
       statusFilter: status !== 'all' ? status : 'all'
     });
+
+    // Debug: Get all donations for this user to see what's in the database
+    const allDonationsDebug = await db
+      .select({
+        id: donations.id,
+        paymentStatus: donations.paymentStatus,
+        amount: donations.amount,
+        createdAt: donations.createdAt,
+      })
+      .from(donations)
+      .where(inArray(donations.campaignId, campaignIds))
+      .orderBy(desc(donations.createdAt));
+    
+    console.log(`API: All donations for user's campaigns (${allDonationsDebug.length} total):`, 
+      allDonationsDebug.map(d => ({ id: d.id, status: d.paymentStatus, amount: d.amount })));
 
     // Get donations received by user's campaigns
     const receivedDonations = await db
