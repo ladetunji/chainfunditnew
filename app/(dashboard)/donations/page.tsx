@@ -9,6 +9,20 @@ const tabs = ["Received", "Pending", "Failed"];
 
 const DonationsPage = () => {
   const [activeTab, setActiveTab] = React.useState(tabs[0]);
+  
+  const renderActiveTab = () => {
+    switch (activeTab) {
+      case "Received":
+        return <ReceivedDonations key="received" />;
+      case "Pending":
+        return <PendingDonations key="pending" />;
+      case "Failed":
+        return <FailedDonations key="failed" />;
+      default:
+        return <ReceivedDonations key="received" />;
+    }
+  };
+
   return (
     <div className="w-full flex flex-col gap-5 font-source 2xl:container 2xl:mx-auto">
       <h2 className="font-semibold text-6xl text-black">Donations</h2>
@@ -27,9 +41,7 @@ const DonationsPage = () => {
         ))}
       </ul>
       <div className="mt-6">
-        {activeTab === "Received" && <ReceivedDonations />}
-        {activeTab === "Pending" && <PendingDonations />}
-        {activeTab === "Failed" && <FailedDonations />}
+        {renderActiveTab()}
       </div>
     </div>
   );

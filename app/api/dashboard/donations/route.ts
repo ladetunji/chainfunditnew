@@ -37,6 +37,8 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
 
+    console.log(`API: Fetching donations for user ${userId} with status: ${status}, page: ${page}`);
+
     // Get user's campaigns first
     const userCampaigns = await db
       .select({ id: campaigns.id })
@@ -64,6 +66,12 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(donations.paymentStatus, status));
     }
     const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
+    
+    console.log(`API: Where clause conditions:`, {
+      campaignIds: campaignIds.length,
+      status,
+      statusFilter: status !== 'all' ? status : 'all'
+    });
 
     // Get donations received by user's campaigns
     const receivedDonations = await db
@@ -107,6 +115,9 @@ export async function GET(request: NextRequest) {
       amount: Number(donation.amount),
       isSuccessful: donation.paymentStatus === 'completed'
     }));
+
+    console.log(`API: Returning ${donationsWithStats.length} donations for status ${status}:`, 
+      donationsWithStats.map(d => ({ id: d.id, status: d.paymentStatus })));
 
     return NextResponse.json({ 
       success: true, 

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 type Props = {};
 
 const FailedDonations = (props: Props) => {
+  console.log('FailedDonations component rendered');
   const { donations, loading, error, refreshDonations } = useDonations('failed');
   const [retryingDonations, setRetryingDonations] = useState<Set<string>>(new Set());
   const [hasShownAlert, setHasShownAlert] = useState(false);

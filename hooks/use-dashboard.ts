@@ -199,8 +199,10 @@ export function useDonations(status: string = 'all', page: number = 1) {
         limit: '10',
       });
 
+      console.log(`Fetching donations with status: ${status}, page: ${page}`);
       const response = await fetch(`/api/dashboard/donations?${params}`);
       const data = await response.json();
+      console.log(`Donations fetched for status ${status}:`, data);
 
       if (data.success) {
         setDonations(data.donations);

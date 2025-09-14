@@ -8,6 +8,7 @@ import { CreditCard, Smartphone, CheckCircle } from "lucide-react";
 type Props = {};
 
 const ReceivedDonations = (props: Props) => {
+  console.log('ReceivedDonations component rendered');
   const { donations, loading, error } = useDonations('completed');
 
   if (loading) {
