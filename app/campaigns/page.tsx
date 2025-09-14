@@ -108,7 +108,7 @@ export default function AllCampaignsPage() {
   >("newest");
   const [timeoutError, setTimeoutError] = useState(false);
 
-  const { campaigns, loading, error, fetchCampaigns, hasMore, loadMore } =
+  const { campaigns, loading, error, fetchCampaigns, hasMore, loadMore, updateFilters } =
     useAllCampaigns();
   
   // Geolocation and filtering
@@ -155,32 +155,21 @@ export default function AllCampaignsPage() {
       );
     }
 
-    // Filter by reason
-    if (selectedReason) {
-      filtered = filtered.filter(
-        (campaign) => campaign.reason === selectedReason
-      );
-    }
-
-    // Filter by status
-    if (selectedStatus) {
-      filtered = filtered.filter(
-        (campaign) => campaign.status === selectedStatus
-      );
-    }
-
-    // Filter by active tab
-    if (activeTab === "Live") {
-      filtered = filtered.filter((campaign) => campaign.status === "active");
-    } else if (activeTab === "Completed") {
-      filtered = filtered.filter((campaign) => campaign.status === "completed");
-    } else if (activeTab === "Trending") {
-      // Show campaigns with high engagement (you can customize this logic)
-      filtered = filtered.filter(
-        (campaign) =>
-          campaign.status === "active" &&
-          (campaign.stats?.totalDonations || 0) > 10
-      );
+    // Server-side filtering handles status and reason filters
+    // Only apply tab filtering if no status filter is selected
+    if (!selectedStatus) {
+      if (activeTab === "Live") {
+        filtered = filtered.filter((campaign) => campaign.status === "active");
+      } else if (activeTab === "Completed") {
+        filtered = filtered.filter((campaign) => campaign.status === "completed");
+      } else if (activeTab === "Trending") {
+        // Show campaigns with high engagement (you can customize this logic)
+        filtered = filtered.filter(
+          (campaign) =>
+            campaign.status === "active" &&
+            (campaign.stats?.totalDonations || 0) > 10
+        );
+      }
     }
 
 
@@ -215,7 +204,6 @@ export default function AllCampaignsPage() {
   }, [
     campaigns,
     searchQuery,
-    selectedReason,
     selectedStatus,
     activeTab,
     sortBy,
@@ -235,6 +223,11 @@ export default function AllCampaignsPage() {
     setSelectedStatus("");
     setSortBy("newest");
   };
+
+  // Update server-side filters when status or reason changes
+  useEffect(() => {
+    updateFilters({ status: selectedStatus || undefined, reason: selectedReason || undefined });
+  }, [selectedStatus, selectedReason, updateFilters]);
 
   // Handle errors
   useEffect(() => {

@@ -41,7 +41,8 @@ const PendingDonations = (props: Props) => {
     );
   }
 
-  const pendingDonations = donations.filter(donation => !donation.isSuccessful && donation.paymentStatus === 'pending');
+  // The API already filters by 'pending' status, so we don't need to filter again
+  const pendingDonations = donations;
 
   if (pendingDonations.length === 0) {
     return (

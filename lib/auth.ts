@@ -14,7 +14,7 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 export function generateUserJWT(user: { id: string; email: string }) {
   const secret = process.env.JWT_SECRET || "dev_secret";
   return jwt.sign({ sub: user.id, email: user.email }, secret, {
-    expiresIn: "7d",
+    expiresIn: "2d",
   });
 }
 

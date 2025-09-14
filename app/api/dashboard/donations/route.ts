@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     if (status !== 'all') {
       conditions.push(eq(donations.paymentStatus, status));
     }
-    const whereClause = conditions.length > 0 ? conditions.reduce((acc, condition) => acc && condition) : undefined;
+    const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
 
     // Get donations received by user's campaigns
     const receivedDonations = await db
@@ -95,10 +95,12 @@ export async function GET(request: NextRequest) {
       .offset(offset);
 
     // Get total count for pagination
-    const totalCount = await db
+    const totalCountResult = await db
       .select({ count: donations.id })
       .from(donations)
       .where(whereClause);
+    
+    const totalCount = totalCountResult.length;
 
     const donationsWithStats = receivedDonations.map(donation => ({
       ...donation,
@@ -112,8 +114,8 @@ export async function GET(request: NextRequest) {
       pagination: {
         page,
         limit,
-        total: totalCount.length,
-        totalPages: Math.ceil(totalCount.length / limit)
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
       }
     });
   } catch (error) {

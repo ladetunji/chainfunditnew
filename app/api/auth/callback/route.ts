@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         response.cookies.set("auth_token", token, {
           httpOnly: true,
           path: "/",
-          maxAge: 60 * 60 * 24 * 7, // 7 days
+          maxAge: 60 * 60 * 24 * 2, // 2 days
           sameSite: "lax",
           secure: process.env.NODE_ENV === "production",
         });

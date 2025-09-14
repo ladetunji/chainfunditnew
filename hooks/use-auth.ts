@@ -56,14 +56,28 @@ export function useAuth() {
 
   const logout = useCallback(async () => {
     try {
+      // Call logout API to clear server-side session
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      
       // Clear user state
       setUser(null);
+      
+      // Clear any local storage items
+      localStorage.removeItem('otp_login_type');
+      localStorage.removeItem('otp_login_identifier');
+      localStorage.removeItem('link_phone_number');
+      localStorage.removeItem('link_phone_email');
       
       // Redirect to signin page
       window.location.href = '/signin';
     } catch (error) {
       console.error('Error during logout:', error);
       setUser(null);
+      // Still redirect even if logout API fails
+      window.location.href = '/signin';
     }
   }, []);
 

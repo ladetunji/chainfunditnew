@@ -338,11 +338,12 @@ const Main = ({ campaignId }: MainProps) => {
 
       if (response.ok) {
         const result = await response.json();
-        if (result.success) {
+        if (result.success && result.data) {
           setChainCount(result.data.chainCount);
         }
       }
     } catch (err) {
+      console.error('Error fetching chain count:', err);
     } finally {
       setLoadingChains(false);
     }
@@ -1112,6 +1113,7 @@ const Main = ({ campaignId }: MainProps) => {
         open={chainModalOpen}
         onOpenChange={setChainModalOpen}
         campaign={campaign || undefined}
+        onChainCreated={fetchChainCount}
       />
       <DonateModal
         open={donateModalOpen}

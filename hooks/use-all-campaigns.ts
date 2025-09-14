@@ -146,6 +146,13 @@ export function useAllCampaigns() {
     fetchCampaigns(true);
   }, []); // Only run once on mount
 
+  // Refetch when filters change (but not offset)
+  useEffect(() => {
+    if (filters.status !== undefined || filters.reason !== undefined) {
+      fetchCampaigns(true);
+    }
+  }, [filters.status, filters.reason, fetchCampaigns]);
+
   // Fetch more when offset changes - but don't depend on fetchCampaigns
   useEffect(() => {
     const currentOffset = filters.offset;

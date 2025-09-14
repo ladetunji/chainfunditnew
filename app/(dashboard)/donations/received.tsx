@@ -30,7 +30,8 @@ const ReceivedDonations = (props: Props) => {
     );
   }
 
-  const receivedDonations = donations.filter(donation => donation.isSuccessful);
+  // The API already filters by 'completed' status, so we don't need to filter again
+  const receivedDonations = donations;
   const totalAmount = receivedDonations.reduce((sum, donation) => sum + donation.amount, 0);
 
   if (receivedDonations.length === 0) {

@@ -52,17 +52,20 @@ export async function GET(
         }
       });
     } else {
-      // Get total chain count for this campaign (existing functionality)
-      const chainCount = await db
+      // Get total chain count for this campaign
+      const chainCountResult = await db
         .select({ count: count() })
         .from(chainers)
         .where(eq(chainers.campaignId, campaignId));
 
+      // Ensure we always get a valid count
+      const chainCount = chainCountResult.length > 0 ? Number(chainCountResult[0].count) : 0;
+      
       return NextResponse.json({
         success: true,
         data: {
           campaignId,
-          chainCount: Number(chainCount[0]?.count || 0)
+          chainCount
         }
       });
     }

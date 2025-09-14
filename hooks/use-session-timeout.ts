@@ -77,16 +77,18 @@ export const useSessionTimeout = (config: SessionTimeoutConfig = {}) => {
     try {
       if (logout && typeof logout === 'function') {
         await logout();
+      } else {
+        // Fallback: clear local state and redirect
+        window.location.href = '/signin';
       }
       setShowTimeoutModal(false);
       setShowWarningModal(false);
-      
-      // For now, just log the redirect instead of actually redirecting
-      
     } catch (error) {
       console.error('Error during logout:', error);
       setShowTimeoutModal(false);
       setShowWarningModal(false);
+      // Fallback redirect
+      window.location.href = '/signin';
     }
   }, [logout]);
 

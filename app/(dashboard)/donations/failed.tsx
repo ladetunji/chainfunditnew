@@ -16,24 +16,21 @@ const FailedDonations = (props: Props) => {
 
   // Show alert when failed donations are detected
   useEffect(() => {
-    if (!loading && donations.length > 0) {
-      const failedDonations = donations.filter(donation => donation.paymentStatus === 'failed');
-      if (failedDonations.length > 0 && !hasShownAlert) {
-        toast.error(`You have ${failedDonations.length} failed donation${failedDonations.length !== 1 ? 's' : ''} that need attention.`, {
-          duration: 5000,
-          action: {
-            label: 'View Details',
-            onClick: () => {
-              // Scroll to failed donations section or focus on it
-              const failedSection = document.querySelector('[data-failed-donations]');
-              if (failedSection) {
-                failedSection.scrollIntoView({ behavior: 'smooth' });
-              }
+    if (!loading && donations.length > 0 && !hasShownAlert) {
+      toast.error(`You have ${donations.length} failed donation${donations.length !== 1 ? 's' : ''} that need attention.`, {
+        duration: 5000,
+        action: {
+          label: 'View Details',
+          onClick: () => {
+            // Scroll to failed donations section or focus on it
+            const failedSection = document.querySelector('[data-failed-donations]');
+            if (failedSection) {
+              failedSection.scrollIntoView({ behavior: 'smooth' });
             }
           }
-        });
-        setHasShownAlert(true);
-      }
+        }
+      });
+      setHasShownAlert(true);
     }
   }, [donations, loading, hasShownAlert]);
 
@@ -87,7 +84,8 @@ const FailedDonations = (props: Props) => {
     );
   }
 
-  const failedDonations = donations.filter(donation => donation.paymentStatus === 'failed');
+  // The API already filters by 'failed' status, so we don't need to filter again
+  const failedDonations = donations;
 
   if (failedDonations.length === 0) {
     return (

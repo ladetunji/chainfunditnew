@@ -21,9 +21,10 @@ interface ChainModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   campaign?: Campaign | null;
+  onChainCreated?: () => void;
 }
 
-const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign }) => {
+const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign, onChainCreated }) => {
   const [step, setStep] = useState<"form" | "success">("form");
   const [whyChain, setWhyChain] = useState("");
   const [proceedsOption, setProceedsOption] = useState("give-back");
@@ -69,6 +70,10 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign })
         setReferralCode(result.data.referralCode);
         setStep("success");
         toast.success('Campaign chained successfully!');
+        // Call the callback to refresh chain count
+        if (onChainCreated) {
+          onChainCreated();
+        }
       } else {
         toast.error(`Failed to chain campaign: ${result.error}`);
       }
