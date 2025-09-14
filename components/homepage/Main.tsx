@@ -421,14 +421,14 @@ const Main = (props: Props) => {
                 {isVideoPlaying ? (
                   <FaPause
                     color="white"
-                    size={48}
-                    className="md:w-[100px] md:h-[100px] w-[48px] h-[48px] drop-shadow-lg"
+                    size={32}
+                    className="md:w-[100px] md:h-[100px] w-[32px] h-[32px] drop-shadow-lg"
                   />
                 ) : (
                   <FaPlay
                     color="white"
-                    size={48}
-                    className="md:w-[100px] md:h-[100px] w-[48px] h-[48px] drop-shadow-lg"
+                    size={32}
+                    className="md:w-[100px] md:h-[100px] w-[32px] h-[32px] drop-shadow-lg"
                   />
                 )}
               </button>
