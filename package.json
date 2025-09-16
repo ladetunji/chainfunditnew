@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --experimental-https --experimental-https-key ./cert.key --experimental-https-cert ./cert.crt",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -76,6 +76,7 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.0.5",
     "jest-environment-jsdom": "^30.0.5",
+    "mkcert": "^3.2.0",
     "postcss": "^8.5.6",
     "tailwindcss": "3",
     "ts-jest": "^29.4.0",

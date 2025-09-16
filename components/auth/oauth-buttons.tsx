@@ -4,6 +4,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { FaGoogle, FaDiscord } from "react-icons/fa";
 import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
 
 interface OAuthButtonsProps {
   mode?: "signin" | "signup";
@@ -16,8 +17,13 @@ export function OAuthButtons({
 }: OAuthButtonsProps) {
   const handleOAuthSignIn = async (provider: "google" | "discord") => {
     try {
+      if (provider === "google") {
+        await authClient.signIn.social({ provider: "google" });
+        return;
+      }
+      
       // Redirect to BetterAuth OAuth endpoint
-      const url = `/api/auth/[...betterauth]?provider=${provider}`;
+      const url = `/api/auth/betterauth?provider=${provider}`;
       window.location.href = url;
     } catch (error) {
       console.error(`${provider} sign-in error:`, error);
@@ -37,7 +43,7 @@ export function OAuthButtons({
 
       <div className="flex gap-3 md:gap-5 w-full">
         <Button
-          className="w-1/2 md:w-[236px] h-16 bg-[#D9D9DC] border-[#8E8C95] text-[#474553] font-medium text-2xl hover:bg-[#C9C9CC] transition-colors"
+          className="w-1/2 md:w-[236px] h-16 bg-[#D9D9DC] border-[#8E8C95] text-[#474553] font-semibold text-2xl hover:bg-[#C9C9CC] transition-colors"
           type="button"
           onClick={() => handleOAuthSignIn("google")}
         >

@@ -87,12 +87,6 @@ export const auth = betterAuth({
     },
     {
       type: "oauth",
-      id: "google",
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    },
-    {
-      type: "oauth",
       id: "discord",
       clientId: process.env.DISCORD_CLIENT_ID!,
       clientSecret: process.env.DISCORD_CLIENT_SECRET!,
@@ -107,7 +101,7 @@ export const auth = betterAuth({
   callbacks: {
     async signIn({ user, account, profile }: any) {
       // Handle OAuth sign-in
-      if (account?.provider === "google" || account?.provider === "discord") {
+      if (account?.provider === "discord") {
         // Update user profile with OAuth data
         if (profile) {
           await db.update(users)

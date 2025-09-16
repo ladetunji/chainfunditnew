@@ -3,6 +3,7 @@
 import React, { useState, useRef } from "react";
 import Image from "next/image";
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { R2Image } from "@/components/ui/r2-image";
 import {
   Select,
   SelectContent,
@@ -59,14 +60,14 @@ const Cards = ({ campaignId }: { campaignId: string }) => {
               // Check if gallery has valid images
               if (campaign.galleryImages && campaign.galleryImages.length > 0) {
                 const firstImage = campaign.galleryImages[0];
-                // Check if it's a valid image URL (not a local upload path that might not exist)
-                if (firstImage && !firstImage.startsWith('/uploads/') && firstImage !== 'undefined') {
+                // Check if it's a valid image URL
+                if (firstImage && firstImage !== 'undefined') {
                   return firstImage;
                 }
               }
               
               // Check cover image
-              if (campaign.coverImageUrl && !campaign.coverImageUrl.startsWith('/uploads/') && campaign.coverImageUrl !== 'undefined') {
+              if (campaign.coverImageUrl && campaign.coverImageUrl !== 'undefined') {
                 return campaign.coverImageUrl;
               }
               

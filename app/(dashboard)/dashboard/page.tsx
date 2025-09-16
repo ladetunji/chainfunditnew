@@ -22,6 +22,9 @@ import {
   Calendar,
   Eye,
 } from "lucide-react";
+import { R2Image } from "@/components/ui/r2-image";
+import { EmojiFallbackImage } from "@/components/ui/emoji-fallback-image";
+import { needsEmojiFallback } from "@/lib/utils/campaign-emojis";
 
 interface DashboardStats {
   totalCampaigns: number;
@@ -56,6 +59,7 @@ interface Campaign {
   progressPercentage: number;
   donationCount: number;
   createdAt: string;
+  reason?: string; // Campaign category for emoji fallback
 }
 
 export default function DashboardPage() {
@@ -336,9 +340,16 @@ export default function DashboardPage() {
                     >
                       <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
                         <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200">
-                          {campaign.coverImageUrl && (
-                            <Image
-                              src={campaign.coverImageUrl}
+                          {needsEmojiFallback(campaign.coverImageUrl) ? (
+                            <EmojiFallbackImage
+                              category={campaign.reason || 'Uncategorized'}
+                              title={campaign.title}
+                              fill
+                              className="group-hover:scale-110 transition-transform duration-500"
+                            />
+                          ) : (
+                            <R2Image
+                              src={campaign.coverImageUrl!}
                               alt={campaign.title}
                               fill
                               className="object-cover group-hover:scale-110 transition-transform duration-500"

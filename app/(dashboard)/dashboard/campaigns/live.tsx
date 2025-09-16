@@ -12,6 +12,9 @@ import Link from "next/link";
 import React from "react";
 import { Campaign, transformCampaign } from "./types";
 import { formatCurrency } from "@/lib/utils/currency";
+import { R2Image } from "@/components/ui/r2-image";
+import { EmojiFallbackImage } from "@/components/ui/emoji-fallback-image";
+import { needsEmojiFallback } from "@/lib/utils/campaign-emojis";
 
 type Props = {
   campaigns: Campaign[];
@@ -63,12 +66,21 @@ const LiveCampaigns = ({ campaigns }: Props) => {
           >
             <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
               <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200">
-                <Image
-                  src={campaign.image}
-                  alt={campaign.title}
-                  fill
-                  className="object-cover group-hover:scale-110 transition-transform duration-500"
-                />
+                {needsEmojiFallback(campaign.image) ? (
+                  <EmojiFallbackImage
+                    category={campaigns.find(c => c.id === campaign.id)?.reason || 'Uncategorized'}
+                    title={campaign.title}
+                    fill
+                    className="group-hover:scale-110 transition-transform duration-500"
+                  />
+                ) : (
+                  <R2Image
+                    src={campaign.image}
+                    alt={campaign.title}
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                 {/* Live badge */}
                 <div className="absolute top-4 right-4">

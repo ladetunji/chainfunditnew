@@ -24,6 +24,12 @@
 .DS_Store
 *.pem
 
+# SSL certificates
+*.key
+*.crt
+ca.key
+ca.crt
+
 # debug
 npm-debug.log*
 yarn-debug.log*

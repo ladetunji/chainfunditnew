@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Image from "next/image";
-import { useDonations } from "@/hooks/use-dashboard";
+import { useDonations, useDashboard } from "@/hooks/use-dashboard";
 import { formatCurrency } from "@/lib/utils/currency";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ const ReceivedDonations = (props: Props) => {
   console.log('ReceivedDonations component rendered');
   const [currentPage, setCurrentPage] = useState(1);
   const { donations, loading, error, pagination, refreshDonations } = useDonations('completed', currentPage);
+  const { stats } = useDashboard();
 
   if (loading) {
     return (
@@ -33,11 +34,11 @@ const ReceivedDonations = (props: Props) => {
     );
   }
 
-  // The API already filters by 'completed' status, so we don't need to filter again
-  const receivedDonations = donations;
-  const totalAmount = receivedDonations.reduce((sum, donation) => sum + donation.amount, 0);
+  // Use total amount from dashboard stats (already converted to Naira)
+  const totalAmount = stats?.totalDonations || 0;
+  const currencyBreakdown = stats?.currencyBreakdown || {};
 
-  if (receivedDonations.length === 0) {
+  if (donations.length === 0) {
     return (
       <div className="flex flex-col gap-4 2xl:container 2xl:mx-auto">
         <section className="relative w-fit">
@@ -65,28 +66,43 @@ const ReceivedDonations = (props: Props) => {
 
   return (
     <div className="flex flex-col gap-4 2xl:container 2xl:mx-auto">
-      {/* <section className="relative w-fit">
-        <Image src="/images/frame.png" alt="" width={232} height={216} />
-        <section
-          className="absolute -top-5 -right-4 w-[70px] h-[78px] bg-white flex items-center justify-center font-bold text-[64px] text-[#104901] rounded-2xl"
-          style={{ boxShadow: "0px 4px 10px 0px #00000040" }}
-        >
-          {receivedDonations.length}
-        </section>
-      </section> */}
-
-      <section>
-        <h3 className="font-semibold text-3xl text-[#104901]">
-          {receivedDonations.length} donation{receivedDonations.length !== 1 ? 's' : ''} received
-        </h3>
-        <p className="font-normal text-xl text-[#104901]">
-          Total amount received: {formatCurrency(totalAmount, 'NGN')}
-        </p>
-      </section>
+      {/* Summary Section */}
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-[#104901] mb-2">
+              Donations Summary
+            </h2>
+            <p className="text-lg text-[#104901] opacity-80">
+              {stats?.totalDonors || 0} donor{(stats?.totalDonors || 0) !== 1 ? 's' : ''} • {donations.length} donation{donations.length !== 1 ? 's' : ''} received
+            </p>
+            {Object.keys(currencyBreakdown).length > 1 && (
+              <div className="mt-2 text-sm text-[#104901] opacity-70">
+                <p className="font-medium">Currency Breakdown:</p>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {Object.entries(currencyBreakdown).map(([currency, amount]) => (
+                    <span key={currency} className="bg-white bg-opacity-50 px-2 py-1 rounded text-xs">
+                      {currency}: {formatCurrency(amount, currency)}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="text-right">
+            <p className="text-3xl font-bold text-[#104901]">
+              ₦{totalAmount.toLocaleString()}
+            </p>
+            <p className="text-sm text-[#104901] opacity-60">
+              Total Amount (NGN)
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Donations List */}
       <div className="mt-6 space-y-4">
-        {receivedDonations.map((donation) => (
+        {donations.map((donation) => (
           <div key={donation.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex justify-between items-start">
               <div className="flex-1">

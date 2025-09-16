@@ -3,10 +3,12 @@ import { useState, useEffect } from 'react';
 interface DashboardStats {
   totalCampaigns: number;
   activeCampaigns: number;
-  totalDonations: number;
+  totalDonations: number; // Total in Naira
   totalDonors: number;
   totalChained: number;
   totalEarnings: number;
+  primaryCurrency: string; // Always 'NGN' for Nigerian users
+  currencyBreakdown: { [key: string]: number }; // Breakdown by original currency
   recentDonations: Array<{
     id: string;
     amount: number;
@@ -52,6 +54,12 @@ interface Donation {
   campaignCurrency: string;
   campaignCoverImage: string;
   isSuccessful: boolean;
+  // Enhanced status fields
+  retryAttempts?: number;
+  failureReason?: string;
+  lastStatusUpdate?: string;
+  providerStatus?: string;
+  providerError?: string;
 }
 
 interface ChainingActivity {

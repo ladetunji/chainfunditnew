@@ -7,6 +7,9 @@ import { Heart, Share2, Eye, Calendar, User, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrencyWithConversion } from '@/lib/utils/currency';
 import { GeolocationData } from '@/lib/utils/geolocation';
+import { R2Image } from '@/components/ui/r2-image';
+import { EmojiFallbackImage } from '@/components/ui/emoji-fallback-image';
+import { needsEmojiFallback } from '@/lib/utils/campaign-emojis';
 
 interface Campaign {
   id: string;
@@ -97,13 +100,21 @@ export function CampaignCard({ campaign, viewMode, geolocation, convertedAmounts
         <div className="flex flex-col md:flex-row">
           {/* Image */}
           <div className="md:w-1/3 relative">
-            <Image
-              src={campaign.coverImageUrl || '/images/card-img1.png'}
-              alt={campaign.title}
-              width={400}
-              height={300}
-              className="w-full h-48 md:h-full object-cover"
-            />
+            {needsEmojiFallback(campaign.coverImageUrl) ? (
+              <EmojiFallbackImage
+                category={campaign.reason}
+                title={campaign.title}
+                className="w-full h-48 md:h-full"
+              />
+            ) : (
+              <R2Image
+                src={campaign.coverImageUrl!}
+                alt={campaign.title}
+                width={400}
+                height={300}
+                className="w-full h-48 md:h-full object-cover"
+              />
+            )}
             <div className="absolute top-3 left-3">
               <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
                 {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
@@ -198,13 +209,21 @@ export function CampaignCard({ campaign, viewMode, geolocation, convertedAmounts
     <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
       {/* Image */}
       <div className="relative">
-        <Image
-          src={campaign.coverImageUrl || '/images/card-img1.png'}
-          alt={campaign.title}
-          width={400}
-          height={300}
-          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-        />
+        {needsEmojiFallback(campaign.coverImageUrl) ? (
+          <EmojiFallbackImage
+            category={campaign.reason}
+            title={campaign.title}
+            className="w-full h-48 group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <R2Image
+            src={campaign.coverImageUrl!}
+            alt={campaign.title}
+            width={400}
+            height={300}
+            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        )}
         <div className="absolute top-3 left-3">
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
             {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}

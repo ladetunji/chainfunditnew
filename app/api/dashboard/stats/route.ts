@@ -4,6 +4,7 @@ import { users, campaigns, donations, chainers } from '@/lib/schema';
 import { eq, and, sql, desc, count, sum, inArray } from 'drizzle-orm';
 import { parse } from 'cookie';
 import { verifyUserJWT } from '@/lib/auth';
+import { convertToNaira, CURRENCY_RATES_TO_NGN } from '@/lib/utils/currency-conversion';
 
 async function getUserFromRequest(request: NextRequest) {
   const cookie = request.headers.get('cookie') || '';
@@ -33,17 +34,20 @@ export async function GET(request: NextRequest) {
     // Get user's campaigns
     const userCampaigns = await db.select().from(campaigns).where(eq(campaigns.creatorId, userId));
 
-    // Get total donations for user's campaigns
+    // Get total donations for user's campaigns with currency conversion
     const campaignIds = userCampaigns.map(c => c.id);
-    let totalDonations = 0;
+    let totalDonationsInNGN = 0;
     let totalDonors = 0;
-    let primaryCurrency = 'USD'; // Default fallback
+    let primaryCurrency = 'NGN'; // Default to Naira for Nigerian users
+    let currencyBreakdown: { [key: string]: number } = {};
 
     if (campaignIds.length > 0) {
-      const donationsResult = await db
+      // Get donations with their currencies for conversion
+      const donationsWithCurrency = await db
         .select({
-          totalAmount: sum(donations.amount),
-          donorCount: count(donations.donorId)
+          amount: donations.amount,
+          currency: donations.currency,
+          donorId: donations.donorId
         })
         .from(donations)
         .where(and(
@@ -51,8 +55,25 @@ export async function GET(request: NextRequest) {
           eq(donations.paymentStatus, 'completed')
         ));
 
-      totalDonations = Number(donationsResult[0]?.totalAmount || 0);
-      totalDonors = Number(donationsResult[0]?.donorCount || 0);
+      // Calculate total donors
+      const uniqueDonors = new Set(donationsWithCurrency.map(d => d.donorId));
+      totalDonors = uniqueDonors.size;
+
+      // Convert all donations to Naira and calculate totals
+      donationsWithCurrency.forEach(donation => {
+        const amount = Number(donation.amount);
+        const currency = donation.currency;
+        
+        // Track currency breakdown
+        if (!currencyBreakdown[currency]) {
+          currencyBreakdown[currency] = 0;
+        }
+        currencyBreakdown[currency] += amount;
+        
+        // Convert to Naira and add to total
+        const amountInNGN = convertToNaira(amount, currency);
+        totalDonationsInNGN += amountInNGN;
+      });
 
       // Get the most common currency from donations
       const currencyResult = await db
@@ -125,11 +146,12 @@ export async function GET(request: NextRequest) {
     const stats = {
       totalCampaigns: userCampaigns.length,
       activeCampaigns: activeCampaigns.length,
-      totalDonations: totalDonations,
+      totalDonations: totalDonationsInNGN, // Total in Naira
       totalDonors: totalDonors,
       totalChained: Number(chainerStats[0]?.totalChained || 0),
       totalEarnings: Number(chainerStats[0]?.totalEarnings || 0),
-      primaryCurrency: primaryCurrency,
+      primaryCurrency: 'NGN', // Always show in Naira for Nigerian users
+      currencyBreakdown: currencyBreakdown, // Breakdown by original currency
       recentDonations: recentDonations.map(d => ({
         ...d,
         amount: Number(d.amount),

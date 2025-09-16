@@ -31,6 +31,11 @@ export function generateTestDonations(campaignId: string, donorIds: string[]): T
       isAnonymous: false,
       createdAt: oneDayAgo.toISOString(),
       processedAt: oneDayAgo.toISOString(),
+      retryAttempts: 0,
+      failureReason: null,
+      lastStatusUpdate: oneDayAgo,
+      providerStatus: 'success',
+      providerError: null,
     },
     {
       id: 'test-donation-2',
@@ -46,6 +51,11 @@ export function generateTestDonations(campaignId: string, donorIds: string[]): T
       isAnonymous: false,
       createdAt: twoDaysAgo.toISOString(),
       processedAt: twoDaysAgo.toISOString(),
+      retryAttempts: 0,
+      failureReason: null,
+      lastStatusUpdate: twoDaysAgo,
+      providerStatus: 'success',
+      providerError: null,
     },
     {
       id: 'test-donation-3',
@@ -61,6 +71,11 @@ export function generateTestDonations(campaignId: string, donorIds: string[]): T
       isAnonymous: true,
       createdAt: oneWeekAgo.toISOString(),
       processedAt: oneWeekAgo.toISOString(),
+      retryAttempts: 0,
+      failureReason: null,
+      lastStatusUpdate: oneWeekAgo,
+      providerStatus: 'success',
+      providerError: null,
     },
     
     // Pending donations
@@ -78,6 +93,11 @@ export function generateTestDonations(campaignId: string, donorIds: string[]): T
       isAnonymous: false,
       createdAt: new Date().toISOString(),
       processedAt: undefined,
+      retryAttempts: 0,
+      failureReason: null,
+      lastStatusUpdate: new Date(),
+      providerStatus: 'pending',
+      providerError: null,
     },
     {
       id: 'test-donation-5',
@@ -93,6 +113,11 @@ export function generateTestDonations(campaignId: string, donorIds: string[]): T
       isAnonymous: false,
       createdAt: new Date().toISOString(),
       processedAt: undefined,
+      retryAttempts: 0,
+      failureReason: null,
+      lastStatusUpdate: new Date(),
+      providerStatus: 'pending',
+      providerError: null,
     },
     
     // Failed donations
@@ -110,6 +135,11 @@ export function generateTestDonations(campaignId: string, donorIds: string[]): T
       isAnonymous: false,
       createdAt: oneDayAgo.toISOString(),
       processedAt: oneDayAgo.toISOString(),
+      retryAttempts: 1,
+      failureReason: 'Card declined by bank',
+      lastStatusUpdate: oneDayAgo,
+      providerStatus: 'failed',
+      providerError: 'Card declined',
     },
     {
       id: 'test-donation-7',
@@ -125,6 +155,11 @@ export function generateTestDonations(campaignId: string, donorIds: string[]): T
       isAnonymous: true,
       createdAt: twoDaysAgo.toISOString(),
       processedAt: twoDaysAgo.toISOString(),
+      retryAttempts: 2,
+      failureReason: 'Insufficient funds',
+      lastStatusUpdate: twoDaysAgo,
+      providerStatus: 'failed',
+      providerError: 'Insufficient funds',
     },
   ];
 }

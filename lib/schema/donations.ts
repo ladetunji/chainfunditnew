@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, decimal, text, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, decimal, text, boolean, integer } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const donations = pgTable('donations', {
@@ -15,6 +15,12 @@ export const donations = pgTable('donations', {
   isAnonymous: boolean('is_anonymous').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   processedAt: timestamp('processed_at'),
+  // Enhanced status tracking fields
+  retryAttempts: integer('retry_attempts').default(0).notNull(),
+  failureReason: varchar('failure_reason', { length: 255 }),
+  lastStatusUpdate: timestamp('last_status_update').defaultNow().notNull(),
+  providerStatus: varchar('provider_status', { length: 50 }), // Original provider status
+  providerError: text('provider_error'), // Provider error message
 });
 
 // Relations will be defined later to avoid circular dependencies

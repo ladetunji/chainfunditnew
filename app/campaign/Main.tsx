@@ -3,6 +3,9 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { R2Image } from "@/components/ui/r2-image";
+import { EmojiFallbackImage } from "@/components/ui/emoji-fallback-image";
+import { needsEmojiFallback } from "@/lib/utils/campaign-emojis";
 import {
   Bitcoin,
   CheckCircle,
@@ -86,81 +89,6 @@ interface MainProps {
   campaignId: string;
 }
 
-// Mock data for fallback when API doesn't return data
-const createMockDonors = (currency: string) => [
-  {
-    id: "mock-1",
-    donorName: "Angela Bassett",
-    amount: "125000",
-    currency: currency,
-    isAnonymous: false,
-    donorAvatar: "/images/donor1.png",
-  },
-  {
-    id: "mock-2", 
-    donorName: "Ruslev Mikhailsky",
-    amount: "250000",
-    currency: currency,
-    isAnonymous: false,
-    donorAvatar: "/images/donor6.png",
-  },
-  {
-    id: "mock-3",
-    donorName: "Alexander Iwobi", 
-    amount: "150000",
-    currency: currency,
-    isAnonymous: false,
-    donorAvatar: "/images/donor2.png",
-  },
-  {
-    id: "mock-4",
-    donorName: "Sarah Johnson",
-    amount: "75000", 
-    currency: currency,
-    isAnonymous: false,
-    donorAvatar: "/images/donor3.png",
-  },
-  {
-    id: "mock-5",
-    donorName: "Michael Brown",
-    amount: "200000",
-    currency: currency, 
-    isAnonymous: false,
-    donorAvatar: "/images/donor4.png",
-  },
-  {
-    id: "mock-6",
-    donorName: "Emily Davis",
-    amount: "90000",
-    currency: currency,
-    isAnonymous: false,
-    donorAvatar: "/images/donor5.png",
-  },
-];
-
-const createMockChainers = () => [
-  {
-    id: "mock-chainer-1",
-    userName: "Angela Bassett",
-    totalReferrals: 20,
-    totalRaised: 125000,
-    userAvatar: "/images/donor1.png",
-  },
-  {
-    id: "mock-chainer-2", 
-    userName: "Ruslev Mikhailsky",
-    totalReferrals: 12,
-    totalRaised: 250000,
-    userAvatar: "/images/donor6.png",
-  },
-  {
-    id: "mock-chainer-3",
-    userName: "Alexander Iwobi",
-    totalReferrals: 6, 
-    totalRaised: 150000,
-    userAvatar: "/images/donor2.png",
-  },
-];
 
 
 const comments = [
@@ -450,7 +378,7 @@ const Main = ({ campaignId }: MainProps) => {
   const campaignImages =
     campaign?.galleryImages && campaign.galleryImages.length > 0
       ? campaign.galleryImages.filter(
-          (img) => img && !img.startsWith("/uploads/") && img !== "undefined"
+          (img) => img && img !== "undefined"
         )
       : [];
 
@@ -511,14 +439,23 @@ const Main = ({ campaignId }: MainProps) => {
             <>
               <div className="w-full flex mb-4 mt-10">
                 <div className="relative md:w-[900px] md:h-[600px] overflow-hidden">
-                  <Image
-                    src={campaignImages[selectedImage]}
-                    alt={`Gallery image ${selectedImage + 1}`}
-                    style={{ objectFit: "cover" }}
-                    width={900}
-                    height={600}
-                    priority
-                  />
+                  {needsEmojiFallback(campaignImages[selectedImage]) ? (
+                    <EmojiFallbackImage
+                      category={campaign?.reason || 'Uncategorized'}
+                      title={campaign?.title}
+                      className="w-full h-full"
+                      fill
+                    />
+                  ) : (
+                    <R2Image
+                      src={campaignImages[selectedImage]}
+                      alt={`Gallery image ${selectedImage + 1}`}
+                      style={{ objectFit: "cover" }}
+                      width={900}
+                      height={600}
+                      priority
+                    />
+                  )}
                 </div>
               </div>
               {/* Thumbnails */}
@@ -534,25 +471,33 @@ const Main = ({ campaignId }: MainProps) => {
                     } overflow-hidden focus:outline-none`}
                     aria-label={`Show image ${idx + 1}`}
                   >
-                    <Image
-                      src={img}
-                      alt={`Thumbnail ${idx + 1}`}
-                      fill
-                      style={{ objectFit: "cover" }}
-                    />
+                    {needsEmojiFallback(img) ? (
+                      <EmojiFallbackImage
+                        category={campaign?.reason || 'Uncategorized'}
+                        title={campaign?.title}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <R2Image
+                        src={img}
+                        alt={`Thumbnail ${idx + 1}`}
+                        fill
+                        style={{ objectFit: "cover" }}
+                      />
+                    )}
                   </button>
                 ))}
               </div>
             </>
           ) : (
             <div className="w-full flex mb-4 mt-10">
-              <div className="relative md:w-[900px] md:h-[600px] overflow-hidden bg-gray-200 flex items-center justify-center">
-                <Image
-                  src="/images/card-img1.png"
-                  alt="Default campaign image"
-                  width={900}
-                  height={600}
-                  style={{ objectFit: "cover" }}
+              <div className="relative md:w-[900px] md:h-[600px] overflow-hidden">
+                <EmojiFallbackImage
+                  category={campaign?.reason || 'Uncategorized'}
+                  title={campaign?.title}
+                  className="w-full h-full"
+                  fill
                 />
               </div>
             </div>
@@ -747,9 +692,9 @@ const Main = ({ campaignId }: MainProps) => {
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#104901]"></div>
               </div>
-            ) : (donations && donations.length > 0) || (!loadingDonations && (!donations || donations.length === 0)) ? (
+            ) : donations && donations.length > 0 ? (
               <div className="grid md:grid-cols-6 grid-cols-3 gap-3">
-                {(donations && donations.length > 0 ? donations.slice(0, 6) : createMockDonors(campaignData.currency)).map((donation, index) => (
+                {donations.slice(0, 6).map((donation, index) => (
                   <div key={donation.id} className="flex flex-col items-center">
                     <div className="relative w-20 h-20 border-2 border-white rounded-3xl overflow-hidden">
                       {donation.donorAvatar && !donation.isAnonymous ? (
@@ -782,7 +727,7 @@ const Main = ({ campaignId }: MainProps) => {
               </div>
             ) : (
               <div className="flex items-center justify-center py-8">
-                <p className="text-[#757575]">
+                <p className="text-[#757575] text-lg">
                   No donors yet. Be the first to donate!
                 </p>
               </div>
@@ -797,9 +742,9 @@ const Main = ({ campaignId }: MainProps) => {
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#104901]"></div>
               </div>
-            ) : (topChainers && topChainers.length > 0) || (!loadingTopChainers && (!topChainers || topChainers.length === 0)) ? (
+            ) : topChainers && topChainers.length > 0 ? (
               <div className="flex gap-8">
-                {(topChainers && topChainers.length > 0 ? topChainers : createMockChainers()).map((chainer, index) => (
+                {topChainers.map((chainer, index) => (
                   <div key={chainer.id} className="flex flex-col items-center">
                     <div className="relative w-20 h-20 border-2 border-white rounded-3xl overflow-hidden">
                       {chainer.userAvatar ? (
@@ -829,7 +774,7 @@ const Main = ({ campaignId }: MainProps) => {
               </div>
             ) : (
               <div className="flex items-center justify-center py-8">
-                <p className="text-[#757575]">
+                <p className="text-[#757575] text-lg">
                   No chainers yet. Start the chain!
                 </p>
               </div>

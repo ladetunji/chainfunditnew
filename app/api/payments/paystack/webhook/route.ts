@@ -5,6 +5,12 @@ import { campaigns } from '@/lib/schema/campaigns';
 import { notifications } from '@/lib/schema/notifications';
 import { eq, sum, and } from 'drizzle-orm';
 import { handlePaystackWebhook, verifyPaystackTransaction } from '@/lib/payments/paystack';
+import { 
+  DONATION_STATUS_CONFIG, 
+  getFailureReason, 
+  isDonationPending, 
+  isDonationFailed 
+} from '@/lib/utils/donation-status';
 
 // Helper function to update campaign currentAmount based on completed donations
 async function updateCampaignAmount(campaignId: string) {
@@ -255,6 +261,9 @@ async function handleChargeSuccess(chargeData: any) {
         .set({
           paymentStatus: 'completed',
           processedAt: new Date(),
+          lastStatusUpdate: new Date(),
+          providerStatus: 'success',
+          providerError: null,
         })
         .where(eq(donations.id, donationId));
       // Update campaign currentAmount
@@ -288,11 +297,28 @@ async function handleChargeFailed(chargeData: any) {
       return;
     }
 
-    // Update donation status to failed
+    // Get current donation to check retry attempts
+    const currentDonation = await db
+      .select({ retryAttempts: donations.retryAttempts })
+      .from(donations)
+      .where(eq(donations.id, donationId))
+      .limit(1);
+
+    const retryAttempts = (currentDonation[0]?.retryAttempts || 0) + 1;
+    const failureReason = getFailureReason('paystack', 'failed', chargeData.gateway_response);
+    
+    // Update donation status to failed with enhanced tracking
     await db
       .update(donations)
       .set({
         paymentStatus: 'failed',
+        retryAttempts: retryAttempts,
+        failureReason: retryAttempts >= DONATION_STATUS_CONFIG.MAX_RETRY_ATTEMPTS 
+          ? DONATION_STATUS_CONFIG.FAILURE_REASONS.MAX_RETRIES 
+          : failureReason,
+        lastStatusUpdate: new Date(),
+        providerStatus: 'failed',
+        providerError: chargeData.gateway_response || 'Payment failed',
       })
       .where(eq(donations.id, donationId));
 
@@ -322,11 +348,14 @@ async function handleChargePending(chargeData: any) {
     if (!donation.length) {
       return;
     }
-    // Update donation status to pending
+    // Update donation status to pending with enhanced tracking
     await db
       .update(donations)
       .set({
         paymentStatus: 'pending',
+        lastStatusUpdate: new Date(),
+        providerStatus: 'pending',
+        providerError: null,
       })
       .where(eq(donations.id, donationId));
 

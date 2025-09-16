@@ -5,6 +5,7 @@ import { campaigns, donations, users } from '@/lib/schema';
 import { eq, and, sum } from 'drizzle-orm';
 import { getPayoutProvider, getPayoutConfig, isPayoutSupported } from '@/lib/payments/payout-config';
 import { getCurrencyCode } from '@/lib/utils/currency';
+import { convertToNaira } from '@/lib/utils/currency-conversion';
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
       .from(campaigns)
       .where(eq(campaigns.creatorId, user[0].id));
 
-    // Calculate available payout amounts for each campaign
+    // Calculate available payout amounts for each campaign with currency conversion
     const campaignsWithPayouts = await Promise.all(
       userCampaigns.map(async (campaign) => {
         // Get total completed donations for this campaign
@@ -55,6 +56,9 @@ export async function GET(request: NextRequest) {
         const totalRaised = parseFloat(totalDonations[0]?.total || '0');
         const currencyCode = getCurrencyCode(campaign.currency);
         
+        // Convert to Naira for Nigerian users
+        const totalRaisedInNGN = convertToNaira(totalRaised, currencyCode);
+        
         // Check if payout is supported for this currency
         const payoutSupported = isPayoutSupported(currencyCode);
         const payoutProvider = payoutSupported ? getPayoutProvider(currencyCode) : null;
@@ -63,6 +67,7 @@ export async function GET(request: NextRequest) {
         return {
           ...campaign,
           totalRaised,
+          totalRaisedInNGN, // Amount in Naira
           currencyCode,
           payoutSupported,
           payoutProvider,
@@ -72,23 +77,41 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    // Calculate total available for payout across all campaigns
-    const totalAvailableForPayout = campaignsWithPayouts.reduce((total, campaign) => {
-      if (campaign.availableForPayout) {
-        return total + campaign.totalRaised;
+    // Calculate totals with currency conversion
+    let totalAvailableForPayout = 0;
+    let totalAvailableForPayoutInNGN = 0;
+    let totalRaisedInNGN = 0;
+    const currencyBreakdown: { [key: string]: number } = {};
+
+    campaignsWithPayouts.forEach(campaign => {
+      // Track currency breakdown
+      if (!currencyBreakdown[campaign.currencyCode]) {
+        currencyBreakdown[campaign.currencyCode] = 0;
       }
-      return total;
-    }, 0);
+      currencyBreakdown[campaign.currencyCode] += campaign.totalRaised;
+      
+      // Add to Naira totals
+      totalRaisedInNGN += campaign.totalRaisedInNGN;
+      
+      if (campaign.availableForPayout) {
+        totalAvailableForPayout += campaign.totalRaised;
+        totalAvailableForPayoutInNGN += campaign.totalRaisedInNGN;
+      }
+    });
 
     return NextResponse.json({
       success: true,
       data: {
         campaigns: campaignsWithPayouts,
         totalAvailableForPayout,
+        totalAvailableForPayoutInNGN, // Total available in Naira
+        totalRaisedInNGN, // Total raised in Naira
+        currencyBreakdown, // Breakdown by original currency
         summary: {
           totalCampaigns: campaignsWithPayouts.length,
           campaignsWithPayouts: campaignsWithPayouts.filter(c => c.availableForPayout).length,
           totalRaised: campaignsWithPayouts.reduce((sum, c) => sum + c.totalRaised, 0),
+          totalRaisedInNGN, // Total raised in Naira
         }
       }
     });

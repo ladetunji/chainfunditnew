@@ -23,39 +23,67 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-// Team data - you can replace this with your actual team members
 const teamMembers = [
   {
     id: 1,
-    name: "John Smith",
-    role: "CEO & Founder",
-    image: "/images/team/john.jpg",
-    bio: "Passionate about social impact and technology.",
+    name: "Tolu Aturamu",
+    role: "CEO",
+    bio: (
+      <div>
+        <ul className="list-disc list-inside">
+          <li>⁠ ⁠Fixed Income & FX Treasury Operations</li>
+          <li>⁠ ⁠Operations</li>
+          <li>⁠ ⁠Sales & Marketing</li>
+          <li>⁠ ⁠Law</li>
+        </ul>
+      </div>
+    ),
   },
   {
     id: 2,
-    name: "Sarah Johnson",
+    name: "Ladetunji Osibanjo",
     role: "CTO",
-    image: "/images/team/sarah.jpg",
-    bio: "Tech leader with 10+ years in fintech.",
+    bio: (
+      <div>
+        <ul className="list-disc list-inside">
+          <li>⁠ ⁠ ⁠HTML, CSS, JavaScript</li>
+          <li>⁠ ⁠WordPress</li>
+          <li>⁠ ⁠Frontend Design</li>
+          <li>⁠⁠Graphics Design & Motion Graphics</li>
+        </ul>
+      </div>
+    ),
   },
   {
     id: 3,
-    name: "Mike Chen",
-    role: "Head of Operations",
-    image: "/images/team/mike.jpg",
-    bio: "Operations expert focused on user experience.",
+    name: "Emily Tong",
+    role: "COO",
+    bio: (
+      <div>
+        <ul className="list-disc list-inside">
+          <li>⁠ ⁠Accounting & Finance</li>
+          <li>⁠Compliance</li>
+        </ul>
+      </div>
+    ),
   },
   {
     id: 4,
-    name: "Emma Wilson",
-    role: "Head of Partnerships",
-    image: "/images/team/emma.jpg",
-    bio: "Building bridges between causes and supporters.",
+    name: "Ade Atunramu",
+    role: "Executive Director",
+    bio: (
+      <div>
+        <ul className="list-disc list-inside">
+          <li>⁠  ⁠Capital Raising</li>
+          <li>⁠  ⁠Investment Banking</li>
+          <li>⁠  ⁠Operations</li>
+          <li>⁠Sales & Marketing</li>
+        </ul>
+      </div>
+    ),
   },
 ];
 
-// Company stats - you can update these with real numbers
 const stats = [
   { label: "Campaigns Funded", value: "50+", icon: Target },
   { label: "Successful Donotions", value: "521+", icon: Users },
@@ -63,7 +91,6 @@ const stats = [
   { label: "Countries Reached", value: "2+", icon: Globe },
 ];
 
-// Values data
 const values = [
   {
     icon: Shield,
@@ -90,7 +117,6 @@ const values = [
   },
 ];
 
-// Timeline data
 const timeline = [
   {
     year: "2020",
@@ -127,14 +153,13 @@ export default function AboutPage() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
       <Navbar />
 
-      {/* Hero Section */}
       <div className="relative bg-gradient-to-r from-green-600 to-[#104901] mt-16 text-white py-20">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-6">
             About ChainFundIt
           </h1>
           <p className="text-xl md:text-2xl text-white/90 max-w-4xl mx-auto mb-8">
-            We're on a mission to democratize fundraising and make it easier for
+            We&apos;re on a mission to democratize fundraising and make it easier for
             people to support causes they care about, anywhere in the world.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
@@ -155,7 +180,6 @@ export default function AboutPage() {
       </div>
 
       <div className="container mx-auto px-4 py-16">
-        {/* Our Story Section */}
         <div className="mb-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -215,7 +239,6 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Mission & Vision */}
         <div className="mb-20">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -263,7 +286,6 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Our Values */}
         <div className="mb-20">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -298,19 +320,17 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Timeline */}
         <div className="mb-20">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
               Our Journey
             </h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              From humble beginnings to global impact - here's how we've grown.
+              From humble beginnings to global impact - here&apos;s how we&apos;ve grown.
             </p>
           </div>
 
           <div className="relative">
-            {/* Timeline line */}
             <div className="absolute left-1/2 transform -translate-x-1/2 w-1 h-full bg-gradient-to-b from-green-600 to-blue-600 rounded-full"></div>
 
             <div className="space-y-12">
@@ -347,7 +367,6 @@ export default function AboutPage() {
                     </Card>
                   </div>
 
-                  {/* Timeline dot */}
                   <div className="absolute left-1/2 transform -translate-x-1/2 w-4 h-4 bg-white border-4 border-green-600 rounded-full"></div>
                 </div>
               ))}
@@ -355,7 +374,6 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Team Section */}
         <div className="mb-20">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">
@@ -371,38 +389,38 @@ export default function AboutPage() {
             {teamMembers.map((member) => (
               <Card
                 key={member.id}
-                className="text-center hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
+                className="hover:shadow-lg transition-all duration-200 hover:-translate-y-1"
               >
                 <CardContent className="p-6">
                   <div className="w-24 h-24 bg-gradient-to-br from-green-400 to-blue-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <span className="text-white font-bold text-xl">
+                    <span className="text-white font-bold text-xl text-center ">
                       {member.name
                         .split(" ")
                         .map((n) => n[0])
                         .join("")}
                     </span>
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-1 text-center">
                     {member.name}
                   </h3>
-                  <p className="text-green-600 font-medium mb-3">
+                  <p className="text-green-600 font-medium text-center mb-3">
                     {member.role}
                   </p>
-                  <p className="text-gray-600 text-sm">{member.bio}</p>
+                  <p className="text-gray-600 text-sm text-left">
+                    {member.bio}
+                  </p>
                 </CardContent>
               </Card>
             ))}
           </div>
         </div>
 
-        {/* Call to Action */}
         <div className="bg-gradient-to-r from-green-600 to-[#104901] rounded-2xl p-12 text-center text-white">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Ready to Make an Impact?
           </h2>
           <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Join chainfunders in making a difference through
-            ChainFundIt.
+            Join chainfunders in making a difference through ChainFundIt.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/create-campaign">

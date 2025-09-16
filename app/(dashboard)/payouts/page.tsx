@@ -30,6 +30,7 @@ interface CampaignPayout {
   targetAmount: number;
   currentAmount: number;
   totalRaised: number;
+  totalRaisedInNGN: number; // Amount in Naira
   status: string;
   createdAt: string;
   payoutSupported: boolean;
@@ -41,10 +42,14 @@ interface CampaignPayout {
 interface PayoutData {
   campaigns: CampaignPayout[];
   totalAvailableForPayout: number;
+  totalAvailableForPayoutInNGN: number; // Total available in Naira
+  totalRaisedInNGN: number; // Total raised in Naira
+  currencyBreakdown: { [key: string]: number }; // Breakdown by original currency
   summary: {
     totalCampaigns: number;
     campaignsWithPayouts: number;
     totalRaised: number;
+    totalRaisedInNGN: number; // Total raised in Naira
   };
 }
 
@@ -241,15 +246,46 @@ const PayoutsPage = () => {
           <p className="text-gray-600">
             Manage your campaign earnings and request payouts to your bank account.
           </p>
-          {geolocation && (
-            <div className="mt-2 text-sm text-gray-500">
-              <span className="inline-flex items-center gap-1">
-                <span>📍</span>
-                Showing amounts in your local currency ({geolocation.currency}) 
-                {geolocation.canSeeAllCurrencies ? ' - You can see all currencies' : ` - Only showing ${geolocation.currency} campaigns`}
-              </span>
+        </div>
+
+        {/* Summary Section */}
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200 mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-[#104901] mb-2">
+                Payouts Summary
+              </h2>
+              <p className="text-lg text-[#104901] opacity-80">
+                {payoutData.summary.totalCampaigns} campaign{payoutData.summary.totalCampaigns !== 1 ? 's' : ''} • {payoutData.summary.campaignsWithPayouts} ready for payout
+              </p>
+              {Object.keys(payoutData.currencyBreakdown).length > 1 && (
+                <div className="mt-2 text-sm text-[#104901] opacity-70">
+                  <p className="font-medium">Currency Breakdown:</p>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {Object.entries(payoutData.currencyBreakdown).map(([currency, amount]) => (
+                      <span key={currency} className="bg-white bg-opacity-50 px-2 py-1 rounded text-xs">
+                        {currency}: {formatCurrency(amount, currency)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+            <div className="text-right">
+              <p className="text-3xl font-bold text-[#104901]">
+                ₦{payoutData.totalRaisedInNGN.toLocaleString()}
+              </p>
+              <p className="text-sm text-[#104901] opacity-60">
+                Total Raised (NGN)
+              </p>
+              <p className="text-xl font-semibold text-[#104901] mt-2">
+                ₦{payoutData.totalAvailableForPayoutInNGN.toLocaleString()}
+              </p>
+              <p className="text-xs text-[#104901] opacity-60">
+                Available for Payout
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -257,16 +293,13 @@ const PayoutsPage = () => {
           <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-[#5F8555]">
-                Total Raised
+                Total Raised (NGN)
               </CardTitle>
               <TrendingUp className="h-4 w-4 text-[#104901]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-[#104901]">
-                <CurrencyDisplay 
-                  amount={payoutData.summary.totalRaised} 
-                  currency={geolocation?.currency || 'USD'} 
-                />
+                ₦{payoutData.summary.totalRaisedInNGN.toLocaleString()}
               </div>
               <p className="text-xs text-gray-500">
                 Across {payoutData.summary.totalCampaigns} campaigns
@@ -277,16 +310,13 @@ const PayoutsPage = () => {
           <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-[#5F8555]">
-                Available for Payout
+                Available for Payout (NGN)
               </CardTitle>
               <DollarSign className="h-4 w-4 text-[#104901]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-[#104901]">
-                <CurrencyDisplay 
-                  amount={payoutData.totalAvailableForPayout} 
-                  currency={geolocation?.currency || 'USD'} 
-                />
+                ₦{payoutData.totalAvailableForPayoutInNGN.toLocaleString()}
               </div>
               <p className="text-xs text-gray-500">
                 {payoutData.summary.campaignsWithPayouts} campaigns ready
@@ -340,7 +370,7 @@ const PayoutsPage = () => {
                       </CardTitle>
                       <div className="flex items-center gap-4 text-sm text-gray-600">
                         <span>Target: <CurrencyDisplay amount={campaign.targetAmount} currency={campaign.currencyCode} /></span>
-                        <span>Raised: <CurrencyDisplay amount={campaign.totalRaised} currency={campaign.currencyCode} /></span>
+                        <span>Raised: <CurrencyDisplay amount={campaign.totalRaised} currency={campaign.currencyCode} /> (₦{campaign.totalRaisedInNGN.toLocaleString()})</span>
                         <span>Progress: {Math.round((campaign.totalRaised / campaign.targetAmount) * 100)}%</span>
                       </div>
                     </div>
@@ -367,7 +397,7 @@ const PayoutsPage = () => {
                           <div className="flex items-center gap-2 text-green-600">
                             <CheckCircle className="h-5 w-5" />
                             <span className="text-sm font-medium">
-                              Payout Available: <CurrencyDisplay amount={campaign.totalRaised} currency={campaign.currencyCode} />
+                              Payout Available: <CurrencyDisplay amount={campaign.totalRaised} currency={campaign.currencyCode} /> (₦{campaign.totalRaisedInNGN.toLocaleString()})
                             </span>
                           </div>
                         ) : (

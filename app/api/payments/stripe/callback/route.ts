@@ -4,6 +4,12 @@ import { donations } from '@/lib/schema/donations';
 import { campaigns } from '@/lib/schema/campaigns';
 import { notifications } from '@/lib/schema/notifications';
 import { eq, sum, and } from 'drizzle-orm';
+import { 
+  DONATION_STATUS_CONFIG, 
+  getFailureReason, 
+  isDonationPending, 
+  isDonationFailed 
+} from '@/lib/utils/donation-status';
 
 // Helper function to update campaign currentAmount based on completed donations
 async function updateCampaignAmount(campaignId: string) {
@@ -116,23 +122,42 @@ export async function POST(request: NextRequest) {
 
     const donationRecord = donation[0];
 
-    // Update donation status based on payment status
+    // Update donation status based on payment status with enhanced logic
     let newStatus: 'pending' | 'completed' | 'failed' = 'pending';
+    let failureReason: string | undefined;
+    let retryAttempts = donationRecord.retryAttempts || 0;
     
     if (status === 'succeeded') {
       newStatus = 'completed';
-    } else if (status === 'requires_payment_method' || status === 'requires_confirmation' || status === 'requires_action') {
+    } else if (DONATION_STATUS_CONFIG.STRIPE_PENDING_STATES.includes(status)) {
       newStatus = 'pending';
+    } else if (DONATION_STATUS_CONFIG.STRIPE_FAILED_STATES.includes(status)) {
+      newStatus = 'failed';
+      failureReason = getFailureReason('stripe', status);
+      
+      // Increment retry attempts for failed payments
+      retryAttempts += 1;
+      
+      // If max retries exceeded, mark as permanently failed
+      if (retryAttempts >= DONATION_STATUS_CONFIG.MAX_RETRY_ATTEMPTS) {
+        failureReason = DONATION_STATUS_CONFIG.FAILURE_REASONS.MAX_RETRIES;
+      }
     } else {
       newStatus = 'failed';
+      failureReason = DONATION_STATUS_CONFIG.FAILURE_REASONS.TECHNICAL_ERROR;
     }
 
-    // Update the donation
+    // Update the donation with enhanced fields
     await db
       .update(donations)
       .set({
         paymentStatus: newStatus,
         paymentIntentId: paymentIntentId,
+        retryAttempts: retryAttempts,
+        failureReason: failureReason,
+        lastStatusUpdate: new Date(),
+        providerStatus: status,
+        providerError: status !== 'succeeded' ? `Stripe status: ${status}` : null,
       })
       .where(eq(donations.id, donationId));
 

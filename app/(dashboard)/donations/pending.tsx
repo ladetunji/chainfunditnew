@@ -4,7 +4,8 @@ import { useDonations } from "@/hooks/use-dashboard";
 import { formatCurrency } from "@/lib/utils/currency";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Clock, CreditCard, Smartphone } from "lucide-react";
+import { RefreshCw, Clock, CreditCard, Smartphone, AlertCircle, RotateCcw } from "lucide-react";
+import { isDonationPending, getStatusMessage, getNextRetryTime } from "@/lib/utils/donation-status";
 
 type Props = {};
 
@@ -42,8 +43,10 @@ const PendingDonations = (props: Props) => {
     );
   }
 
-  // The API already filters by 'pending' status, so we don't need to filter again
-  const pendingDonations = donations;
+  // Filter donations using enhanced pending logic
+  const pendingDonations = donations.filter(donation => 
+    isDonationPending(donation as any)
+  );
 
   if (pendingDonations.length === 0) {
     return (
@@ -146,8 +149,13 @@ const PendingDonations = (props: Props) => {
                   Pending
                 </Badge>
                 <p className="text-xs text-gray-500 mt-1">
-                  Waiting for payment completion
+                  {getStatusMessage(donation as any)}
                 </p>
+                {donation.retryAttempts && donation.retryAttempts > 0 && (
+                  <p className="text-xs text-orange-600 mt-1">
+                    Retry attempt {donation.retryAttempts} of 3
+                  </p>
+                )}
               </div>
             </div>
           </div>

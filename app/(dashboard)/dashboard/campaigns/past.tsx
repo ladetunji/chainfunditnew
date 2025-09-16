@@ -6,6 +6,9 @@ import Link from "next/link";
 import { Campaign, transformCampaign } from "./types";
 import { getCampaignStatus, getTimeRemaining } from "@/lib/utils/campaign-status";
 import { formatCurrency } from "@/lib/utils/currency";
+import { R2Image } from "@/components/ui/r2-image";
+import { EmojiFallbackImage } from "@/components/ui/emoji-fallback-image";
+import { needsEmojiFallback } from "@/lib/utils/campaign-emojis";
 
 type Props = {
   campaigns: Campaign[];
@@ -56,13 +59,21 @@ const PastCampaigns = ({ campaigns }: Props) => {
           className="border border-[#D9D9D9] bg-white py-4 pl-4 pr-6 flex justify-between items-start"
           style={{ boxShadow: "0px 4px 8px 0px #0000001A" }}
         >
-          <Image
-            src={transformedCampaign.image}
-            alt={transformedCampaign.title}
-            width={270}
-            height={190}
-            className="object-cover"
-          />
+          {needsEmojiFallback(transformedCampaign.image) ? (
+            <EmojiFallbackImage
+              category={campaign.reason || 'Uncategorized'}
+              title={transformedCampaign.title}
+              className="w-[270px] h-[190px]"
+            />
+          ) : (
+            <R2Image
+              src={transformedCampaign.image}
+              alt={transformedCampaign.title}
+              width={270}
+              height={190}
+              className="object-cover"
+            />
+          )}
           <div className="flex flex-col justify-end">
             <div className="flex items-center gap-2 mb-2">
               <h3 className="text-2xl font-medium">{transformedCampaign.title}</h3>

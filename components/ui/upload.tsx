@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { useFileUpload } from '@/hooks/use-upload';
 import { Plus, Image as LuImage } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface UploadProps {
   onUpload: (url: string) => void;
@@ -16,124 +17,49 @@ export function Upload({
   onUpload, 
   type, 
   accept = "image/*", 
-  maxSize = 5 * 1024 * 1024, // 5MB default
+  maxSize = 5 * 1024 * 1024,
   className,
   children,
   previewUrl
 }: UploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploadFile, isUploading, uploadError } = useFileUpload();
+  uploadError && toast.error(uploadError);
   const [localPreview, setLocalPreview] = useState<string>('');
 
-  // Log component initialization
-  React.useEffect(() => {
-    console.log('🎯 Upload component initialized with props:', {
-      type,
-      accept,
-      maxSize,
-      previewUrl: previewUrl ? 'Present' : 'None',
-      previewUrlValue: previewUrl,
-      hasOnUploadCallback: typeof onUpload === 'function'
-    });
-  }, []);
-
-  // Log when previewUrl prop changes
-  React.useEffect(() => {
-    console.log('🔄 previewUrl prop changed:', previewUrl);
-  }, [previewUrl]);
-
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('🚀 Upload process started');
     
     const file = e.target.files?.[0];
     if (!file) {
-      console.log('❌ No file selected');
       return;
     }
-
-    console.log('📁 File selected:', {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      sizeInMB: (file.size / 1024 / 1024).toFixed(2)
-    });
-
+  
     if (file.size > maxSize) {
-      console.log('❌ File too large:', {
-        fileSize: file.size,
-        maxSize: maxSize,
-        fileSizeMB: (file.size / 1024 / 1024).toFixed(2),
-        maxSizeMB: (maxSize / 1024 / 1024).toFixed(2)
-      });
-      alert(`File size must be less than ${maxSize / 1024 / 1024}MB`);
+      toast.error(`File size must be less than ${maxSize / 1024 / 1024}MB`);
       return;
     }
 
-    console.log('✅ File size validation passed');
-
-    // Create local preview immediately
-    console.log('🖼️ Creating local preview...');
     const localUrl = URL.createObjectURL(file);
     setLocalPreview(localUrl);
-    console.log('✅ Local preview created:', localUrl);
 
     try {
-      console.log('📤 Starting file upload to server...');
-      console.log('📤 Upload parameters:', {
-        fileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-        uploadType: type
-      });
-      
       const result = await uploadFile(file, type);
-      
-      console.log('📥 Upload result received:', result);
-      
       if (result && result.url) {
-        console.log('✅ Upload successful! Server URL:', result.url);
         onUpload(result.url);
-        console.log('🔄 Calling onUpload callback with URL:', result.url);
-        // Clear local preview once upload is complete
-        setLocalPreview('');
-        console.log('🧹 Local preview cleared');
       } else {
-        console.log('❌ Upload result is invalid:', result);
+        toast.error('Upload result is invalid');
       }
     } catch (error) {
-      console.error('❌ Upload error occurred:', error);
-      console.error('❌ Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        error: error
-      });
-      // Clear local preview on error
+      toast.error('Upload error occurred');
       setLocalPreview('');
-      console.log('🧹 Local preview cleared due to error');
     }
   };
 
-  const currentPreview = previewUrl || localPreview;
-
-  // Log component state changes
-  React.useEffect(() => {
-    console.log('🔄 Upload component state changed:', {
-      isUploading,
-      uploadError,
-      localPreview: localPreview ? 'Present' : 'None',
-      previewUrl: previewUrl ? 'Present' : 'None',
-      currentPreview: currentPreview ? 'Present' : 'None',
-      previewUrlValue: previewUrl,
-      localPreviewValue: localPreview,
-      currentPreviewValue: currentPreview
-    });
-  }, [isUploading, uploadError, localPreview, previewUrl, currentPreview]);
+  const currentPreview = localPreview || previewUrl;
 
   const handleClick = () => {
-    console.log('👆 Upload area clicked');
     fileInputRef.current?.click();
   };
-
   return (
     <div className={className}>
       <div className="relative">
@@ -157,10 +83,9 @@ export function Upload({
         >
         </label>
         
-        {/* Plus button positioned to match original design */}
         <button
           type="button"
-          className="w-8 md:w-[56px] h-8 md:h-[56px] bg-[#104901] flex items-center justify-center text-white absolute right-[118px] md:right-[160px] 2xl:right-[200px] bottom-6 md:bottom-11"
+          className="w-8 md:w-[56px] h-8 md:h-[56px] bg-[#104901] flex items-center justify-center text-white absolute right-[118px] md:right-[200px] 2xl:right-[200px] bottom-6 md:bottom-11"
           onClick={handleClick}
           disabled={isUploading}
         >
@@ -173,11 +98,6 @@ export function Upload({
           <p className="text-sm text-gray-600">Uploading...</p>
         </div>
       )}
-      
-      {uploadError && (
-        <p className="text-red-500 text-sm mt-2 text-center">{uploadError}</p>
-      )}
-      
       {children}
     </div>
   );

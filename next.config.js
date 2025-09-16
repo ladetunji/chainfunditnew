@@ -16,6 +16,8 @@ const nextConfig = {
     minimumCacheTTL: 60,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    // Disable image optimization for R2 URLs to avoid 401 errors
+    unoptimized: false,
   },
 
   // Compression
