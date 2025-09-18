@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { campaigns, users, donations } from '@/lib/schema';
-import { eq, and, count, sum } from 'drizzle-orm';
+import { eq, and, count, sum, desc, asc } from 'drizzle-orm';
 import { parse } from 'cookie';
 import { verifyUserJWT } from '@/lib/auth';
 import { generateSlug, generateUniqueSlug } from '@/lib/utils/slug';
@@ -70,6 +70,7 @@ export async function GET(request: NextRequest) {
       .from(campaigns)
       .leftJoin(users, eq(campaigns.creatorId, users.id))
       .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(campaigns.isActive), desc(campaigns.createdAt))
       .limit(limit)
       .offset(offset);
 
