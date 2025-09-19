@@ -639,7 +639,7 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
               >
                 Updates
                 {updates.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-[#104901] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center border border-white">
+                  <span className="absolute -top-1 -right-1 bg-[#104901] text-white text-sm rounded-full w-6 h-6 flex items-center justify-center border border-white">
                     {updates.length}
                   </span>
                 )}
@@ -654,7 +654,7 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
               >
                 Documents
                 {campaignDocuments.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-[#104901] text-white text-xs rounded-full w-5 h-5 flex items-center justify-center border border-white">
+                  <span className="absolute -top-1 -right-1 bg-[#104901] text-white text-sm rounded-full w-6 h-6 flex items-center justify-center border border-white">
                     {campaignDocuments.length}
                   </span>
                 )}

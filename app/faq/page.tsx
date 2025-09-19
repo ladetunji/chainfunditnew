@@ -388,7 +388,7 @@ export default function FAQPage() {
                 variant="outline"
                 className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white"
               >
-                support@chainfundit.com
+                campaigns@chainfundit.com
               </Button>
             </div>
 
@@ -402,7 +402,7 @@ export default function FAQPage() {
                 variant="outline"
                 className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white"
               >
-                +1 (555) 123-4567
+               +44 20 3838 0360
               </Button>
             </div>
 

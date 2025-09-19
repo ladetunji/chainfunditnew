@@ -81,8 +81,16 @@ const Main = (props: Props) => {
     }
   });
 
+  // If no campaigns match the specific filter, fall back to showing active campaigns
+  const displayCampaigns =
+    filteredCampaigns.length > 0
+      ? filteredCampaigns.slice(0, 3)
+      : campaigns
+          .filter((campaign) => campaign.status === "active")
+          .slice(0, 3);
+
   // Transform campaigns data to match the expected format
-  const cardDetails = filteredCampaigns.map((campaign) => {
+  const cardDetails = displayCampaigns.map((campaign) => {
     return {
       id: campaign.id,
       slug: campaign.slug,
@@ -145,19 +153,19 @@ const Main = (props: Props) => {
                 value="live campaigns"
                 className="capitalize cursor-pointer"
               >
-                Live campaigns anywhere (worldwide)
+                Live campaigns anywhere (Worldwide)
               </SelectItem>
               <SelectItem
                 value="need momentum"
                 className="capitalize cursor-pointer"
               >
-                Need momentum (campaigns between 0-10%)
+                Need momentum (Campaigns between 0-10%)
               </SelectItem>
               <SelectItem
                 value="close to target"
                 className="capitalize cursor-pointer"
               >
-                Close to target (campaigns above 90%)
+                Close to target (Campaigns above 90%)
               </SelectItem>
             </SelectContent>
           </Select>
@@ -225,7 +233,7 @@ const Main = (props: Props) => {
           {/* Campaign Cards */}
           {!campaignsLoading && !campaignsError && cardDetails.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-8">
-              {cardDetails.slice(0, 3).map((card, idx) => (
+              {cardDetails.map((card, idx) => (
                 <div
                   key={card.id}
                   className="group relative overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 cursor-pointer"

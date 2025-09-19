@@ -39,6 +39,7 @@ interface PublicCampaignFilters {
   reason?: string;
   limit?: number;
   offset?: number;
+  filter?: string; // Add filter parameter for frontend filtering
 }
 
 export function usePublicCampaigns() {
@@ -46,7 +47,7 @@ export function usePublicCampaigns() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<PublicCampaignFilters>({ 
-    limit: 3, 
+    limit: 100, // Fetch more campaigns to allow proper filtering
     offset: 0 
   });
 
