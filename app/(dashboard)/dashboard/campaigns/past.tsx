@@ -52,11 +52,11 @@ const PastCampaigns = ({ campaigns }: Props) => {
   return (
     <div className="flex flex-col gap-6 font-source 2xl:container 2xl:mx-auto">
       {transformedCampaigns.map((transformedCampaign, index) => {
-        const campaign = campaigns[index]; // Get original campaign data
+        const campaign = campaigns[index]; 
         return (
         <div
           key={transformedCampaign.id}
-          className="border border-[#D9D9D9] bg-white py-4 pl-4 pr-6 flex justify-between items-start"
+          className="border border-[#D9D9D9] bg-white py-4 pl-4 pr-6 flex gap-20 items-start"
           style={{ boxShadow: "0px 4px 8px 0px #0000001A" }}
         >
           {needsEmojiFallback(transformedCampaign.image) ? (

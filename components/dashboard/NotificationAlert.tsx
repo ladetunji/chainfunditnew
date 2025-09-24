@@ -15,11 +15,6 @@ export function NotificationAlert({ className }: NotificationAlertProps) {
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
-  // Debug logging
-  React.useEffect(() => {
-    console.log('NotificationAlert mounted, notifications:', notifications.length);
-  }, [notifications]);
-
   // Show toast for failed donation notifications
   useEffect(() => {
     const failedDonationNotifications = notifications.filter(
@@ -94,15 +89,14 @@ export function NotificationAlert({ className }: NotificationAlertProps) {
       {/* Notification Bell */}
       <Button
         variant="ghost"
-        size="sm"
+        size="lg"
         onClick={() => {
-          console.log('Notification bell clicked, isOpen:', isOpen);
           setIsOpen(!isOpen);
         }}
         className="relative p-2 hover:bg-gray-100 cursor-pointer"
         aria-label="Notifications"
       >
-        <Bell color="#757575" size={24} />
+        <Bell color="#757575" size={26} />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
             {unreadCount > 9 ? "9+" : unreadCount}
@@ -130,7 +124,7 @@ export function NotificationAlert({ className }: NotificationAlertProps) {
               {unreadCount > 0 && (
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="lg"
                   onClick={markAllAsRead}
                   className="text-xs text-[#5F8555] hover:text-[#104901]"
                 >

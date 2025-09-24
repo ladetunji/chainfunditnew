@@ -20,10 +20,23 @@ export const users = pgTable('users', {
   tiktok: varchar('tiktok', { length: 255 }),
   youtube: varchar('youtube', { length: 255 }),
   bio: text('bio'),
+  // Account details for payouts
+  accountNumber: varchar('account_number', { length: 20 }),
+  bankCode: varchar('bank_code', { length: 10 }),
+  bankName: varchar('bank_name', { length: 100 }),
+  accountName: varchar('account_name', { length: 255 }),
+  accountVerified: boolean('account_verified').default(false),
+  accountVerificationDate: timestamp('account_verification_date'),
+  accountLocked: boolean('account_locked').default(false),
+  accountChangeRequested: boolean('account_change_requested').default(false),
+  accountChangeReason: text('account_change_reason'),
 }, (table) => ({
   emailIdx: index('users_email_idx').on(table.email),
   phoneIdx: index('users_phone_idx').on(table.phone),
   verifiedIdx: index('users_verified_idx').on(table.isVerified),
+  accountNumberIdx: index('users_account_number_idx').on(table.accountNumber),
+  accountVerifiedIdx: index('users_account_verified_idx').on(table.accountVerified),
+  accountLockedIdx: index('users_account_locked_idx').on(table.accountLocked),
 }));
 
 // Relations will be defined later to avoid circular dependencies

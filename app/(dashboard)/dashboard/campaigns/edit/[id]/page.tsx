@@ -160,10 +160,7 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
 
   const handleImageUpload = async (file: File) => {
     try {
-      console.log('Starting image upload for file:', file.name, file.size);
       const result = await uploadFile(file, 'imageUpload');
-      console.log('Upload result:', result);
-      console.log('Setting coverImageUrl to:', result.url);
       
       setFormData(prev => ({
         ...prev,
@@ -172,9 +169,7 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
       setNewCoverImage(file);
       setPreviewImage(URL.createObjectURL(file));
       
-      console.log('Image upload completed successfully');
     } catch (error) {
-      console.error('Image upload failed:', error);
     }
   };
 
@@ -200,8 +195,6 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
     setError(null);
 
     try {
-      console.log('Submitting form data:', formData);
-      console.log('Cover image URL being sent:', formData.coverImageUrl);
       
       const response = await fetch(`/api/campaigns/${campaignId}`, {
         method: "PUT",
@@ -225,7 +218,6 @@ export default function EditCampaignPage({ params }: { params: Promise<{ id: str
       router.push(`/campaign/${campaignId}`);
       
     } catch (err) {
-      console.error("Error updating campaign:", err);
       setError(err instanceof Error ? err.message : "Failed to update campaign");
     } finally {
       setSaving(false);

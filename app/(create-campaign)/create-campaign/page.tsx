@@ -56,8 +56,9 @@ import Image from "next/image";
 import { useShortenLink } from "@/hooks/use-shorten-link";
 import { useFileUpload } from "@/hooks/use-upload";
 import { toast } from "sonner";
-import { Upload } from '@/components/ui/upload';
+import { Upload } from "@/components/ui/upload";
 import ClientToaster from "@/components/ui/client-toaster";
+import { Switch } from "@/components/ui/switch";
 
 const reasons = [
   { text: "Business", icon: <Briefcase /> },
@@ -109,6 +110,8 @@ type CampaignFormData = {
   duration: string;
   video: string;
   story: string;
+  isChained: boolean;
+  chainerCommissionRate: number;
 };
 
 // S = Small, M = Medium, L = Large content length options
@@ -147,6 +150,8 @@ export default function CreateCampaignPage() {
     duration: "",
     video: "",
     story: "",
+    isChained: false,
+    chainerCommissionRate: 0,
   });
 
   // Add upload URLs state
@@ -157,79 +162,65 @@ export default function CreateCampaignPage() {
   });
 
   const handleCoverImageUpload = (url: string) => {
-    console.log('🖼️ Cover image uploaded successfully:', url);
-    setUploadedFiles(prev => {
+    setUploadedFiles((prev) => {
       const newState = { ...prev, coverImageUrl: url };
-      console.log('📸 Updated uploadedFiles state:', newState);
       return newState;
     });
-    console.log('📸 Cover image URL updated');
   };
 
   const handleImageFileSelect = async (files: FileList | null) => {
     if (!files) return;
-    
-    console.log('📁 Image files selected:', files.length);
-    
+
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      console.log(`📤 Uploading image ${i + 1}/${files.length}:`, file.name);
-      
+
       try {
-        const result = await uploadFile(file, 'imageUpload');
+        const result = await uploadFile(file, "imageUpload");
         if (result && result.url) {
-          console.log('✅ Image uploaded successfully:', result.url);
-          setUploadedFiles(prev => ({ 
-            ...prev, 
-            imageUrls: [...prev.imageUrls, result.url] 
+          setUploadedFiles((prev) => ({
+            ...prev,
+            imageUrls: [...prev.imageUrls, result.url],
           }));
         }
       } catch (error) {
-        console.error('❌ Image upload failed:', error);
       }
     }
   };
 
   const handleDocumentFileSelect = async (files: FileList | null) => {
     if (!files) return;
-    
-    console.log('📁 Document files selected:', files.length);
-    
+
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      console.log(`📤 Uploading document ${i + 1}/${files.length}:`, file.name);
-      
+
       try {
-        const result = await uploadFile(file, 'documentUpload');
+        const result = await uploadFile(file, "documentUpload");
         if (result && result.url) {
-          console.log('✅ Document uploaded successfully:', result.url);
-          setUploadedFiles(prev => ({ 
-            ...prev, 
-            documentUrls: [...prev.documentUrls, result.url] 
+          setUploadedFiles((prev) => ({
+            ...prev,
+            documentUrls: [...prev.documentUrls, result.url],
           }));
         }
       } catch (error) {
-        console.error('❌ Document upload failed:', error);
       }
     }
   };
 
   const handleRemoveImage = (index: number) => {
-    console.log('🗑️ Removing image at index:', index);
-    setUploadedFiles(prev => ({
+    setUploadedFiles((prev) => ({
       ...prev,
-      imageUrls: prev.imageUrls.filter((_, i) => i !== index)
+      imageUrls: prev.imageUrls.filter((_, i) => i !== index),
     }));
   };
 
   const handleRemoveDocument = (index: number) => {
-    console.log('🗑️ Removing document at index:', index);
-    setUploadedFiles(prev => ({
+    setUploadedFiles((prev) => ({
       ...prev,
-      documentUrls: prev.documentUrls.filter((_, i) => i !== index)
+      documentUrls: prev.documentUrls.filter((_, i) => i !== index),
     }));
   };
-
 
   const handleFieldChange = (field: keyof CampaignFormData, value: any) => {
     if (field === "currency") {
@@ -238,7 +229,6 @@ export default function CreateCampaignPage() {
       setFormData((prev) => ({ ...prev, [field]: value }));
     }
   };
-
 
   const generateAiSuggestion = async () => {
     const prompt = aiInstruction.trim();
@@ -270,22 +260,24 @@ export default function CreateCampaignPage() {
 
   const handleSubmit = async () => {
     setIsLoading(true);
-    
+
     try {
       const payload = new FormData();
 
       // Map form fields to API expected field names
       payload.append("title", formData.title);
       payload.append("subtitle", formData.subtitle || "");
-      payload.append("description", formData.story); // story -> description
+      payload.append("description", formData.story); 
       payload.append("reason", formData.reason);
       payload.append("fundraisingFor", formData.fundraisingFor);
       payload.append("duration", formData.duration || "");
-      payload.append("videoUrl", formData.video || ""); // video -> videoUrl
-      payload.append("goalAmount", formData.goal.toString()); // goal -> goalAmount
+      payload.append("videoUrl", formData.video || ""); 
+      payload.append("goalAmount", formData.goal.toString()); 
       payload.append("currency", formData.currency);
-      payload.append("minimumDonation", "1"); // Default minimum donation
-      payload.append("chainerCommissionRate", "5"); // Default commission rate
+      payload.append("minimumDonation", "1"); 
+      payload.append("chainerCommissionRate", formData.chainerCommissionRate.toString()); // Use form data
+      payload.append("isChained", formData.isChained.toString()); 
+      payload.append("visibility", formData.visibility); 
 
       // Add cover image URL with fallback to first gallery image
       if (uploadedFiles.coverImageUrl) {
@@ -294,12 +286,15 @@ export default function CreateCampaignPage() {
         // Use first gallery image as cover image fallback
         payload.append("coverImageUrl", uploadedFiles.imageUrls[0]);
       }
-    
+
       // Convert image URLs to JSON string for galleryImages
       if (uploadedFiles.imageUrls.length > 0) {
-        payload.append("galleryImages", JSON.stringify(uploadedFiles.imageUrls));
+        payload.append(
+          "galleryImages",
+          JSON.stringify(uploadedFiles.imageUrls)
+        );
       }
-      
+
       // Convert document URLs to JSON string for documents
       if (uploadedFiles.documentUrls.length > 0) {
         payload.append("documents", JSON.stringify(uploadedFiles.documentUrls));
@@ -313,7 +308,6 @@ export default function CreateCampaignPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        console.error("Campaign creation failed:", data);
         throw new Error(data.error || "Failed to create campaign");
       }
       const campaignUrl = `${window.location.origin}/campaign/${data.data.slug}`;
@@ -329,7 +323,6 @@ export default function CreateCampaignPage() {
       });
       setShowSuccessModal(true);
     } catch (err) {
-      console.error("Error creating campaign:", err);
       alert("Failed to create campaign. Please try again.");
     } finally {
       setIsLoading(false);
@@ -358,8 +351,7 @@ export default function CreateCampaignPage() {
 
   const handleShareCampaign = (platform: string) => {
     const campaignUrl =
-      createdCampaign?.shortUrl ||
-      `chainfund.it/${createdCampaign?.slug}`;
+      createdCampaign?.shortUrl || `chainfund.it/${createdCampaign?.slug}`;
     const shareText = `Check out my campaign: ${formData.title}`;
 
     let shareUrl = "";
@@ -396,19 +388,19 @@ export default function CreateCampaignPage() {
         {/* Step 1 */}
         {step === 1 && (
           <div className="w-full flex md:flex-row flex-col gap-5 md:gap-10">
-              {/* Left Side: Image Upload */}
-              <div className="w-full md:w-2/5 flex flex-col gap-4">
-                <Upload
-                  type="imageUpload"
-                  onUpload={handleCoverImageUpload}
-                  accept="image/*"
-                  previewUrl={uploadedFiles.coverImageUrl}
-                />
-                
-                <p className="font-medium text-sm md:text-xl text-[#104901]">
-                  Upload your main campaign image
-                </p>
-              </div>
+            {/* Left Side: Image Upload */}
+            <div className="w-full md:w-2/5 flex flex-col gap-4">
+              <Upload
+                type="imageUpload"
+                onUpload={handleCoverImageUpload}
+                accept="image/*"
+                previewUrl={uploadedFiles.coverImageUrl}
+              />
+
+              <p className="font-medium text-sm md:text-xl text-[#104901]">
+                Upload your main campaign image
+              </p>
+            </div>
 
             <div className="md:w-3/5 w-full flex flex-col gap-3">
               {/* Campaign Title */}
@@ -640,6 +632,53 @@ export default function CreateCampaignPage() {
                 ))}
               </div>
             </section>
+            <section className="space-y-2">
+              <p className="font-semibold text-[28px] text-[#104901]">
+                Do you want your campaign to be chained?
+              </p>
+              <section className="flex gap-2 items-center">
+                <Switch
+                  checked={formData.isChained}
+                  onCheckedChange={() =>
+                    handleFieldChange("isChained", !formData.isChained)
+                  }
+                />
+                <p className="font-normal text-base text-[#5F8555]">
+                  Yes, I want my campaign to be chained
+                </p>
+              </section>
+              <section className="flex gap-2 items-center">
+                <Switch
+                  checked={!formData.isChained}
+                  onCheckedChange={() =>
+                    handleFieldChange("isChained", !formData.isChained)
+                  }
+                />
+                <p className="font-normal text-base text-[#5F8555]">
+                  No, I don't want my campaign to be chained
+                </p>
+              </section>
+              <p className="font-medium text-xs text-[#5F8555] my-2">
+                Note: Chainers will receive a percentage of the proceeds from
+                the campaign.
+              </p>
+            </section>
+
+            {formData.isChained && (
+              <section className=" space-y-2">
+                <p className="font-semibold text-[28px] text-[#104901]">
+                  What percentage of the proceeds will chainers get?
+                </p>
+                <input
+                  type="number"
+                  value={formData.chainerCommissionRate}
+                  onChange={(e) =>
+                    handleFieldChange("chainerCommissionRate", +e.target.value)
+                  }
+                  className="w-[300px] p-3 rounded-xl bg-[#E5ECDE] font-medium text-lg md:text-3xl text-[#5F8555] placeholder:text-[#5F8555] outline-none"
+                />
+              </section>
+            )}
           </div>
         )}
 
@@ -769,7 +808,8 @@ export default function CreateCampaignPage() {
                 {uploadedFiles.documentUrls.length > 0 ? (
                   uploadedFiles.documentUrls.map((url, index) => {
                     // Extract filename from URL
-                    const filename = url.split('/').pop() || `document-${index}`;
+                    const filename =
+                      url.split("/").pop() || `document-${index}`;
                     return (
                       <div
                         key={index}

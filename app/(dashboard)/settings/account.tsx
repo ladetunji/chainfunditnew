@@ -127,7 +127,7 @@ const Account = (props: Props) => {
               style={{
                 backgroundImage: preview
                   ? `url(${preview})`
-                  : `url('/images/user-profile.png')`,
+                  : ``,
               }}
               title="Upload profile image"
             >

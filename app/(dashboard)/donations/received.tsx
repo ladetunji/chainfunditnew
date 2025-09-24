@@ -9,7 +9,6 @@ import { CreditCard, Smartphone, CheckCircle, ChevronDown } from "lucide-react";
 type Props = {};
 
 const ReceivedDonations = (props: Props) => {
-  console.log('ReceivedDonations component rendered');
   const [currentPage, setCurrentPage] = useState(1);
   const { donations, loading, error, pagination, refreshDonations } = useDonations('completed', currentPage);
   const { stats } = useDashboard();

@@ -34,12 +34,35 @@ export async function POST(request: NextRequest) {
     // Check if donation is retryable
     if (!isRetryable(donationRecord)) {
       const nextRetryTime = getNextRetryTime(donationRecord);
+      const retryAttempts = donationRecord.retryAttempts || 0;
+      const lastUpdate = donationRecord.lastStatusUpdate || donationRecord.createdAt;
+      const now = new Date();
+      const lastUpdateTime = new Date(lastUpdate);
+      const timeSinceLastUpdate = now.getTime() - lastUpdateTime.getTime();
+      const cooldownTime = 24 * 60 * 60 * 1000; // 24 hours
+      
+      console.log('❌ Donation not retryable:', {
+        donationId,
+        retryAttempts,
+        maxAttempts: 3,
+        timeSinceLastUpdate: timeSinceLastUpdate / (1000 * 60 * 60), // hours
+        cooldownTime: cooldownTime / (1000 * 60 * 60), // hours
+        failureReason: donationRecord.failureReason,
+        paymentStatus: donationRecord.paymentStatus
+      });
+      
       return NextResponse.json(
         { 
           success: false, 
           error: 'Donation cannot be retried',
           nextRetryTime: nextRetryTime?.toISOString(),
-          reason: donationRecord.failureReason || 'Maximum retry attempts exceeded'
+          reason: donationRecord.failureReason || 'Maximum retry attempts exceeded',
+          details: {
+            retryAttempts,
+            maxAttempts: 3,
+            timeSinceLastUpdate: Math.round(timeSinceLastUpdate / (1000 * 60 * 60)), // hours
+            cooldownRequired: Math.round(cooldownTime / (1000 * 60 * 60)) // hours
+          }
         },
         { status: 400 }
       );
@@ -55,6 +78,14 @@ export async function POST(request: NextRequest) {
         providerError: null,
       })
       .where(eq(donations.id, donationId));
+
+    console.log('✅ Donation retry initiated:', {
+      donationId,
+      retryAttempts: donationRecord.retryAttempts || 0,
+      failureReason: donationRecord.failureReason,
+      amount: donationRecord.amount,
+      currency: donationRecord.currency
+    });
 
     // TODO: Implement actual payment retry logic here
     // This would involve:

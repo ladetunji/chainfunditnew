@@ -100,21 +100,6 @@ export function CampaignCard({ campaign, viewMode, geolocation, convertedAmounts
   const getStatusDisplayText = (status: string, closedAt?: string) => {
     switch (status) {
       case 'closed':
-        if (closedAt) {
-          const closedDate = new Date(closedAt);
-          const now = new Date();
-          const daysSinceClosed = Math.floor((now.getTime() - closedDate.getTime()) / (1000 * 60 * 60 * 24));
-          
-          if (daysSinceClosed === 0) {
-            return 'Closed Today';
-          } else if (daysSinceClosed === 1) {
-            return 'Closed Yesterday';
-          } else if (daysSinceClosed < 7) {
-            return `Closed ${daysSinceClosed} days ago`;
-          } else {
-            return `Closed ${closedDate.toLocaleDateString()}`;
-          }
-        }
         return 'Closed';
       case 'active':
         return 'Active';
@@ -241,7 +226,7 @@ export function CampaignCard({ campaign, viewMode, geolocation, convertedAmounts
 
   // Grid view
   return (
-    <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
+    <div className="bg-white h-fit rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group">
       {/* Image */}
       <div className="relative">
         {needsEmojiFallback(campaign.coverImageUrl) ? (
@@ -275,10 +260,10 @@ export function CampaignCard({ campaign, viewMode, geolocation, convertedAmounts
       <div className="p-4">
         <div className="mb-3">
           <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2">
-            {campaign.title.slice(0, 40)}...
+            {campaign.title.slice(0, 20)}...
           </h3>
           <p className="text-gray-600 text-sm line-clamp-2 mb-3">
-            {campaign.description}
+            {campaign.description.slice(0, 30)}...
           </p>
         </div>
 

@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { users, campaigns, chainers, donations } from '@/lib/schema';
-import { eq, and, desc, count, sum } from 'drizzle-orm';
-import { parse } from 'cookie';
-import { verifyUserJWT } from '@/lib/auth';
+import { users } from '@/lib/schema/users';
+import { chainers } from '@/lib/schema/chainers';
+import { campaigns } from '@/lib/schema/campaigns';
+import { donations } from '@/lib/schema/donations';
+import { eq, and, desc } from 'drizzle-orm';
+import { getUserCommissionStats } from '@/lib/utils/commission-calculation';
 
 async function getUserFromRequest(request: NextRequest) {
-  const cookie = request.headers.get('cookie') || '';
-  const cookies = parse(cookie);
-  const token = cookies['auth_token'];
+  const token = request.headers.get('authorization')?.replace('Bearer ', '');
   if (!token) return null;
-  const userPayload = verifyUserJWT(token);
-  if (!userPayload || !userPayload.email) return null;
+
+  const userPayload = JSON.parse(atob(token.split('.')[1]));
   return userPayload.email;
 }
 
@@ -30,36 +30,8 @@ export async function GET(request: NextRequest) {
 
     const userId = user[0].id;
 
-    // Get user's chaining activity
-    const chainingActivity = await db
-      .select({
-        id: chainers.id,
-        campaignId: chainers.campaignId,
-        referralCode: chainers.referralCode,
-        totalRaised: chainers.totalRaised,
-        totalReferrals: chainers.totalReferrals,
-        commissionEarned: chainers.commissionEarned,
-        createdAt: chainers.createdAt,
-        campaignTitle: campaigns.title,
-        campaignCoverImage: campaigns.coverImageUrl,
-        campaignGoal: campaigns.goalAmount,
-        campaignCurrent: campaigns.currentAmount,
-        campaignCurrency: campaigns.currency
-      })
-      .from(chainers)
-      .leftJoin(campaigns, eq(chainers.campaignId, campaigns.id))
-      .where(eq(chainers.userId, userId))
-      .orderBy(desc(chainers.createdAt));
-
-    // Get total chaining stats
-    const totalStats = await db
-      .select({
-        totalChained: count(chainers.id),
-        totalEarnings: sum(chainers.commissionEarned),
-        totalDonations: sum(chainers.totalRaised)
-      })
-      .from(chainers)
-      .where(eq(chainers.userId, userId));
+    // Get user's chaining data using the commission calculation utility
+    const chainingData = await getUserCommissionStats(userId);
 
     // Get recent donations through chaining
     const recentChainedDonations = await db
@@ -71,7 +43,7 @@ export async function GET(request: NextRequest) {
         isAnonymous: donations.isAnonymous,
         createdAt: donations.createdAt,
         campaignTitle: campaigns.title,
-        donorName: users.fullName
+        donorName: users.fullName,
       })
       .from(donations)
       .leftJoin(campaigns, eq(donations.campaignId, campaigns.id))
@@ -83,15 +55,6 @@ export async function GET(request: NextRequest) {
       .orderBy(desc(donations.createdAt))
       .limit(10);
 
-    const chainingWithStats = chainingActivity.map(chain => ({
-      ...chain,
-      totalEarnings: Number(chain.commissionEarned || 0),
-      totalDonations: Number(chain.totalRaised || 0),
-      campaignGoal: Number(chain.campaignGoal),
-      campaignCurrent: Number(chain.campaignCurrent),
-      progressPercentage: Math.min(100, Math.round((Number(chain.campaignCurrent) / Number(chain.campaignGoal)) * 100))
-    }));
-
     const recentDonationsWithStats = recentChainedDonations.map(donation => ({
       ...donation,
       amount: Number(donation.amount),
@@ -100,16 +63,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      chaining: chainingWithStats,
+      chaining: chainingData.chainers,
       recentDonations: recentDonationsWithStats,
-      stats: {
-        totalChained: Number(totalStats[0]?.totalChained || 0),
-        totalEarnings: Number(totalStats[0]?.totalEarnings || 0),
-        totalDonations: Number(totalStats[0]?.totalDonations || 0)
-      }
+      stats: chainingData.stats
     });
   } catch (error) {
     console.error('User chaining error:', error);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
-} 
+}

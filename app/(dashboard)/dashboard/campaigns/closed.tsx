@@ -24,22 +24,7 @@ const ClosedCampaigns = ({ campaigns }: Props) => {
   const transformedCampaigns = campaigns.map(transformCampaign);
 
   const getClosedReason = (campaign: Campaign) => {
-    if (!campaign.closedAt) return 'Closed';
-    
-    const closedDate = new Date(campaign.closedAt);
-    const now = new Date();
-    const daysSinceClosed = Math.floor((now.getTime() - closedDate.getTime()) / (1000 * 60 * 60 * 24));
-    
-    // Check if campaign reached its goal
-    const progressPercentage = Math.round((campaign.currentAmount / campaign.goalAmount) * 100);
-    
-    if (progressPercentage >= 100) {
-      return 'Goal Reached';
-    } else if (daysSinceClosed <= 1) {
-      return 'Recently Closed';
-    } else {
-      return 'Closed';
-    }
+    return 'Closed';
   };
 
   const getClosedIcon = (campaign: Campaign) => {

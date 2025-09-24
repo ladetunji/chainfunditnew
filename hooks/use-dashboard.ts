@@ -124,7 +124,6 @@ export function useDashboard() {
         error: null,
       });
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
       setData(prev => ({
         ...prev,
         loading: false,
@@ -166,7 +165,6 @@ export function useCampaigns() {
         setError(data.error || 'Failed to load campaigns');
       }
     } catch (error) {
-      console.error('Error fetching campaigns:', error);
       setError('Failed to load campaigns');
     } finally {
       setLoading(false);
@@ -207,10 +205,8 @@ export function useDonations(status: string = 'all', page: number = 1) {
         limit: '10',
       });
 
-      console.log(`Fetching donations with status: ${status}, page: ${page}`);
       const response = await fetch(`/api/dashboard/donations?${params}`);
       const data = await response.json();
-      console.log(`Donations fetched for status ${status}:`, data);
 
       if (data.success) {
         setDonations(data.donations);
@@ -219,7 +215,6 @@ export function useDonations(status: string = 'all', page: number = 1) {
         setError(data.error || 'Failed to load donations');
       }
     } catch (error) {
-      console.error('Error fetching donations:', error);
       setError('Failed to load donations');
     } finally {
       setLoading(false);

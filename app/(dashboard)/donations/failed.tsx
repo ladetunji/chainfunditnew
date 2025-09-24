@@ -10,7 +10,6 @@ import { isDonationFailed, getStatusMessage, isRetryable, getNextRetryTime } fro
 type Props = {};
 
 const FailedDonations = (props: Props) => {
-  console.log('FailedDonations component rendered');
   const { donations, loading, error, refreshDonations } = useDonations('failed');
   const [refreshing, setRefreshing] = useState(false);
   const [retryingDonation, setRetryingDonation] = useState<string | null>(null);

@@ -14,7 +14,6 @@ import { HandCoins, CheckCircle, XCircle } from 'lucide-react';
 
 // Initialize Stripe
 const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-console.log('Stripe publishable key:', stripePublishableKey ? 'Set' : 'Missing');
 
 // Only initialize Stripe if we have a valid key
 const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
@@ -52,12 +51,6 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
-
-  // Debug Stripe loading
-  useEffect(() => {
-    console.log('Stripe loaded:', !!stripe);
-    console.log('Elements loaded:', !!elements);
-  }, [stripe, elements]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

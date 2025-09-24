@@ -10,7 +10,6 @@ import { isDonationPending, getStatusMessage, getNextRetryTime } from "@/lib/uti
 type Props = {};
 
 const PendingDonations = (props: Props) => {
-  console.log('PendingDonations component rendered');
   const { donations, loading, error, refreshDonations } = useDonations('pending');
   const [refreshing, setRefreshing] = useState(false);
 

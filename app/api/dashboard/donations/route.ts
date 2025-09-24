@@ -37,7 +37,6 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = (page - 1) * limit;
 
-    console.log(`API: Fetching donations for user ${userId} with status: ${status}, page: ${page}`);
 
     // Get user's campaigns first
     const userCampaigns = await db
@@ -75,28 +74,7 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(donations.paymentStatus, dbStatus));
     }
     const whereClause = conditions.length > 1 ? and(...conditions) : conditions[0];
-    
-    console.log(`API: Where clause conditions:`, {
-      campaignIds: campaignIds.length,
-      status,
-      statusFilter: status !== 'all' ? status : 'all'
-    });
-
-    // Debug: Get all donations for this user to see what's in the database
-    const allDonationsDebug = await db
-      .select({
-        id: donations.id,
-        paymentStatus: donations.paymentStatus,
-        amount: donations.amount,
-        createdAt: donations.createdAt,
-      })
-      .from(donations)
-      .where(inArray(donations.campaignId, campaignIds))
-      .orderBy(desc(donations.createdAt));
-    
-    console.log(`API: All donations for user's campaigns (${allDonationsDebug.length} total):`, 
-      allDonationsDebug.map(d => ({ id: d.id, status: d.paymentStatus, amount: d.amount })));
-
+ 
     // Get donations received by user's campaigns
     const receivedDonations = await db
       .select({
@@ -140,8 +118,6 @@ export async function GET(request: NextRequest) {
       isSuccessful: donation.paymentStatus === 'completed'
     }));
 
-    console.log(`API: Returning ${donationsWithStats.length} donations for status ${status}:`, 
-      donationsWithStats.map(d => ({ id: d.id, status: d.paymentStatus })));
 
     return NextResponse.json({ 
       success: true, 
@@ -154,7 +130,6 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('User donations error:', error);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 } 

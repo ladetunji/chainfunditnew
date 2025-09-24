@@ -176,7 +176,12 @@ export function isRetryable(donation: DonationStatusCriteria): boolean {
     return retryableReasons.includes(donation.failureReason);
   }
   
-  return true; // Default to retryable if no specific reason
+  // If no failure reason is set, check if it's a recent failure that might be retryable
+  const createdAt = new Date(donation.createdAt);
+  const ageInDays = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+  
+  // Allow retry if donation is less than 7 days old and has no specific failure reason
+  return ageInDays < 7;
 }
 
 /**

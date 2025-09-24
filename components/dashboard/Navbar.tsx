@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-import { Search } from "lucide-react";
 import UserAvatar from "@/components/ui/user-avatar";
 import SessionStatusIndicator from "./SessionStatusIndicator";
 import { NotificationAlert } from "./NotificationAlert";
@@ -48,7 +47,7 @@ const Navbar = (props: Props) => {
           <Link href="/virtual-giving-mall">Virtual Giving Mall</Link>
         </li>
         <li>
-          <Link href="/faqs" className="">
+          <Link href="/faq" className="">
             FAQs
           </Link>
         </li>
@@ -63,7 +62,6 @@ const Navbar = (props: Props) => {
             Create Campaign
           </Link>
         </Button>
-        <Search color="#757575" size={24} />
         <NotificationAlert />
         <Link href="/settings">
           <UserAvatar size={32} className="w-8 h-8" />
@@ -98,7 +96,6 @@ const Navbar = (props: Props) => {
           <div className="flex flex-col gap-2">
             <Button className="w-full">Create Campaign</Button>
             <div className="flex gap-3 items-center justify-center">
-              <Search color="#757575" size={24} />
               <NotificationAlert />
               <Link href="/settings">
                 <UserAvatar size={32} className="w-8 h-8" />

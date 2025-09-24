@@ -57,8 +57,10 @@ export async function GET(request: NextRequest) {
         currency: campaigns.currency,
         minimumDonation: campaigns.minimumDonation,
         chainerCommissionRate: campaigns.chainerCommissionRate,
+        isChained: campaigns.isChained,
         currentAmount: campaigns.currentAmount,
         status: campaigns.status,
+        visibility: campaigns.visibility,
         isActive: campaigns.isActive,
         createdAt: campaigns.createdAt,
         updatedAt: campaigns.updatedAt,
@@ -172,6 +174,8 @@ export async function POST(request: NextRequest) {
     const currency = formData.get('currency') as string;
     const minimumDonation = formData.get('minimumDonation') as string;
     const chainerCommissionRate = formData.get('chainerCommissionRate') as string;
+    const isChained = formData.get('isChained') as string;
+    const visibility = formData.get('visibility') as string;
     const videoUrl = formData.get('videoUrl') as string;
     const coverImageUrl = formData.get('coverImageUrl') as string;
     const galleryImages = formData.get('galleryImages') as string;
@@ -184,6 +188,17 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Validate visibility field
+    if (visibility && !['public', 'private'].includes(visibility)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid visibility value. Must be public or private' },
+        { status: 400 }
+      );
+    }
+
+    // Validate isChained field
+    const isChainedBool = isChained === 'true';
 
     // Validate numeric fields
     const goalAmountNum = parseFloat(goalAmount);
@@ -204,11 +219,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (isNaN(commissionRateNum) || commissionRateNum < 1 || commissionRateNum > 10) {
-      return NextResponse.json(
-        { success: false, error: 'Commission rate must be between 1.0 and 10.0' },
-        { status: 400 }
-      );
+    // Only validate commission rate if campaign is chained
+    if (isChainedBool) {
+      if (isNaN(commissionRateNum) || commissionRateNum < 1 || commissionRateNum > 10) {
+        return NextResponse.json(
+          { success: false, error: 'Commission rate must be between 1.0 and 10.0 when chaining is enabled' },
+          { status: 400 }
+        );
+      }
     }
 
     // Generate unique slug for the campaign
@@ -241,9 +259,11 @@ export async function POST(request: NextRequest) {
       goalAmount: goalAmountNum.toString(),
       currency,
       minimumDonation: minimumDonationNum.toString(),
-      chainerCommissionRate: commissionRateNum.toString(),
+      chainerCommissionRate: isChainedBool ? commissionRateNum.toString() : '0',
+      isChained: isChainedBool,
       currentAmount: '0',
       status: 'active',
+      visibility: visibility || 'public',
       isActive: true,
     }).returning();
 

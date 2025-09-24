@@ -19,8 +19,10 @@ export const campaigns = pgTable('campaigns', {
   currency: varchar('currency', { length: 50 }).notNull(), // Increased length for longer currency names
   minimumDonation: decimal('minimum_donation', { precision: 15, scale: 2 }).notNull(),
   chainerCommissionRate: decimal('chainer_commission_rate', { precision: 3, scale: 1 }).notNull(), // 1.0-10.0
+  isChained: boolean('is_chained').default(false).notNull(), // Whether campaign allows chaining
   currentAmount: decimal('current_amount', { precision: 15, scale: 2 }).default('0').notNull(),
   status: varchar('status', { length: 20 }).default('active').notNull(), // active, paused, goal_reached, closed
+  visibility: varchar('visibility', { length: 20 }).default('public').notNull(), // public, private
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

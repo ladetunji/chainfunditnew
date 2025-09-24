@@ -9,10 +9,15 @@ import {
   Edit,
   PlusSquare,
   MessageCircle,
+  DollarSign,
+  TrendingUp,
+  Share2,
+  Gift,
+  Calendar,
 } from "lucide-react";
 import Link from "next/link";
 import { Campaign, transformCampaign } from "./types";
-import { useCampaignChains } from "@/hooks/use-campaign-chains";
+import { useChainerDonations } from "@/hooks/use-chainer-donations";
 import { formatCurrency } from "@/lib/utils/currency";
 
 type Props = {
@@ -20,26 +25,9 @@ type Props = {
 };
 
 const Chains = ({ campaigns }: Props) => {
-  const transformedCampaigns = campaigns.map(transformCampaign);
+  const { data: chainerData, loading, error, refetch } = useChainerDonations();
 
-  // Get chain counts for all campaigns - use memoized IDs from parent
-  const campaignIds = useMemo(
-    () => campaigns.map((campaign) => campaign.id),
-    [campaigns]
-  );
-
-  const { chainCounts, loading: chainsLoading } =
-    useCampaignChains(campaignIds);
-
-  // Filter campaigns to only show those with chains (chainCount > 0)
-  const campaignsWithChains = useMemo(() => {
-    return transformedCampaigns.filter((campaign) => {
-      const chainCount = chainCounts[campaign.id] || 0;
-      return chainCount > 0;
-    });
-  }, [transformedCampaigns, chainCounts]);
-
-  const isEmpty = campaignsWithChains.length === 0;
+  const isEmpty = !loading && (!chainerData || chainerData.donations.length === 0);
 
   if (isEmpty) {
     return (
@@ -56,148 +44,226 @@ const Chains = ({ campaigns }: Props) => {
 
         <div className="text-center mb-8">
           <h3 className="font-bold text-3xl text-[#104901] mb-3">
-            No Chains Found
+            No Chainer Donations Yet
           </h3>
           <p className="font-normal text-xl text-[#104901] opacity-80">
-            Start chaining campaigns to earn commissions and help others
-            fundraise.
+            No donations have been raised through chainers for your campaigns yet. Encourage people to chain your campaigns to help spread the word!
           </p>
         </div>
 
-        <Link href="/create-campaign">
+        <Link href="/campaigns">
           <Button className="bg-gradient-to-r from-green-600 to-[#104901] text-white hover:from-green-600 hover:to-[#104901] hover:text-white rounded-xl px-8 py-4 hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-semibold text-xl">
-            Create a Campaign <Plus size={24} />
+            Browse Campaigns <Plus size={24} />
           </Button>
         </Link>
       </div>
     );
   }
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#104901]"></div>
+        <p className="mt-4 text-[#104901] opacity-80">Loading chainer donations...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="text-center mb-8">
+          <h3 className="font-bold text-3xl text-red-600 mb-3">
+            Error Loading Data
+          </h3>
+          <p className="font-normal text-xl text-red-600 opacity-80 mb-4">
+            {error}
+          </p>
+          <Button 
+            onClick={refetch}
+            className="bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-600 hover:to-red-700 hover:text-white rounded-xl px-8 py-4 hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-semibold text-xl"
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {campaignsWithChains.map((campaign) => {
-          const chainCount = chainCounts[campaign.id] || 0;
+      {/* Stats Overview */}
+      {chainerData && chainerData.stats && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-gradient-to-r from-green-600 to-[#104901] text-white p-6 rounded-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-100 text-sm font-medium">Total Chainer Donations</p>
+                <p className="text-3xl font-bold">{chainerData.stats.totalChainedDonations}</p>
+              </div>
+              <Gift className="h-8 w-8 text-green-100" />
+            </div>
+          </div>
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-100 text-sm font-medium">Amount Raised by Chainers</p>
+                <p className="text-3xl font-bold">{formatCurrency(chainerData.stats.totalChainedAmount, 'NGN')}</p>
+              </div>
+              <DollarSign className="h-8 w-8 text-blue-100" />
+            </div>
+          </div>
+          <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 rounded-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-purple-100 text-sm font-medium">Total Chainers</p>
+                <p className="text-3xl font-bold">{chainerData.stats.totalChainers}</p>
+              </div>
+              <Users className="h-8 w-8 text-purple-100" />
+            </div>
+          </div>
+          <div className="bg-gradient-to-r from-orange-600 to-orange-700 text-white p-6 rounded-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-100 text-sm font-medium">Commissions Paid</p>
+                <p className="text-3xl font-bold">{formatCurrency(chainerData.stats.totalCommissionsPaid, 'NGN')}</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-orange-100" />
+            </div>
+          </div>
+        </div>
+      )}
 
-          return (
-            <div
-              key={campaign.id}
-              className="group relative overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2"
-            >
-              <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden">
-                <div className="relative h-48 bg-gradient-to-br from-gray-100 to-gray-200">
-                  <Image
-                    src={campaign.image}
-                    alt={campaign.title}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                  {/* Chain badge */}
-                  <div className="absolute top-4 right-4">
-                    <div className="bg-gradient-to-r from-green-600 to-[#104901] text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
-                      <LinkIcon size={14} />
-                      Chained
+      {/* Campaign Stats */}
+      {chainerData && chainerData.campaigns.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-[#104901] mb-6">Campaign Performance</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {chainerData.campaigns.map((campaign) => (
+              <div
+                key={campaign.campaignId}
+                className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-200"
+              >
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden">
+                    <Image
+                      src={campaign.campaignCoverImage || '/images/default-campaign.jpg'}
+                      alt={campaign.campaignTitle}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-[#104901] text-lg mb-2">
+                      {campaign.campaignTitle}
+                    </h3>
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <span className="flex items-center gap-1">
+                        <Gift size={14} />
+                        {campaign.chainedDonations} donations
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Users size={14} />
+                        {campaign.totalChainers} chainers
+                      </span>
                     </div>
                   </div>
                 </div>
-                <div className="p-6">
-                  <h3 className="font-bold text-[#104901] mb-3 text-xl">
-                    {campaign.title}
-                  </h3>
-                  <p className="text-[#104901] opacity-80 mb-4 text-sm">
-                    {campaign.description.slice(0, 80)}...
-                  </p>
-
-                  <div className="space-y-3 mb-4">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#104901] opacity-80">Raised</span>
-                      <span className="font-semibold">
-                        {formatCurrency(campaign.amountRaised, campaign.currency)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#104901] opacity-80">Goal</span>
-                      <span className="font-semibold">
-                        {formatCurrency(campaign.goal, campaign.currency)}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-[#104901] to-green-500 h-3 rounded-full transition-all duration-500"
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            Math.round(
-                              (campaign.amountRaised / campaign.goal) * 100
-                            )
-                          )}%`,
-                        }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>
-                        {Math.min(
-                          100,
-                          Math.round(
-                            (campaign.amountRaised / campaign.goal) * 100
-                          )
-                        )}
-                        % complete
-                      </span>
-                    </div>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Raised by Chainers</span>
+                    <span className="font-semibold text-green-600">
+                      {formatCurrency(campaign.chainedAmount, campaign.campaignCurrency)}
+                    </span>
                   </div>
-
-                  <div className="flex justify-between items-center mb-4 text-sm text-[#104901] opacity-80">
-                    <div className="flex items-center gap-1">
-                      <Users size={16} />
-                      {campaign.donors} donors
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <LinkIcon size={16} />
-                      {chainsLoading ? "..." : chainCount} chains
-                    </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Commissions Paid</span>
+                    <span className="font-semibold text-blue-600">
+                      {formatCurrency(campaign.totalCommissionsPaid, campaign.campaignCurrency)}
+                    </span>
                   </div>
-
-                  <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <Link href={`/dashboard/campaigns/edit/${campaign.id}`}>
-                      <Button
-                        variant="outline"
-                        className="w-full text-[#104901] border-[#104901] hover:bg-[#104901] hover:text-white rounded-xl py-2 transition-all duration-300"
-                      >
-                        <Edit size={16} className="mr-2" />
-                        Edit
-                      </Button>
-                    </Link>
-                    <Link href={`/campaign/${campaign.slug}`}>
-                      <Button className="w-full bg-gradient-to-r from-green-600 to-[#104901] text-white rounded-xl py-2 hover:shadow-lg hover:from-green-600 hover:to-[#104901] hover:text-white transition-all duration-300">
-                        <Eye size={16} className="mr-2" />
-                        View
-                      </Button>
-                    </Link>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-gradient-to-r from-[#104901] to-green-500 h-2 rounded-full"
+                      style={{ width: `${campaign.progressPercentage}%` }}
+                    ></div>
                   </div>
-                  <Button
-                    onClick={() =>
-                      window.open(`/campaign/${campaign.slug}`, "_blank")
-                    }
-                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl py-2 hover:shadow-lg hover:text-white transition-all duration-300"
-                  >
-                    <PlusSquare size={16} className="mr-2" />
-                    Update Campaign
-                  </Button>
-                </div>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>{campaign.progressPercentage}% of goal reached</span>
+                    <span>{formatCurrency(campaign.campaignCurrent, campaign.campaignCurrency)} / {formatCurrency(campaign.campaignGoal, campaign.campaignCurrency)}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Chainer Donations */}
+      {chainerData && chainerData.donations.length > 0 && (
+        <div>
+          <h2 className="text-2xl font-bold text-[#104901] mb-6">Recent Chainer Donations</h2>
+          <div className="space-y-4">
+            {chainerData.donations.slice(0, 10).map((donation) => (
+              <div
+                key={donation.id}
+                className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 border border-gray-200 hover:shadow-lg transition-all duration-300"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-12 h-12 rounded-xl overflow-hidden">
+                      <Image
+                        src={donation.campaignCoverImage || '/images/default-campaign.jpg'}
+                        alt={donation.campaignTitle}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-[#104901] text-lg">
+                        {donation.campaignTitle}
+                      </h3>
+                      <p className="text-gray-600 text-sm">
+                        Donated by <span className="font-medium">{donation.donorName}</span>
+                      </p>
+                      <p className="text-gray-500 text-xs flex items-center gap-1">
+                        <Calendar size={12} />
+                        {new Date(donation.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency(donation.amount, donation.currency)}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Via referral: <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                        {donation.chainerReferralCode}
+                      </span>
+                    </div>
+                    <div className="text-xs text-blue-600">
+                      Commission: {formatCurrency(donation.chainerCommissionEarned, donation.currency)}
+                    </div>
+                  </div>
+                </div>
+                
+                {donation.message && (
+                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <p className="text-gray-700 text-sm italic">"{donation.message}"</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-center mt-8">
-        <Link href="/create-campaign">
+        <Link href="/campaigns">
           <Button className="bg-gradient-to-r from-green-600 to-[#104901] hover:from-green-600 hover:to-[#104901] hover:text-white rounded-xl px-8 py-4 hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-semibold text-xl">
-            Create a Campaign <Plus size={24} />
+            View All Campaigns <Plus size={24} />
           </Button>
         </Link>
       </div>

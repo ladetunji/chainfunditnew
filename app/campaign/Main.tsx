@@ -28,7 +28,7 @@ import { useCampaignDonations } from "@/hooks/use-campaign-donations";
 import { useTopChainers } from "@/hooks/use-top-chainers";
 import ClientToaster from "@/components/ui/client-toaster";
 import { formatCurrency, getCurrencySymbol } from "@/lib/utils/currency";
-import { toast } from "sonner";
+import { ExternalToast, toast } from "sonner";
 
 // Utility function to extract YouTube video ID and generate thumbnail URL
 const getYouTubeThumbnail = (url: string): string | null => {
@@ -208,8 +208,8 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
           setUpdates(result.data);
         }
       }
-    } catch (err) {
-      console.error("Error fetching updates:", err);
+    } catch (error) {
+      toast.error("Error fetching updates:", error as ExternalToast | undefined);
     } finally {
       setLoadingUpdates(false);
     }
@@ -227,7 +227,8 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
           setComments(result.data);
         }
       }
-    } catch (err) {
+    } catch (error) {
+      toast.error("Error fetching comments:", error as ExternalToast | undefined);
     } finally {
       setLoadingComments(false);
     }
@@ -245,8 +246,8 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
           setChainCount(result.data.chainCount);
         }
       }
-    } catch (err) {
-      console.error('Error fetching chain count:', err);
+    } catch (error) {
+      toast.error('Error fetching chain count:', error as ExternalToast | undefined);
     } finally {
       setLoadingChains(false);
     }
@@ -260,7 +261,6 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
       
       // Use initial data if available, otherwise fetch from API
       if (initialCampaignData) {
-        console.log('Using initial campaign data:', initialCampaignData);
         setCampaign(initialCampaignData);
         // Still fetch updates, comments, and chain count
         await Promise.all([fetchUpdates(), fetchComments(), fetchChainCount()]);
@@ -298,8 +298,9 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
 
       // Fetch campaign updates, comments, and chain count
       await Promise.all([fetchUpdates(), fetchComments(), fetchChainCount()]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch campaign");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to fetch campaign");
+      toast.error("Error fetching campaign:", error as ExternalToast | undefined);
     } finally {
       setLoading(false);
     }

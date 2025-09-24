@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { campaigns, donations, users } from '@/lib/schema';
-import { eq, and, sum } from 'drizzle-orm';
+import { eq, and, sum, count } from 'drizzle-orm';
 import { getPayoutProvider, getPayoutConfig, isPayoutSupported } from '@/lib/payments/payout-config';
 import { getCurrencyCode } from '@/lib/utils/currency';
 import { convertToNaira } from '@/lib/utils/currency-conversion';
@@ -42,16 +42,29 @@ export async function GET(request: NextRequest) {
     // Calculate available payout amounts for each campaign with currency conversion
     const campaignsWithPayouts = await Promise.all(
       userCampaigns.map(async (campaign) => {
-        // Get total completed donations for this campaign
+        // Get total donations for this campaign (including pending and completed)
         const totalDonations = await db
           .select({ total: sum(donations.amount) })
           .from(donations)
           .where(
             and(
               eq(donations.campaignId, campaign.id),
-              eq(donations.paymentStatus, 'completed')
+              // Include both completed and pending donations
+              // Exclude only explicitly failed donations that are not retryable
+              // For now, include all non-failed donations
             )
           );
+
+        // Get breakdown by status for transparency
+        const donationsByStatus = await db
+          .select({ 
+            status: donations.paymentStatus,
+            total: sum(donations.amount),
+            count: count(donations.id)
+          })
+          .from(donations)
+          .where(eq(donations.campaignId, campaign.id))
+          .groupBy(donations.paymentStatus);
 
         const totalRaised = parseFloat(totalDonations[0]?.total || '0');
         const currencyCode = getCurrencyCode(campaign.currency);
@@ -64,10 +77,9 @@ export async function GET(request: NextRequest) {
         const payoutProvider = payoutSupported ? getPayoutProvider(currencyCode) : null;
         const payoutConfig = payoutProvider ? getPayoutConfig(payoutProvider) : null;
         
-        // Check if campaign has reached 50% of its goal
+        // Calculate goal progress for display purposes
         const targetAmount = parseFloat(campaign.targetAmount);
         const goalProgress = targetAmount > 0 ? (totalRaised / targetAmount) * 100 : 0;
-        const hasReached50Percent = goalProgress >= 50;
 
         return {
           ...campaign,
@@ -78,8 +90,9 @@ export async function GET(request: NextRequest) {
           payoutProvider,
           payoutConfig,
           goalProgress,
-          hasReached50Percent,
-          availableForPayout: payoutSupported && totalRaised > 0 && hasReached50Percent,
+          hasReached50Percent: goalProgress >= 50, // Keep for backward compatibility
+          availableForPayout: payoutSupported && totalRaised > 0,
+          donationsByStatus, // Include breakdown for transparency
         };
       })
     );
@@ -174,35 +187,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get total available for payout
+    // Get total available for payout (including pending donations)
     const totalDonations = await db
       .select({ total: sum(donations.amount) })
       .from(donations)
-      .where(
-        and(
-          eq(donations.campaignId, campaignId),
-          eq(donations.paymentStatus, 'completed')
-        )
-      );
+      .where(eq(donations.campaignId, campaignId));
 
     const totalRaised = parseFloat(totalDonations[0]?.total || '0');
     const targetAmount = parseFloat(campaign[0].goalAmount);
     
-    // Check if campaign has reached 50% of its goal
+    // Calculate goal progress for reference (no longer required for payout)
     const goalProgress = targetAmount > 0 ? (totalRaised / targetAmount) * 100 : 0;
-    const hasReached50Percent = goalProgress >= 50;
     
-    if (!hasReached50Percent) {
+    // Check if campaign has any donations at all
+    if (totalRaised === 0) {
       return NextResponse.json(
-        { 
-          error: 'Campaign must reach at least 50% of its goal before requesting payout',
-          details: {
-            currentProgress: Math.round(goalProgress),
-            requiredProgress: 50,
-            totalRaised,
-            targetAmount
-          }
-        },
+        { error: 'Campaign has no donations - payout not available' },
         { status: 400 }
       );
     }

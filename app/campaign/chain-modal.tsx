@@ -15,6 +15,7 @@ interface Campaign {
   id: string;
   title: string;
   shortUrl?: string;
+  chainerCommissionRate?: number;
 }
 
 interface ChainModalProps {
@@ -171,7 +172,7 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign, o
               </div>
 
                 <p className="text-xl font-medium text-[#104901]">
-                  Please Note: The campaign creator has approved only a 5% commission on this campaign.
+                  Please Note: The campaign creator has approved only a {campaign?.chainerCommissionRate}% commission on this campaign.
                 </p>
 
               {error && (

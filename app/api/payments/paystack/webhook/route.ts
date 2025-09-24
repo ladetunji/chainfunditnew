@@ -12,6 +12,7 @@ import {
   isDonationFailed 
 } from '@/lib/utils/donation-status';
 import { shouldCloseForGoalReached, closeCampaign } from '@/lib/utils/campaign-closure';
+import { calculateAndDistributeCommissions } from '@/lib/utils/commission-calculation';
 
 // Helper function to update campaign currentAmount based on completed donations
 async function updateCampaignAmount(campaignId: string) {
@@ -328,6 +329,10 @@ async function handleChargeSuccess(chargeData: any) {
           await closeCampaign(campaign[0].id, 'goal_reached', campaign[0].creatorId);
         }
       }
+
+      // Calculate and distribute commissions
+      await calculateAndDistributeCommissions(donationId);
+      console.log('✅ Commissions calculated and distributed');
 
       // Create notification for successful donation
       await createSuccessfulDonationNotification(donationId, donation[0].campaignId);
