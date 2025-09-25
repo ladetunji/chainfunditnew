@@ -186,17 +186,35 @@ export async function convertCurrency(
  */
 async function getExchangeRates(baseCurrency: string): Promise<Record<string, number> | null> {
   try {
-    // Using exchangerate-api.com (free tier)
-    const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${baseCurrency}`);
+    // Using exchangerate-api.com (free tier) with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    const response = await fetch(`https://api.exchangerate-api.com/v4/latest/${baseCurrency}`, {
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      console.warn(`Exchange rate API responded with status: ${response.status}`);
+      return null;
+    }
+    
     const data = await response.json();
     
     if (!data.rates) {
+      console.warn('Exchange rate API returned invalid data structure');
       return null;
     }
     
     return data.rates;
   } catch (error) {
-    console.error('Failed to fetch exchange rates:', error);
+    if (error.name === 'AbortError') {
+      console.warn('Exchange rate API request timed out');
+    } else {
+      console.warn('Failed to fetch exchange rates:', error);
+    }
     return null;
   }
 }

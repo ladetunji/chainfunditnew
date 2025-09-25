@@ -4,7 +4,7 @@ import { useDonations } from "@/hooks/use-dashboard";
 import { formatCurrency } from "@/lib/utils/currency";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, XCircle, CreditCard, Smartphone, RotateCcw, AlertTriangle } from "lucide-react";
+import { RefreshCw, XCircle, RotateCcw, AlertTriangle } from "lucide-react";
 import { isDonationFailed, getStatusMessage, isRetryable, getNextRetryTime } from "@/lib/utils/donation-status";
 
 type Props = {};
@@ -157,9 +157,9 @@ const FailedDonations = (props: Props) => {
                     <span>•</span>
                     <div className="flex items-center gap-1">
                       {donation.paymentProvider === 'stripe' ? (
-                        <CreditCard className="h-3 w-3" />
+                        <Image src='/icons/stripe.png' alt='Stripe' width={16} height={16}/>
                       ) : (
-                        <Smartphone className="h-3 w-3" />
+                        <Image src='/icons/paystack.png' alt='Paystack' width={16} height={16}/>
                       )}
                       <span className="capitalize">{donation.paymentProvider}</span>
                     </div>

@@ -12,8 +12,6 @@ import {
   HandCoins,
   XCircle,
   ArrowRight,
-  CreditCard,
-  Smartphone,
   Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,6 +26,7 @@ import Link from "next/link";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import StripePaymentForm from "@/components/payments/StripePaymentForm";
+import Image from "next/image";
 
 interface Campaign {
   id: string;
@@ -555,8 +554,8 @@ const DonateModal: React.FC<DonateModalProps> = ({
                           }`}
                           onClick={() => setPaymentProvider(provider)}
                         >
-                          {provider === "stripe" && <CreditCard size={24} />}
-                          {provider === "paystack" && <Smartphone size={24} />}
+                          {provider === "stripe" && <Image src='/icons/stripe.png' alt='Stripe' width={16} height={16}/>}
+                          {provider === "paystack" && <Image src='/icons/paystack.png' alt='Paystack' width={16} height={16}/>}
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <div className="font-semibold capitalize">{provider}</div>

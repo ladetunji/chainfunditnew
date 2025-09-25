@@ -97,7 +97,7 @@ const Account = (props: Props) => {
               name="fullName"
               value={form.fullName}
               onChange={handleChange}
-              placeholder="Tolulope Smith"
+              placeholder="Enter your name"
               className="w-[385px] py-[10px] mb-3 px-5 rounded-lg border border-[#D9D9DC] outline-none placeholder:font-medium placeholder:text-2xl placeholder:text-[#1E1E1E]"
             />
             <label className="font-normal text-xl text-[#104901] mb-2">

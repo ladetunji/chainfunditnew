@@ -660,7 +660,7 @@ export default function CreateCampaignPage() {
               </section>
               <p className="font-medium text-xs text-[#5F8555] my-2">
                 Note: Chainers will receive a percentage of the proceeds from
-                the campaign.
+                the campaign. Chainer commission rate must be between 0 and 10% of campaign proceeds and must be a valid percentage.
               </p>
             </section>
 
@@ -671,6 +671,8 @@ export default function CreateCampaignPage() {
                 </p>
                 <input
                   type="number"
+                  min={0}
+                  max={10}
                   value={formData.chainerCommissionRate}
                   onChange={(e) =>
                     handleFieldChange("chainerCommissionRate", +e.target.value)

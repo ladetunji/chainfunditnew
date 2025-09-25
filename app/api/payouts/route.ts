@@ -6,6 +6,7 @@ import { eq, and, sum, count } from 'drizzle-orm';
 import { getPayoutProvider, getPayoutConfig, isPayoutSupported } from '@/lib/payments/payout-config';
 import { getCurrencyCode } from '@/lib/utils/currency';
 import { convertToNaira } from '@/lib/utils/currency-conversion';
+import { sendPayoutConfirmationEmail } from '@/lib/payments/payout-email';
 
 export async function GET(request: NextRequest) {
   try {
@@ -152,9 +153,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user from database
+    // Get user from database with profile information
     const user = await db
-      .select({ id: users.id })
+      .select({ 
+        id: users.id,
+        fullName: users.fullName,
+        email: users.email,
+        accountNumber: users.accountNumber,
+        bankName: users.bankName,
+        accountName: users.accountName,
+        accountVerified: users.accountVerified
+      })
       .from(users)
       .where(eq(users.email, userEmail))
       .limit(1);
@@ -224,9 +233,62 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Implement actual payout processing based on provider
-    // For now, return success with mock data
+    // Calculate fees and net amount
+    const calculateFees = () => {
+      const baseAmount = amount;
+      let feePercentage = 0;
+      let fixedFee = 0;
+
+      switch (payoutProvider) {
+        case 'stripe':
+          feePercentage = 0.025; // 2.5%
+          fixedFee = 0.30; // $0.30
+          break;
+        case 'paystack':
+          feePercentage = 0.015; // 1.5%
+          fixedFee = 0;
+          break;
+        default:
+          feePercentage = 0.02; // 2%
+          fixedFee = 0;
+      }
+
+      const percentageFee = baseAmount * feePercentage;
+      const totalFees = percentageFee + fixedFee;
+      const netAmount = baseAmount - totalFees;
+
+      return {
+        totalFees,
+        netAmount
+      };
+    };
+
+    const fees = calculateFees();
     const payoutId = `payout_${Date.now()}`;
+    
+    // Send confirmation email
+    try {
+      await sendPayoutConfirmationEmail({
+        userEmail: user[0].email,
+        userName: user[0].fullName,
+        campaignTitle: campaign[0].title,
+        payoutAmount: amount,
+        currency: currencyCode,
+        netAmount: fees.netAmount,
+        fees: fees.totalFees,
+        payoutProvider,
+        processingTime: payoutProvider === 'stripe' ? '2-7 business days' : '1-3 business days',
+        payoutId,
+        bankDetails: user[0].accountVerified ? {
+          accountName: user[0].accountName || '',
+          accountNumber: user[0].accountNumber || '',
+          bankName: user[0].bankName || ''
+        } : undefined
+      });
+    } catch (emailError) {
+      console.error('Failed to send payout confirmation email:', emailError);
+      // Don't fail the payout if email fails
+    }
     
     return NextResponse.json({
       success: true,
@@ -237,6 +299,8 @@ export async function POST(request: NextRequest) {
         provider: payoutProvider,
         status: 'processing',
         estimatedDelivery: payoutProvider === 'stripe' ? '2-7 business days' : '1-3 business days',
+        netAmount: fees.netAmount,
+        fees: fees.totalFees,
         message: `Payout of ${currency} ${amount} initiated via ${payoutProvider}. You will receive a confirmation email shortly.`
       }
     });

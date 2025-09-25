@@ -15,7 +15,7 @@ async function getUserFromRequest(request: NextRequest) {
   return userPayload.email;
 }
 
-// GET /api/account/verify - Verify account details using Paystack
+// POST /api/account/verify - Verify account details using Paystack
 export async function POST(request: NextRequest) {
   try {
     const email = await getUserFromRequest(request);
@@ -110,6 +110,7 @@ export async function GET(request: NextRequest) {
 
     const userData = user[0];
 
+
     return NextResponse.json({
       success: true,
       data: {
@@ -196,6 +197,7 @@ async function verifyAccountWithPaystack(accountNumber: string, bankCode: string
     });
 
     const data = await response.json();
+
 
     if (!response.ok) {
       return {

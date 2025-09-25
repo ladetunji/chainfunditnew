@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PayoutDetailsModal } from '@/components/payments/payout-details-modal';
 
 import { 
   DollarSign, 
@@ -11,8 +13,6 @@ import {
   Clock, 
   CheckCircle, 
   AlertCircle,
-  CreditCard,
-  Smartphone,
   ExternalLink,
   Info
 } from 'lucide-react';
@@ -65,6 +65,9 @@ const PayoutsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processingPayouts, setProcessingPayouts] = useState<Set<string>>(new Set());
+  const [selectedCampaign, setSelectedCampaign] = useState<CampaignPayout | null>(null);
+  const [showPayoutModal, setShowPayoutModal] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   
   // Get user's geolocation and currency conversion capabilities
   const { geolocation, loading: geolocationLoading } = useGeolocation();
@@ -72,7 +75,20 @@ const PayoutsPage = () => {
 
   useEffect(() => {
     fetchPayoutData();
+    fetchUserProfile();
   }, []);
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await fetch('/api/user/profile');
+      const result = await response.json();
+      if (result.success) {
+        setUserProfile(result.user);
+      }
+    } catch (err) {
+      console.error('Failed to fetch user profile:', err);
+    }
+  };
 
   const fetchPayoutData = async () => {
     try {
@@ -92,9 +108,14 @@ const PayoutsPage = () => {
     }
   };
 
-  const handlePayout = async (campaign: CampaignPayout) => {
+  const handlePayoutClick = (campaign: CampaignPayout) => {
+    setSelectedCampaign(campaign);
+    setShowPayoutModal(true);
+  };
+
+  const handleConfirmPayout = async (campaignId: string, amount: number, currency: string, payoutProvider: string) => {
     try {
-      setProcessingPayouts(prev => new Set(prev).add(campaign.id));
+      setProcessingPayouts(prev => new Set(prev).add(campaignId));
       
       const response = await fetch('/api/payouts', {
         method: 'POST',
@@ -102,10 +123,10 @@ const PayoutsPage = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          campaignId: campaign.id,
-          amount: campaign.totalRaised,
-          currency: campaign.currency,
-          payoutProvider: campaign.payoutProvider,
+          campaignId,
+          amount,
+          currency,
+          payoutProvider,
         }),
       });
 
@@ -115,6 +136,8 @@ const PayoutsPage = () => {
         toast.success(result.data.message);
         // Refresh payout data
         await fetchPayoutData();
+        setShowPayoutModal(false);
+        setSelectedCampaign(null);
       } else {
         // Handle specific 50% requirement error
         if (result.error && result.error.includes('50%')) {
@@ -133,7 +156,7 @@ const PayoutsPage = () => {
     } finally {
       setProcessingPayouts(prev => {
         const newSet = new Set(prev);
-        newSet.delete(campaign.id);
+        newSet.delete(campaignId);
         return newSet;
       });
     }
@@ -180,9 +203,9 @@ const PayoutsPage = () => {
   const getProviderIcon = (provider: string) => {
     switch (provider) {
       case 'stripe':
-        return <CreditCard className="h-5 w-5" />;
+        return <Image src='/icons/stripe.png' alt='Stripe' width={16} height={16}/>;
       case 'paystack':
-        return <Smartphone className="h-5 w-5" />;
+        return <Image src='/icons/paystack.png' alt='Paystack' width={16} height={16}/>;
       default:
         return <DollarSign className="h-5 w-5" />;
     }
@@ -440,7 +463,7 @@ const PayoutsPage = () => {
                             <span className="capitalize">{campaign.payoutProvider}</span>
                           </div>
                           <Button
-                            onClick={() => handlePayout(campaign)}
+                            onClick={() => handlePayoutClick(campaign)}
                             disabled={processingPayouts.has(campaign.id)}
                             className="mt-2 bg-[#104901] text-white"
                           >
@@ -494,6 +517,21 @@ const PayoutsPage = () => {
             ))
           )}
         </div>
+
+        {/* Payout Details Modal */}
+        {selectedCampaign && selectedCampaign.payoutProvider && (
+          <PayoutDetailsModal
+            isOpen={showPayoutModal}
+            onClose={() => {
+              setShowPayoutModal(false);
+              setSelectedCampaign(null);
+            }}
+            campaign={selectedCampaign}
+            userProfile={userProfile}
+            onConfirmPayout={handleConfirmPayout}
+            isProcessing={processingPayouts.has(selectedCampaign.id)}
+          />
+        )}
       </div>
     </div>
   );

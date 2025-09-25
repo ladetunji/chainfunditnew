@@ -4,7 +4,7 @@ import { useDonations, useDashboard } from "@/hooks/use-dashboard";
 import { formatCurrency } from "@/lib/utils/currency";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Smartphone, CheckCircle, ChevronDown } from "lucide-react";
+import { CheckCircle, ChevronDown } from "lucide-react";
 
 type Props = {};
 
@@ -135,10 +135,10 @@ const ReceivedDonations = (props: Props) => {
                   <span>{new Date(donation.createdAt).toLocaleDateString()}</span>
                   <span>•</span>
                   <div className="flex items-center gap-1">
-                    {donation.paymentProvider === 'stripe' ? (
-                      <CreditCard className="h-3 w-3" />
+                      {donation.paymentProvider === 'stripe' ? (
+                        <Image src='/icons/stripe.png' alt='Stripe' width={16} height={16}/>
                     ) : (
-                      <Smartphone className="h-3 w-3" />
+                      <Image src='/icons/paystack.png' alt='Paystack' width={16} height={16}/>
                     )}
                     <span className="capitalize">{donation.paymentProvider}</span>
                   </div>

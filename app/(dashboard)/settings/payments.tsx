@@ -21,6 +21,14 @@ import {
   Mail,
   Phone
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useAccountManagement } from '@/hooks/use-account-management';
 import { toast } from 'sonner';
 
@@ -58,13 +66,31 @@ const Payments = (props: Props) => {
     }
 
     try {
-      const result = await verifyAccount(formData.accountNumber, formData.bankCode);
+      const response = await fetch('/api/account/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          accountNumber: formData.accountNumber, 
+          bankCode: formData.bankCode 
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Account verification failed');
+      }
+
       toast.success(result.message || 'Account verified successfully!');
       setFormData({ accountNumber: '', bankCode: '' });
     } catch (error) {
-      // Error is handled by the hook
+      toast.error(error instanceof Error ? error.message : 'Account verification failed');
     }
   };
+
 
   const handleRequestChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +106,7 @@ const Payments = (props: Props) => {
       setChangeRequestReason('');
       setShowChangeRequest(false);
     } catch (error) {
-      // Error is handled by the hook
+      toast.error(error instanceof Error ? error.message : 'Account change request failed');
     }
   };
 
@@ -208,6 +234,7 @@ const Payments = (props: Props) => {
                 </AlertDescription>
               </Alert>
             )}
+           
           </CardContent>
         </Card>
       )}
@@ -393,6 +420,7 @@ const Payments = (props: Props) => {
           </div>
         </CardContent>
       </Card>
+
     </div>
   );
 };

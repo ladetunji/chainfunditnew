@@ -108,7 +108,8 @@ export function useCurrencyConversion(userGeolocation: GeolocationData | null): 
       
       return result;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Formatting failed');
+      // Don't set error for currency conversion failures - just fallback gracefully
+      console.warn('Currency conversion failed, using original currency:', err);
       return { amount, currency: originalCurrency };
     } finally {
       setLoading(false);
