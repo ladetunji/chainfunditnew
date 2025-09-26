@@ -65,15 +65,9 @@ export function useChainerDonations() {
         setLoading(true);
         setError(null);
 
-        const token = localStorage.getItem('auth-token');
-        if (!token) {
-          setError('No authentication token found');
-          return;
-        }
-
         const response = await fetch('/api/dashboard/chains', {
+          credentials: 'include', // Include cookies for authentication
           headers: {
-            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
@@ -101,15 +95,9 @@ export function useChainerDonations() {
     setError(null);
 
     try {
-      const token = localStorage.getItem('auth-token');
-      if (!token) {
-        setError('No authentication token found');
-        return;
-      }
-
       const response = await fetch('/api/dashboard/chains', {
+        credentials: 'include', // Include cookies for authentication
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });

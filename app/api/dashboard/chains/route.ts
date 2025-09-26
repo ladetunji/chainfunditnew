@@ -4,17 +4,23 @@ import { users } from '@/lib/schema/users';
 import { chainers } from '@/lib/schema/chainers';
 import { campaigns } from '@/lib/schema/campaigns';
 import { donations } from '@/lib/schema/donations';
-import { eq, and, desc, sum, count } from 'drizzle-orm';
-import { getUserCommissionStats } from '@/lib/utils/commission-calculation';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 
 async function getUserFromRequest(request: NextRequest) {
-  const token = request.headers.get('authorization')?.replace('Bearer ', '');
+  const cookie = request.headers.get('cookie') || '';
+  const cookies = cookie.split(';').reduce((acc, curr) => {
+    const [key, value] = curr.trim().split('=');
+    acc[key] = value;
+    return acc;
+  }, {} as Record<string, string>);
+  
+  const token = cookies['auth_token'];
   if (!token) return null;
 
   try {
     const userPayload = JSON.parse(atob(token.split('.')[1]));
     return userPayload.email;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -35,19 +41,21 @@ export async function GET(request: NextRequest) {
     const userId = user[0].id;
 
     // Get user's campaigns (campaigns created by the user)
-    const userCampaigns = await db
-      .select({
-        id: campaigns.id,
-        title: campaigns.title,
-        slug: campaigns.slug,
-        coverImageUrl: campaigns.coverImageUrl,
-        goalAmount: campaigns.goalAmount,
-        currentAmount: campaigns.currentAmount,
-        currency: campaigns.currency,
-        status: campaigns.status,
-      })
-      .from(campaigns)
-      .where(eq(campaigns.creatorId, userId));
+    const userCampaigns = await db.select().from(campaigns).where(eq(campaigns.creatorId, userId));
+    
+    if (userCampaigns.length === 0) {
+      return NextResponse.json({
+        success: true,
+        campaigns: [],
+        donations: [],
+        stats: {
+          totalChainedDonations: 0,
+          totalChainedAmount: 0,
+          totalChainers: 0,
+          totalCommissionsPaid: 0
+        }
+      });
+    }
 
     const campaignIds = userCampaigns.map(c => c.id);
 
@@ -80,29 +88,23 @@ export async function GET(request: NextRequest) {
       .leftJoin(chainers, eq(donations.chainerId, chainers.id))
       .leftJoin(users, eq(donations.donorId, users.id))
       .where(and(
+        inArray(donations.campaignId, campaignIds),
         eq(donations.paymentStatus, 'completed'),
-        // Only donations to user's campaigns that have a chainer
-        eq(donations.chainerId, chainers.id)
+        // Only donations that came through chainers
+        // donations.chainerId is not null
       ))
       .orderBy(desc(donations.createdAt));
 
-    // Filter to only include donations to user's campaigns
-    const filteredChainerDonations = chainerDonations.filter(donation => 
-      campaignIds.includes(donation.campaignId)
-    );
+    // Filter out donations without chainerId (direct donations)
+    const filteredChainerDonations = chainerDonations.filter(donation => donation.chainerId);
 
-    // Calculate campaign stats
+    // Calculate campaign statistics
     const campaignStats = userCampaigns.map(campaign => {
       const campaignDonations = filteredChainerDonations.filter(d => d.campaignId === campaign.id);
       const chainedAmount = campaignDonations.reduce((sum, d) => sum + Number(d.amount), 0);
+      const uniqueChainers = new Set(campaignDonations.map(d => d.chainerId)).size;
       const totalCommissionsPaid = campaignDonations.reduce((sum, d) => sum + Number(d.chainerCommissionEarned || 0), 0);
-      
-      // Get unique chainers for this campaign
-      const uniqueChainers = new Set(campaignDonations.map(d => d.chainerId));
-      
-      const progressPercentage = Number(campaign.goalAmount) > 0 
-        ? (Number(campaign.currentAmount) / Number(campaign.goalAmount)) * 100 
-        : 0;
+      const progressPercentage = Math.min(100, Math.round((Number(campaign.currentAmount) / Number(campaign.goalAmount)) * 100));
 
       return {
         campaignId: campaign.id,
@@ -115,20 +117,20 @@ export async function GET(request: NextRequest) {
         campaignStatus: campaign.status,
         chainedDonations: campaignDonations.length,
         chainedAmount,
-        totalChainers: uniqueChainers.size,
+        totalChainers: uniqueChainers,
         totalCommissionsPaid,
-        progressPercentage: Math.round(progressPercentage),
+        progressPercentage
       };
     });
 
-    // Calculate overall stats
+    // Calculate overall statistics
     const totalChainedDonations = filteredChainerDonations.length;
     const totalChainedAmount = filteredChainerDonations.reduce((sum, d) => sum + Number(d.amount), 0);
     const totalChainers = new Set(filteredChainerDonations.map(d => d.chainerId)).size;
     const totalCommissionsPaid = filteredChainerDonations.reduce((sum, d) => sum + Number(d.chainerCommissionEarned || 0), 0);
 
-    // Transform donations to match expected interface
-    const transformedDonations = filteredChainerDonations.map(donation => ({
+    // Format donations for response
+    const formattedDonations = filteredChainerDonations.map(donation => ({
       id: donation.id,
       campaignId: donation.campaignId,
       donorId: donation.donorId,
@@ -137,7 +139,7 @@ export async function GET(request: NextRequest) {
       currency: donation.currency,
       message: donation.message,
       isAnonymous: donation.isAnonymous,
-      createdAt: donation.createdAt.toISOString(),
+      createdAt: donation.createdAt,
       campaignTitle: donation.campaignTitle,
       campaignSlug: donation.campaignSlug,
       campaignCoverImage: donation.campaignCoverImage,
@@ -148,23 +150,23 @@ export async function GET(request: NextRequest) {
       chainerReferralCode: donation.chainerReferralCode,
       chainerUserId: donation.chainerUserId,
       chainerCommissionEarned: Number(donation.chainerCommissionEarned || 0),
-      donorName: donation.isAnonymous ? 'Anonymous' : donation.donorName,
+      donorName: donation.isAnonymous ? 'Anonymous' : donation.donorName
     }));
 
     return NextResponse.json({
       success: true,
       campaigns: campaignStats,
-      donations: transformedDonations,
+      donations: formattedDonations,
       stats: {
         totalChainedDonations,
         totalChainedAmount,
         totalChainers,
-        totalCommissionsPaid,
+        totalCommissionsPaid
       }
     });
 
   } catch (error) {
-    console.error('Error fetching chainer donations:', error);
+    console.error('Chains API error:', error);
     return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -73,36 +73,62 @@ export function PayoutDetailsModal({
   // Calculate fees and net amount
   const calculateFees = () => {
     const baseAmount = campaign.totalRaised;
-    let feePercentage = 0;
+    const chainerCommissions = campaign.chainerCommissionsTotal || 0;
+    
+    // console.log('Payout modal - Campaign data:', campaign);
+    console.log('Payout modal - Chainer commissions total:', chainerCommissions);
+    
+    // ChainFundIt takes 5% of campaign proceeds
+    const chainfunditFeePercentage = 0.05; // 5%
+    const chainfunditFee = baseAmount * chainfunditFeePercentage;
+    
+    // Provider fees are taken from ChainFundIt's 5%
+    let providerFeePercentage = 0;
     let fixedFee = 0;
 
-    // Fee structure based on provider
     const provider = campaign.payoutProvider || 'default';
     switch (provider) {
       case 'stripe':
-        feePercentage = 0.025; // 2.5%
+        providerFeePercentage = 0.025; // 2.5%
         fixedFee = 0.30; // $0.30
         break;
       case 'paystack':
-        feePercentage = 0.015; // 1.5%
+        providerFeePercentage = 0.01; // 1%
         fixedFee = 0; // No fixed fee
         break;
       default:
-        feePercentage = 0.02; // 2% default
+        providerFeePercentage = 0.02; // 2% default
         fixedFee = 0;
     }
 
-    const percentageFee = baseAmount * feePercentage;
-    const totalFees = percentageFee + fixedFee;
-    const netAmount = baseAmount - totalFees;
+    const providerFee = chainfunditFee * providerFeePercentage;
+    const netChainfunditFee = chainfunditFee - providerFee; // Provider fee deducted from ChainFundIt's 5%
+    const totalFees = netChainfunditFee + fixedFee;
+    const netAmount = baseAmount - totalFees - chainerCommissions;
+
+    console.log('Fee calculation breakdown:', {
+      baseAmount,
+      chainfunditFee,
+      providerFee,
+      netChainfunditFee,
+      fixedFee,
+      chainerCommissions,
+      totalFees,
+      netAmount,
+      calculation: `${baseAmount} - ${totalFees} - ${chainerCommissions} = ${netAmount}`
+    });
 
     return {
       baseAmount,
-      percentageFee,
+      chainfunditFee,
+      providerFee,
+      netChainfunditFee,
       fixedFee,
+      chainerCommissions,
       totalFees,
       netAmount,
-      feePercentage: feePercentage * 100
+      chainfunditFeePercentage: chainfunditFeePercentage * 100,
+      providerFeePercentage: providerFeePercentage * 100
     };
   };
 
@@ -236,13 +262,13 @@ export function PayoutDetailsModal({
             </CardContent>
           </Card>
 
-          {/* Chainer Payouts */}
-          {campaign.chainerDonations && campaign.chainerDonations.length > 0 && (
+          {/* Chainer Payouts  */}
+           {campaign.chainerDonations && campaign.chainerDonations.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg text-[#104901] flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Chainer Payouts
+                  Ambassador Payouts
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -280,42 +306,6 @@ export function PayoutDetailsModal({
                     </div>
                   </div>
                 )}
-                <Separator />
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-700">Recent Chainer Donations:</p>
-                  {campaign.chainerDonations.slice(0, 3).map((donation) => {
-                    const donationAmount = parseFloat(donation.amount);
-                    const commissionAmount = campaign.chainerCommissionRate 
-                      ? (donationAmount * campaign.chainerCommissionRate) / 100 
-                      : 0;
-                    
-                    return (
-                      <div key={donation.id} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded">
-                        <div>
-                          <span className="font-medium">{donation.campaignTitle}</span>
-                          <div className="text-xs text-gray-500">
-                            {new Date(donation.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-semibold text-green-600">
-                            {formatCurrency(donationAmount, donation.currency)}
-                          </div>
-                          {commissionAmount > 0 && (
-                            <div className="text-xs text-blue-600">
-                              Commission: {formatCurrency(commissionAmount, donation.currency)}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {campaign.chainerDonations.length > 3 && (
-                    <p className="text-xs text-gray-500 text-center">
-                      +{campaign.chainerDonations.length - 3} more donations
-                    </p>
-                  )}
-                </div>
               </CardContent>
             </Card>
           )}
@@ -335,14 +325,39 @@ export function PayoutDetailsModal({
                   {formatCurrency(fees.baseAmount, campaign.currencyCode)}
                 </span>
               </div>
+              
+              {/* ChainFundIt Fee */}
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-600">
-                  Platform Fee ({fees.feePercentage}%):
+                  ChainFundIt Fee ({fees.chainfunditFeePercentage}%):
                 </span>
                 <span className="text-red-600">
-                  -{formatCurrency(fees.percentageFee, campaign.currencyCode)}
+                  -{formatCurrency(fees.chainfunditFee, campaign.currencyCode)}
                 </span>
               </div>
+              
+              {/* Provider Fee (deducted from ChainFundIt's fee) */}
+              {/* <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600">
+                  {(campaign.payoutProvider ? campaign.payoutProvider.charAt(0).toUpperCase() + campaign.payoutProvider.slice(1) : 'Provider')} Fee ({fees.providerFeePercentage}%):
+                </span>
+                <span className="text-red-600">
+                  -{formatCurrency(fees.providerFee, campaign.currencyCode)}
+                </span>
+              </div> */}
+
+              {/* Chainer Commissions */}
+              {fees.chainerCommissions > 0 && (
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600">Chainer Commissions:</span>
+                  <span className="text-blue-600">
+                    -{formatCurrency(fees.chainerCommissions, campaign.currencyCode)}
+                  </span>
+                </div>
+              )}
+
+              
+              {/* Fixed Fee */}
               {fees.fixedFee > 0 && (
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-600">Fixed Fee:</span>
@@ -351,6 +366,7 @@ export function PayoutDetailsModal({
                   </span>
                 </div>
               )}
+              
               <Separator />
               <div className="flex justify-between items-center">
                 <span className="font-medium text-lg">Net Amount:</span>

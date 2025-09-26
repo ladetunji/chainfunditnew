@@ -52,6 +52,13 @@ const Payments = (props: Props) => {
 
   const [changeRequestReason, setChangeRequestReason] = useState('');
   const [showChangeRequest, setShowChangeRequest] = useState(false);
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [verificationData, setVerificationData] = useState<{
+    accountNumber: string;
+    bankCode: string;
+    bankName: string;
+    accountName: string;
+  } | null>(null);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -66,7 +73,7 @@ const Payments = (props: Props) => {
     }
 
     try {
-      const response = await fetch('/api/account/verify', {
+      const response = await fetch('/api/account/verify/preview', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,13 +91,38 @@ const Payments = (props: Props) => {
         throw new Error(result.error || 'Account verification failed');
       }
 
-      toast.success(result.message || 'Account verified successfully!');
-      setFormData({ accountNumber: '', bankCode: '' });
+      const selectedBank = banks.find(bank => bank.code === formData.bankCode);
+      
+      setVerificationData({
+        accountNumber: formData.accountNumber,
+        bankCode: formData.bankCode,
+        bankName: selectedBank?.name || result.data.bank_name || 'Unknown Bank',
+        accountName: result.data.account_name,
+      });
+      setShowConfirmationModal(true);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Account verification failed');
     }
   };
 
+  const handleConfirmVerification = async () => {
+    if (!verificationData) return;
+
+    try {
+      const result = await verifyAccount(verificationData.accountNumber, verificationData.bankCode);
+      toast.success(result.message || 'Account verified successfully!');
+      setFormData({ accountNumber: '', bankCode: '' });
+      setShowConfirmationModal(false);
+      setVerificationData(null);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Account verification failed');
+    }
+  };
+
+  const handleCancelVerification = () => {
+    setShowConfirmationModal(false);
+    setVerificationData(null);
+  };
 
   const handleRequestChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,7 +246,11 @@ const Payments = (props: Props) => {
                 <Label className="text-sm font-medium text-gray-600">Bank Name</Label>
                 <div className="flex items-center gap-2 mt-1">
                   <Building2 className="h-4 w-4 text-gray-400" />
-                  <span className="text-lg">{accountDetails.bankName}</span>
+                  <span className="text-lg">
+                    {accountDetails.bankName || 
+                     (banks.find(bank => bank.code === accountDetails.bankCode)?.name) || 
+                     'Unknown Bank'}
+                  </span>
                 </div>
               </div>
               <div>
@@ -396,6 +432,48 @@ const Payments = (props: Props) => {
         </Card>
       )}
 
+      {/* Test Reset Button - Remove in production */}
+      {process.env.NODE_ENV === 'development' && (
+        <Card className="border-2 bg-red-50 border-red-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Test Reset (Development Only)
+            </CardTitle>
+            <CardDescription>
+              Reset account details for testing purposes
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={async () => {
+                try {
+                  const response = await fetch('/api/test/reset-account', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                  });
+                  const result = await response.json();
+                  if (result.success) {
+                    toast.success('Account details reset successfully!');
+                    // Refresh the page to show the reset state
+                    window.location.reload();
+                  } else {
+                    toast.error(result.error || 'Failed to reset account');
+                  }
+                } catch (error) {
+                  toast.error('Failed to reset account details');
+                }
+              }}
+              variant="destructive"
+              className="w-full"
+            >
+              Reset Account Details
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Contact Information */}
       <Card className="border-2 bg-gray-50">
         <CardHeader>
@@ -420,6 +498,87 @@ const Payments = (props: Props) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Account Verification Confirmation Modal */}
+      <Dialog open={showConfirmationModal} onOpenChange={setShowConfirmationModal}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-[#104901]">
+              <Shield className="h-5 w-5" />
+              Confirm Account Details
+            </DialogTitle>
+            <DialogDescription>
+              Please verify that the account details below are correct before proceeding. Once confirmed, these details will be locked and cannot be changed without contacting our admin team.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {verificationData && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Account Number</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <User className="h-4 w-4 text-gray-400" />
+                    <span className="font-mono text-lg font-semibold">{verificationData.accountNumber}</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Bank Name</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Building2 className="h-4 w-4 text-gray-400" />
+                    <span className="text-lg font-semibold">{verificationData.bankName}</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Account Name</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <User className="h-4 w-4 text-gray-400" />
+                    <span className="text-lg font-semibold text-[#104901]">{verificationData.accountName}</span>
+                  </div>
+                </div>
+              </div>
+
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Important:</strong> Please double-check that the account name above matches your bank account. Once you confirm, these details will be permanently saved and locked for security purposes.
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+
+          <DialogFooter className="gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancelVerification}
+              className="flex-1 h-12 text-lg"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirmVerification}
+              disabled={verifying}
+              className="flex-1 h-12 text-lg font-semibold"
+            >
+              {verifying ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Confirming...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  Confirm & Save
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );

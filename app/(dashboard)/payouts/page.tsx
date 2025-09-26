@@ -17,8 +17,6 @@ import {
   Info
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/currency';
-import { getPayoutProvider, getPayoutConfig, isPayoutSupported } from '@/lib/payments/payout-config';
-import { getCurrencyCode } from '@/lib/utils/currency';
 import { toast } from 'sonner';
 import { useGeolocation, useCurrencyConversion } from '@/hooks/use-geolocation';
 
@@ -126,20 +124,45 @@ const PayoutsPage = () => {
   };
 
   const handlePayoutClick = async (campaign: CampaignPayout) => {
+    console.log('🚀 [handlePayoutClick] Starting payout click for campaign:', campaign.id);
     try {
       // Fetch chainer donations for this specific campaign
       const chainerDonations = payoutData?.chainerDonations?.filter(donation => 
         donation.campaignId === campaign.id
       ) || [];
 
+      console.log('All chainer donations from payout data:', payoutData?.chainerDonations);
+      console.log('Filtered chainer donations for campaign:', chainerDonations);
+      console.log('Campaign ID:', campaign.id);
+
       // Fetch campaign details to get commission rate
       const campaignResponse = await fetch(`/api/campaigns/${campaign.id}`);
       const campaignData = await campaignResponse.json();
       const commissionRate = campaignData.success ? Number(campaignData.data.chainerCommissionRate) : 0;
+      
+      console.log('Campaign response:', campaignData);
+      console.log('Commission rate from campaign:', commissionRate);
 
       // Calculate commission amounts
       const chainerDonationsTotal = chainerDonations.reduce((sum, d) => sum + parseFloat(d.amount), 0);
-      const chainerCommissionsTotal = chainerDonationsTotal * (commissionRate / 100);
+      const chainerCommissionsTotal = chainerDonations.reduce((sum, d) => {
+        // Use the actual commission earned from the chainer data if available
+        const commissionEarned = (d as any).chainerCommissionEarned;
+        console.log('Chainer donation:', d);
+        console.log('Commission earned from data:', commissionEarned);
+        console.log('Commission rate:', commissionRate);
+        
+        if (commissionEarned && parseFloat(commissionEarned) > 0) {
+          return sum + parseFloat(commissionEarned);
+        }
+        // Fallback to calculating from commission rate
+        const calculatedCommission = parseFloat(d.amount) * (commissionRate / 100);
+        console.log('Calculated commission:', calculatedCommission);
+        return sum + calculatedCommission;
+      }, 0);
+      
+      console.log('Total chainer donations:', chainerDonationsTotal);
+      console.log('Total chainer commissions:', chainerCommissionsTotal);
 
       // Create enhanced campaign object with chainer data
       const enhancedCampaign = {
@@ -436,7 +459,7 @@ const PayoutsPage = () => {
         </div>
 
         {/* Chainer Donations Section */}
-        {payoutData.chainerDonations.length > 0 && (
+        {/* {payoutData.chainerDonations.length > 0 && (
           <div className="mb-8">
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200 mb-6">
               <div className="flex items-center justify-between">
@@ -487,7 +510,7 @@ const PayoutsPage = () => {
               ))}
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Campaigns List */}
         <div className="space-y-6">

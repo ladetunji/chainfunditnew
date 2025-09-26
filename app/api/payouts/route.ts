@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { campaigns, donations, users, chainers } from '@/lib/schema';
-import { eq, and, sum, count } from 'drizzle-orm';
+import { eq, and, sum, count, inArray, isNotNull } from 'drizzle-orm';
 import { getPayoutProvider, getPayoutConfig, isPayoutSupported } from '@/lib/payments/payout-config';
 import { getCurrencyCode } from '@/lib/utils/currency';
 import { convertToNaira } from '@/lib/utils/currency-conversion';
@@ -40,8 +40,9 @@ export async function GET(request: NextRequest) {
       .from(campaigns)
       .where(eq(campaigns.creatorId, user[0].id));
 
-    // Get user's chainer donations (campaigns where user is a chainer)
-    const userChainerDonations = await db
+    // Get chainer donations for user's campaigns (donations that came through chainers to user's campaigns)
+    const campaignIds = userCampaigns.map(c => c.id);
+    const userChainerDonations = campaignIds.length > 0 ? await db
       .select({
         id: donations.id,
         amount: donations.amount,
@@ -51,13 +52,17 @@ export async function GET(request: NextRequest) {
         campaignTitle: campaigns.title,
         campaignCurrency: campaigns.currency,
         createdAt: donations.createdAt,
+        chainerId: donations.chainerId,
+        chainerCommissionEarned: chainers.commissionEarned,
       })
       .from(donations)
       .leftJoin(campaigns, eq(donations.campaignId, campaigns.id))
+      .leftJoin(chainers, eq(donations.chainerId, chainers.id))
       .where(and(
-        eq(donations.chainerId, user[0].id),
-        eq(donations.paymentStatus, 'completed')
-      ));
+        inArray(donations.campaignId, campaignIds),
+        eq(donations.paymentStatus, 'completed'),
+        isNotNull(donations.chainerId) // Only donations that came through chainers
+      )) : [];
 
     // Calculate available payout amounts for each campaign with currency conversion
     const campaignsWithPayouts = await Promise.all(
