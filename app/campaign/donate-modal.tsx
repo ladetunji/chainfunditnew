@@ -41,12 +41,17 @@ interface DonateModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   campaign?: Campaign;
+  referralChainer?: {
+    id: string;
+    referralCode: string;
+  } | null;
 }
 
 const DonateModal: React.FC<DonateModalProps> = ({
   open,
   onOpenChange,
   campaign,
+  referralChainer,
 }) => {
   const [step, setStep] = useState<"donate" | "payment" | "stripe-payment" | "thankyou">("donate");
   const [period, setPeriod] = useState("one-time");
@@ -72,6 +77,14 @@ const DonateModal: React.FC<DonateModalProps> = ({
 
   useEffect(() => {
     if (campaign && open) {
+      // Check if this is a thank you modal from Paystack callback
+      const showThankYouModal = sessionStorage.getItem('showThankYouModal');
+      if (showThankYouModal === 'true') {
+        setStep("thankyou");
+        sessionStorage.removeItem('showThankYouModal');
+        return;
+      }
+
       // Set initial currency to campaign currency
       setSelectedCurrency(campaign.currency || "₦");
       
@@ -135,6 +148,7 @@ const DonateModal: React.FC<DonateModalProps> = ({
         paymentProvider,
         message: comments,
         isAnonymous: anonymous,
+        chainerId: referralChainer?.id || null,
       };
 
       // Initialize donation and redirect to payment gateway

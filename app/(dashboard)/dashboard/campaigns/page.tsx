@@ -163,7 +163,7 @@ export default function CampaignsPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             {activeTab === "Live" && <LiveCampaigns campaigns={filteredCampaigns} />}
             {activeTab === "Past" && <PastCampaigns campaigns={filteredCampaigns} />}
-            {activeTab === "Chains" && <Chains campaigns={filteredCampaigns} />}
+            {activeTab === "Chains" && <Chains />}
             {activeTab === "Favourites" && <Favourites campaigns={filteredCampaigns} />}
             {activeTab === "Comments" && <Comments campaigns={userCampaigns} />}
           </div>

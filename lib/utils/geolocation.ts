@@ -210,7 +210,7 @@ async function getExchangeRates(baseCurrency: string): Promise<Record<string, nu
     
     return data.rates;
   } catch (error) {
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       console.warn('Exchange rate API request timed out');
     } else {
       console.warn('Failed to fetch exchange rates:', error);

@@ -8,6 +8,7 @@ import { eq } from 'drizzle-orm';
 import { createStripePaymentIntent, simulateStripePayment } from '@/lib/payments/stripe';
 import { createPaystackTransaction, simulatePaystackPayment } from '@/lib/payments/paystack';
 import { getSupportedProviders } from '@/lib/payments/config';
+import { validateCampaignForDonations, checkAndUpdateGoalReached } from '@/lib/utils/campaign-validation';
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,32 +72,27 @@ export async function POST(request: NextRequest) {
       user = guestUser[0];
     }
 
-    // Validate campaign exists and is active
-    const campaign = await db
-      .select()
-      .from(campaigns)
-      .where(eq(campaigns.id, campaignId))
-      .limit(1);
-
-    if (!campaign.length) {
+    // Validate campaign can accept donations
+    const campaignValidation = await validateCampaignForDonations(campaignId);
+    
+    if (!campaignValidation.canAcceptDonations) {
       return NextResponse.json(
-        { success: false, error: 'Campaign not found' },
-        { status: 404 }
-      );
-    }
-
-    if (campaign[0].status !== 'active') {
-      return NextResponse.json(
-        { success: false, error: 'Campaign is not active' },
+        { 
+          success: false, 
+          error: campaignValidation.reason || 'Campaign cannot accept donations',
+          campaignStatus: campaignValidation.campaign?.status
+        },
         { status: 400 }
       );
     }
 
+    const campaign = campaignValidation.campaign;
+
     // Check minimum donation amount
-    const minDonation = parseFloat(campaign[0].minimumDonation);
+    const minDonation = parseFloat(campaign.minimumDonation);
     if (amount < minDonation) {
       return NextResponse.json(
-        { success: false, error: `Minimum donation amount is ${campaign[0].currency} ${minDonation}` },
+        { success: false, error: `Minimum donation amount is ${campaign.currency} ${minDonation}` },
         { status: 400 }
       );
     }
@@ -130,7 +126,7 @@ export async function POST(request: NextRequest) {
           donorEmail: user.email!,
           metadata: {
             donorName: user.fullName,
-            campaignTitle: campaign[0].title,
+            campaignTitle: campaign.title,
           },
         });
       } else {
@@ -142,7 +138,7 @@ export async function POST(request: NextRequest) {
           donorEmail: user.email!,
           metadata: {
             donorName: user.fullName,
-            campaignTitle: campaign[0].title,
+            campaignTitle: campaign.title,
           },
         });
       }
@@ -175,7 +171,7 @@ export async function POST(request: NextRequest) {
           campaignId,
           metadata: {
             donorName: user.fullName,
-            campaignTitle: campaign[0].title,
+            campaignTitle: campaign.title,
           },
         });
       } else {
@@ -187,7 +183,7 @@ export async function POST(request: NextRequest) {
           campaignId,
           metadata: {
             donorName: user.fullName,
-            campaignTitle: campaign[0].title,
+            campaignTitle: campaign.title,
           },
           callback_url: `${process.env.NEXT_PUBLIC_APP_URL}/api/payments/paystack/callback`,
         });

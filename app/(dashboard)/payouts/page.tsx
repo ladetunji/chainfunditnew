@@ -46,17 +46,34 @@ interface CampaignPayout {
   }>;
 }
 
+interface ChainerDonation {
+  id: string;
+  amount: string;
+  currency: string;
+  paymentStatus: string;
+  campaignId: string;
+  campaignTitle: string;
+  campaignCurrency: string;
+  createdAt: string;
+}
+
 interface PayoutData {
   campaigns: CampaignPayout[];
+  chainerDonations: ChainerDonation[];
   totalAvailableForPayout: number;
   totalAvailableForPayoutInNGN: number; // Total available in Naira
   totalRaisedInNGN: number; // Total raised in Naira
+  chainerDonationsTotal: number;
+  chainerDonationsInNGN: number; // Chainer donations in Naira
   currencyBreakdown: { [key: string]: number }; // Breakdown by original currency
   summary: {
     totalCampaigns: number;
     campaignsWithPayouts: number;
     totalRaised: number;
     totalRaisedInNGN: number; // Total raised in Naira
+    chainerDonationsCount: number;
+    chainerDonationsTotal: number;
+    chainerDonationsInNGN: number;
   };
 }
 
@@ -108,9 +125,45 @@ const PayoutsPage = () => {
     }
   };
 
-  const handlePayoutClick = (campaign: CampaignPayout) => {
-    setSelectedCampaign(campaign);
-    setShowPayoutModal(true);
+  const handlePayoutClick = async (campaign: CampaignPayout) => {
+    try {
+      // Fetch chainer donations for this specific campaign
+      const chainerDonations = payoutData?.chainerDonations?.filter(donation => 
+        donation.campaignId === campaign.id
+      ) || [];
+
+      // Fetch campaign details to get commission rate
+      const campaignResponse = await fetch(`/api/campaigns/${campaign.id}`);
+      const campaignData = await campaignResponse.json();
+      const commissionRate = campaignData.success ? Number(campaignData.data.chainerCommissionRate) : 0;
+
+      // Calculate commission amounts
+      const chainerDonationsTotal = chainerDonations.reduce((sum, d) => sum + parseFloat(d.amount), 0);
+      const chainerCommissionsTotal = chainerDonationsTotal * (commissionRate / 100);
+
+      // Create enhanced campaign object with chainer data
+      const enhancedCampaign = {
+        ...campaign,
+        chainerDonations,
+        chainerDonationsTotal,
+        chainerDonationsInNGN: chainerDonations.reduce((sum, d) => {
+          // Simple conversion - in a real app, you'd use proper currency conversion
+          const amount = parseFloat(d.amount);
+          return sum + (d.currency === 'NGN' ? amount : amount * 0.001); // Rough conversion
+        }, 0),
+        chainerCommissionRate: commissionRate,
+        chainerCommissionsTotal,
+        chainerCommissionsInNGN: chainerCommissionsTotal * (campaign.totalRaisedInNGN / campaign.totalRaised), // Rough conversion
+      };
+
+      setSelectedCampaign(enhancedCampaign);
+      setShowPayoutModal(true);
+    } catch (error) {
+      console.error('Error fetching chainer donations:', error);
+      // Fallback to original campaign without chainer data
+      setSelectedCampaign(campaign);
+      setShowPayoutModal(true);
+    }
   };
 
   const handleConfirmPayout = async (campaignId: string, amount: number, currency: string, payoutProvider: string) => {
@@ -381,6 +434,60 @@ const PayoutsPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Chainer Donations Section */}
+        {payoutData.chainerDonations.length > 0 && (
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200 mb-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-[#104901] mb-2">
+                    Chainer Donations
+                  </h2>
+                  <p className="text-lg text-[#104901] opacity-80">
+                    {payoutData.summary.chainerDonationsCount} donation{payoutData.summary.chainerDonationsCount !== 1 ? 's' : ''} earned through referrals
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-3xl font-bold text-[#104901]">
+                    ₦{payoutData.chainerDonationsInNGN.toLocaleString()}
+                  </p>
+                  <p className="text-sm text-[#104901] opacity-60">
+                    Total Earned (NGN)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {payoutData.chainerDonations.map((donation) => (
+                <Card key={donation.id} className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-lg">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-semibold text-[#104901] truncate">
+                      {donation.campaignTitle}
+                    </CardTitle>
+                    <CardDescription className="text-sm text-gray-600">
+                      {new Date(donation.createdAt).toLocaleDateString()}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold text-[#104901]">
+                          {formatCurrency(parseFloat(donation.amount), donation.currency)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {donation.currency} • {donation.paymentStatus}
+                        </p>
+                      </div>
+                      <CheckCircle className="h-6 w-6 text-green-500" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Campaigns List */}
         <div className="space-y-6">

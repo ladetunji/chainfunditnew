@@ -43,8 +43,9 @@ export async function POST(request: NextRequest) {
     await s3Client.send(command);
     console.log('R2 Upload: File uploaded successfully to R2');
 
-    // Return the URL - construct public URL for Cloudflare R2
-    const fileUrl = `https://pub-${process.env.R2_ACCOUNT_ID}.r2.dev/${fileName}`;
+    // Return the URL - use the configured public access key URL
+    const baseUrl = process.env.R2_PUBLIC_ACCESS_KEY;
+    const fileUrl = `${baseUrl}/${fileName}`;
     console.log('R2 Upload: Generated URL:', fileUrl);
     
     return NextResponse.json({ 

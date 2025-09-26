@@ -106,10 +106,9 @@ interface CampaignComment {
 
 interface MainProps {
   campaignId: string;
-  initialCampaignData?: CampaignData;
 }
 
-const Main = ({ campaignId, initialCampaignData }: MainProps) => {
+const Main = ({ campaignId }: MainProps) => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [activeTab, setActiveTab] = useState("why-support");
   const [chainModalOpen, setChainModalOpen] = useState(false);
@@ -131,6 +130,10 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
     donationId?: string;
     message: string;
   } | null>(null);
+  const [referralChainer, setReferralChainer] = useState<{
+    id: string;
+    referralCode: string;
+  } | null>(null);
 
   // Fetch donations data
   const { donations, loading: loadingDonations } =
@@ -144,6 +147,7 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
     const donationStatus = urlParams.get('donation_status');
     const donationId = urlParams.get('donation_id');
     const error = urlParams.get('error');
+    const ref = urlParams.get('ref'); // Extract referral code
 
     if (donationStatus) {
       let message = '';
@@ -153,10 +157,10 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
         case 'success':
           status = 'success';
           message = 'Thank you! Your donation was successful.';
-          toast.success('Donation Successful!', {
-            description: message,
-            duration: 5000,
-          });
+          // Show the donate modal with thank you step for successful donations
+          setDonateModalOpen(true);
+          // Set a flag to indicate this is a thank you modal
+          sessionStorage.setItem('showThankYouModal', 'true');
           break;
         case 'failed':
           status = 'failed';
@@ -194,7 +198,29 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
         setDonationStatusNotification(null);
       }, 10000);
     }
-  }, []);
+
+    // Handle referral code
+    if (ref) {
+      // Fetch chainer information by referral code
+      fetch(`/api/chainers?referralCode=${ref}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success && data.data.length > 0) {
+            const chainer = data.data[0];
+            // Only set if the chainer is for this campaign
+            if (chainer.campaignId === campaignId) {
+              setReferralChainer({
+                id: chainer.id,
+                referralCode: ref
+              });
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching chainer:', error);
+        });
+    }
+  }, [campaignId]);
 
   // Fetch campaign updates
   const fetchUpdates = React.useCallback(async () => {
@@ -259,15 +285,7 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
       setLoading(true);
       setError(null);
       
-      // Use initial data if available, otherwise fetch from API
-      if (initialCampaignData) {
-        setCampaign(initialCampaignData);
-        // Still fetch updates, comments, and chain count
-        await Promise.all([fetchUpdates(), fetchComments(), fetchChainCount()]);
-        setLoading(false);
-        return;
-      }
-
+      // Always fetch from API to get canEdit property and latest data
       const response = await fetch(`/api/campaigns/${campaignId}?t=${Date.now()}`);
 
       if (!response.ok) {
@@ -304,7 +322,7 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
     } finally {
       setLoading(false);
     }
-  }, [campaignId, initialCampaignData, fetchUpdates, fetchComments]);
+  }, [campaignId, fetchUpdates, fetchComments]);
 
   React.useEffect(() => {
     if (campaignId) {
@@ -571,7 +589,7 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
               >
                 <CheckCircle /> Verified
               </Button>
-              <Button
+              {/* <Button
                 className="font-medium text-lg text-[#2C2C2C] rounded-lg border-2 border-[#A5C7E7]"
                 style={{
                   background:
@@ -580,7 +598,7 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
               >
                 <Bitcoin />
                 Accepts Crypto
-              </Button>
+              </Button> */}
             </section>
           </div>
 
@@ -929,7 +947,7 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
                 <ul className="flex">
                   <li>
                     <Image
-                      src="/images/donor1.png"
+                      src="/images/donor3.jpg"
                       alt=""
                       width={40}
                       height={40}
@@ -1172,6 +1190,7 @@ const Main = ({ campaignId, initialCampaignData }: MainProps) => {
         open={donateModalOpen}
         onOpenChange={setDonateModalOpen}
         campaign={campaign || undefined}
+        referralChainer={referralChainer}
       />
       <ShareModal
         open={shareModalOpen}

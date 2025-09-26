@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { campaigns, donations, users } from '@/lib/schema';
+import { campaigns, donations, users, chainers } from '@/lib/schema';
 import { eq, and, sum, count } from 'drizzle-orm';
 import { getPayoutProvider, getPayoutConfig, isPayoutSupported } from '@/lib/payments/payout-config';
 import { getCurrencyCode } from '@/lib/utils/currency';
@@ -39,6 +39,25 @@ export async function GET(request: NextRequest) {
       })
       .from(campaigns)
       .where(eq(campaigns.creatorId, user[0].id));
+
+    // Get user's chainer donations (campaigns where user is a chainer)
+    const userChainerDonations = await db
+      .select({
+        id: donations.id,
+        amount: donations.amount,
+        currency: donations.currency,
+        paymentStatus: donations.paymentStatus,
+        campaignId: donations.campaignId,
+        campaignTitle: campaigns.title,
+        campaignCurrency: campaigns.currency,
+        createdAt: donations.createdAt,
+      })
+      .from(donations)
+      .leftJoin(campaigns, eq(donations.campaignId, campaigns.id))
+      .where(and(
+        eq(donations.chainerId, user[0].id),
+        eq(donations.paymentStatus, 'completed')
+      ));
 
     // Calculate available payout amounts for each campaign with currency conversion
     const campaignsWithPayouts = await Promise.all(
@@ -120,19 +139,32 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // Calculate chainer donations summary
+    const chainerDonationsTotal = userChainerDonations.reduce((sum, d) => sum + parseFloat(d.amount), 0);
+    const chainerDonationsInNGN = userChainerDonations.reduce((sum, d) => {
+      const currencyCode = getCurrencyCode(d.currency);
+      return sum + convertToNaira(parseFloat(d.amount), currencyCode);
+    }, 0);
+
     return NextResponse.json({
       success: true,
       data: {
         campaigns: campaignsWithPayouts,
+        chainerDonations: userChainerDonations,
         totalAvailableForPayout,
         totalAvailableForPayoutInNGN, // Total available in Naira
         totalRaisedInNGN, // Total raised in Naira
+        chainerDonationsTotal,
+        chainerDonationsInNGN, // Chainer donations in Naira
         currencyBreakdown, // Breakdown by original currency
         summary: {
           totalCampaigns: campaignsWithPayouts.length,
           campaignsWithPayouts: campaignsWithPayouts.filter(c => c.availableForPayout).length,
           totalRaised: campaignsWithPayouts.reduce((sum, c) => sum + c.totalRaised, 0),
           totalRaisedInNGN, // Total raised in Naira
+          chainerDonationsCount: userChainerDonations.length,
+          chainerDonationsTotal,
+          chainerDonationsInNGN,
         }
       }
     });

@@ -21,12 +21,16 @@ export const campaigns = pgTable('campaigns', {
   chainerCommissionRate: decimal('chainer_commission_rate', { precision: 3, scale: 1 }).notNull(), // 1.0-10.0
   isChained: boolean('is_chained').default(false).notNull(), // Whether campaign allows chaining
   currentAmount: decimal('current_amount', { precision: 15, scale: 2 }).default('0').notNull(),
-  status: varchar('status', { length: 20 }).default('active').notNull(), // active, paused, goal_reached, closed
+  status: varchar('status', { length: 20 }).default('active').notNull(), // active, paused, goal_reached, closed, expired
   visibility: varchar('visibility', { length: 20 }).default('public').notNull(), // public, private
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   closedAt: timestamp('closed_at'),
+  // Auto-close logic fields
+  goalReachedAt: timestamp('goal_reached_at'), // When campaign first reached its goal
+  autoCloseAt: timestamp('auto_close_at'), // When campaign should be auto-closed (4 weeks after goal reached)
+  expiresAt: timestamp('expires_at'), // Campaign expiration date (if any)
 });
 
 

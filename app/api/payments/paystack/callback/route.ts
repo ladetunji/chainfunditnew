@@ -4,6 +4,7 @@ import { donations } from '@/lib/schema/donations';
 import { campaigns } from '@/lib/schema/campaigns';
 import { eq, sum, and } from 'drizzle-orm';
 import { verifyPaystackTransaction } from '@/lib/payments/paystack';
+import { checkAndUpdateGoalReached } from '@/lib/utils/campaign-validation';
 
 // Helper function to update campaign currentAmount based on completed donations
 async function updateCampaignAmount(campaignId: string) {
@@ -28,6 +29,9 @@ async function updateCampaignAmount(campaignId: string) {
         currentAmount: totalAmount.toString(),
       })
       .where(eq(campaigns.id, campaignId));
+
+    // Check if campaign reached its goal and update status
+    await checkAndUpdateGoalReached(campaignId);
   } catch (error) {
     console.error('Error updating campaign amount:', error);
   }

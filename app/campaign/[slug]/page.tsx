@@ -36,7 +36,7 @@ const page = async ({ params }: PageProps) => {
   return (
     <div className='h-full'>
       <Navbar />
-      <Main campaignId={campaignData.id} initialCampaignData={campaignData as any} />
+      <Main campaignId={campaignData.id} />
       <Cards campaignId={campaignData.id} />
       <Footer />
     </div>

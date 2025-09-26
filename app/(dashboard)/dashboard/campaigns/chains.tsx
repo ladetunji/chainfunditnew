@@ -1,30 +1,19 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Plus,
-  Eye,
-  Link as LinkIcon,
   Users,
-  Edit,
-  PlusSquare,
-  MessageCircle,
   DollarSign,
   TrendingUp,
-  Share2,
   Gift,
   Calendar,
 } from "lucide-react";
 import Link from "next/link";
-import { Campaign, transformCampaign } from "./types";
 import { useChainerDonations } from "@/hooks/use-chainer-donations";
 import { formatCurrency } from "@/lib/utils/currency";
 
-type Props = {
-  campaigns: Campaign[];
-};
-
-const Chains = ({ campaigns }: Props) => {
+const Chains = () => {
   const { data: chainerData, loading, error, refetch } = useChainerDonations();
 
   const isEmpty = !loading && (!chainerData || chainerData.donations.length === 0);

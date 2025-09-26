@@ -65,8 +65,14 @@ export async function GET(
     }
 
     const campaignUrl = `/campaign/${campaign[0].slug}?ref=${referralCode}`;
+    const fullUrl = new URL(campaignUrl, request.url).toString();
     
-    return NextResponse.redirect(new URL(campaignUrl, request.url));
+    return NextResponse.json({
+      success: true,
+      redirectUrl: fullUrl,
+      campaignSlug: campaign[0].slug,
+      referralCode
+    });
   } catch (error) {
     console.error('Error processing referral:', error);
     return NextResponse.json(

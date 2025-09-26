@@ -10,6 +10,7 @@ import {
   isDonationPending, 
   isDonationFailed 
 } from '@/lib/utils/donation-status';
+import { checkAndUpdateGoalReached } from '@/lib/utils/campaign-validation';
 
 // Helper function to update campaign currentAmount based on completed donations
 async function updateCampaignAmount(campaignId: string) {
@@ -34,6 +35,9 @@ async function updateCampaignAmount(campaignId: string) {
         currentAmount: totalAmount.toString(),
       })
       .where(eq(campaigns.id, campaignId));
+
+    // Check if campaign reached its goal and update status
+    await checkAndUpdateGoalReached(campaignId);
   } catch (error) {
     console.error('Error updating campaign amount:', error);
   }

@@ -34,6 +34,18 @@ interface PayoutDetailsModalProps {
     totalRaisedInNGN: number;
     payoutProvider: string | null;
     payoutConfig: any;
+    chainerDonations?: Array<{
+      id: string;
+      amount: string;
+      currency: string;
+      campaignTitle: string;
+      createdAt: string;
+    }>;
+    chainerDonationsTotal?: number;
+    chainerDonationsInNGN?: number;
+    chainerCommissionRate?: number;
+    chainerCommissionsTotal?: number;
+    chainerCommissionsInNGN?: number;
   };
   userProfile?: {
     fullName: string;
@@ -222,6 +234,90 @@ export function PayoutDetailsModal({
               </div>
             </CardContent>
           </Card>
+
+          {/* Chainer Payouts */}
+          {campaign.chainerDonations && campaign.chainerDonations.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg text-[#104901] flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Chainer Payouts
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Total Chainer Donations:</span>
+                  <div className="text-right">
+                    <div className="font-semibold">
+                      {formatCurrency(campaign.chainerDonationsTotal || 0, campaign.currencyCode)}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      ₦{campaign.chainerDonationsInNGN?.toLocaleString() || '0'}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">Number of Donations:</span>
+                  <span className="font-semibold">{campaign.chainerDonations.length}</span>
+                </div>
+                {campaign.chainerCommissionRate && (
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Commission Rate:</span>
+                    <span className="font-semibold text-blue-600">{campaign.chainerCommissionRate}%</span>
+                  </div>
+                )}
+                {campaign.chainerCommissionsTotal && (
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Total Commissions:</span>
+                    <div className="text-right">
+                      <div className="font-semibold text-green-600">
+                        {formatCurrency(campaign.chainerCommissionsTotal, campaign.currencyCode)}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        ₦{campaign.chainerCommissionsInNGN?.toLocaleString() || '0'}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <Separator />
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-700">Recent Chainer Donations:</p>
+                  {campaign.chainerDonations.slice(0, 3).map((donation) => {
+                    const donationAmount = parseFloat(donation.amount);
+                    const commissionAmount = campaign.chainerCommissionRate 
+                      ? (donationAmount * campaign.chainerCommissionRate) / 100 
+                      : 0;
+                    
+                    return (
+                      <div key={donation.id} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded">
+                        <div>
+                          <span className="font-medium">{donation.campaignTitle}</span>
+                          <div className="text-xs text-gray-500">
+                            {new Date(donation.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-green-600">
+                            {formatCurrency(donationAmount, donation.currency)}
+                          </div>
+                          {commissionAmount > 0 && (
+                            <div className="text-xs text-blue-600">
+                              Commission: {formatCurrency(commissionAmount, donation.currency)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {campaign.chainerDonations.length > 3 && (
+                    <p className="text-xs text-gray-500 text-center">
+                      +{campaign.chainerDonations.length - 3} more donations
+                    </p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Fee Breakdown */}
           <Card>
