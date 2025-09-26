@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,7 +69,7 @@ export function PayoutDetailsModal({
   isProcessing = false
 }: PayoutDetailsModalProps) {
   const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
-
+  const router = useRouter();
   // Calculate fees and net amount
   const calculateFees = () => {
     const baseAmount = campaign.totalRaised;
@@ -417,7 +418,7 @@ export function PayoutDetailsModal({
                   <p className="text-sm text-gray-600 mb-3">
                     Bank account details not verified. Please complete your profile setup.
                   </p>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" onClick={() => router.push('/settings')}>
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Complete Profile
                   </Button>
