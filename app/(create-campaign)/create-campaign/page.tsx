@@ -93,9 +93,11 @@ const currencies = [
 
 const duration = [
   { text: "Not applicable", icon: <MinusCircle /> },
-  { text: "1 week" },
   { text: "2 weeks" },
   { text: "1 month" },
+  { text: "2 months" },
+  { text: "3 months" },
+  { text: "6 months" },
   { text: "1 year" },
 ];
 
@@ -171,7 +173,6 @@ export default function CreateCampaignPage() {
   const handleImageFileSelect = async (files: FileList | null) => {
     if (!files) return;
 
-
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
 
@@ -183,14 +184,12 @@ export default function CreateCampaignPage() {
             imageUrls: [...prev.imageUrls, result.url],
           }));
         }
-      } catch (error) {
-      }
+      } catch (error) {}
     }
   };
 
   const handleDocumentFileSelect = async (files: FileList | null) => {
     if (!files) return;
-
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -203,8 +202,7 @@ export default function CreateCampaignPage() {
             documentUrls: [...prev.documentUrls, result.url],
           }));
         }
-      } catch (error) {
-      }
+      } catch (error) {}
     }
   };
 
@@ -267,17 +265,20 @@ export default function CreateCampaignPage() {
       // Map form fields to API expected field names
       payload.append("title", formData.title);
       payload.append("subtitle", formData.subtitle || "");
-      payload.append("description", formData.story); 
+      payload.append("description", formData.story);
       payload.append("reason", formData.reason);
       payload.append("fundraisingFor", formData.fundraisingFor);
       payload.append("duration", formData.duration || "");
-      payload.append("videoUrl", formData.video || ""); 
-      payload.append("goalAmount", formData.goal.toString()); 
+      payload.append("videoUrl", formData.video || "");
+      payload.append("goalAmount", formData.goal.toString());
       payload.append("currency", formData.currency);
-      payload.append("minimumDonation", "1"); 
-      payload.append("chainerCommissionRate", formData.chainerCommissionRate.toString()); // Use form data
-      payload.append("isChained", formData.isChained.toString()); 
-      payload.append("visibility", formData.visibility); 
+      payload.append("minimumDonation", "1");
+      payload.append(
+        "chainerCommissionRate",
+        formData.chainerCommissionRate.toString()
+      ); // Use form data
+      payload.append("isChained", formData.isChained.toString());
+      payload.append("visibility", formData.visibility);
 
       // Add cover image URL with fallback to first gallery image
       if (uploadedFiles.coverImageUrl) {
@@ -660,7 +661,8 @@ export default function CreateCampaignPage() {
               </section>
               <p className="font-medium text-xs text-[#5F8555] my-2">
                 Note: Ambassadors will receive a percentage of the proceeds from
-                the campaign. Ambassador commission rate must be between 0 and 10% of campaign proceeds and must be a valid percentage.
+                the campaign. Ambassador commission rate must be between 0 and
+                10% of campaign proceeds and must be a valid percentage.
               </p>
             </section>
 
