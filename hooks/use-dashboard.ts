@@ -62,26 +62,10 @@ interface Donation {
   providerError?: string;
 }
 
-interface ChainingActivity {
-  id: string;
-  campaignId: string;
-  referralCode: string;
-  totalEarnings: number;
-  totalDonations: number;
-  createdAt: string;
-  campaignTitle: string;
-  campaignCoverImage: string;
-  campaignGoal: number;
-  campaignCurrent: number;
-  campaignCurrency: string;
-  progressPercentage: number;
-}
-
 interface DashboardData {
   stats: DashboardStats | null;
   campaigns: Campaign[];
   donations: Donation[];
-  chaining: ChainingActivity[];
   loading: boolean;
   error: string | null;
 }
@@ -91,7 +75,6 @@ export function useDashboard() {
     stats: null,
     campaigns: [],
     donations: [],
-    chaining: [],
     loading: true,
     error: null,
   });
@@ -101,25 +84,22 @@ export function useDashboard() {
       setData(prev => ({ ...prev, loading: true, error: null }));
 
       // Fetch all dashboard data in parallel
-      const [statsRes, campaignsRes, donationsRes, chainingRes] = await Promise.all([
+      const [statsRes, campaignsRes, donationsRes] = await Promise.all([
         fetch('/api/dashboard/stats'),
         fetch('/api/dashboard/campaigns'),
         fetch('/api/dashboard/donations'),
-        fetch('/api/dashboard/chaining'),
       ]);
 
-      const [statsData, campaignsData, donationsData, chainingData] = await Promise.all([
+      const [statsData, campaignsData, donationsData] = await Promise.all([
         statsRes.json(),
         campaignsRes.json(),
         donationsRes.json(),
-        chainingRes.json(),
       ]);
 
       setData({
         stats: statsData.success ? statsData.stats : null,
         campaigns: campaignsData.success ? campaignsData.campaigns : [],
         donations: donationsData.success ? donationsData.donations : [],
-        chaining: chainingData.success ? chainingData.chaining : [],
         loading: false,
         error: null,
       });
@@ -138,6 +118,25 @@ export function useDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
+    
+    // Auto-refresh dashboard data every 60 seconds
+    const interval = setInterval(() => {
+      fetchDashboardData();
+    }, 60000); // 60 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Refresh dashboard when page gains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible') {
+        fetchDashboardData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleFocus);
+    return () => document.removeEventListener('visibilitychange', handleFocus);
   }, []);
 
   return {
@@ -173,6 +172,29 @@ export function useCampaigns() {
 
   useEffect(() => {
     fetchCampaigns();
+  }, []);
+
+  // Auto-refresh campaigns every 2 minutes when not loading
+  useEffect(() => {
+    if (loading) return;
+    
+    const interval = setInterval(() => {
+      fetchCampaigns();
+    }, 120000); // 2 minutes
+
+    return () => clearInterval(interval);
+  }, [loading]);
+
+  // Refresh campaigns when page gains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible') {
+        fetchCampaigns();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleFocus);
+    return () => document.removeEventListener('visibilitychange', handleFocus);
   }, []);
 
   return {
@@ -223,6 +245,29 @@ export function useDonations(status: string = 'all', page: number = 1) {
 
   useEffect(() => {
     fetchDonations();
+  }, [status, page]);
+
+  // Auto-refresh donations every 30 seconds when donations are not loading
+  useEffect(() => {
+    if (loading) return;
+    
+    const interval = setInterval(() => {
+      fetchDonations();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [loading, status, page]);
+
+  // Refresh when page gains focus (user returns to tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible') {
+        fetchDonations();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleFocus);
+    return () => document.removeEventListener('visibilitychange', handleFocus);
   }, [status, page]);
 
   return {

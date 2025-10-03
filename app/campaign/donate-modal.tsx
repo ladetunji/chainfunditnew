@@ -60,7 +60,6 @@ const DonateModal: React.FC<DonateModalProps> = ({
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [taxNumber, setTaxNumber] = useState("");
   const [anonymous, setAnonymous] = useState(false);
   const [comments, setComments] = useState("");
   const [paymentProvider, setPaymentProvider] = useState<PaymentProvider>("stripe");
@@ -200,7 +199,6 @@ const DonateModal: React.FC<DonateModalProps> = ({
     setFullName("");
     setEmail("");
     setPhone("");
-    setTaxNumber("");
     setAnonymous(false);
     setComments("");
     setLinkCopied(false);
@@ -453,21 +451,6 @@ const DonateModal: React.FC<DonateModalProps> = ({
                       value={phone}
                       placeholder="Phone number"
                       onChange={(e) => setPhone(e.target.value)}
-                      className="mt-2 h-11 bg-whitesmoke rounded-lg border border-[#C0BFC4] text-[#5F8555] placeholder:text-xl placeholder:text-[#5F8555] text-xl shadow-none"
-                    />
-                  </div>
-                  <div>
-                    <Label
-                      htmlFor="taxNumber"
-                      className="text-sm font-medium text-gray-700"
-                    >
-                      Tax number
-                    </Label>
-                    <Input
-                      id="taxNumber"
-                      value={taxNumber}
-                      placeholder="Tax number"
-                      onChange={(e) => setTaxNumber(e.target.value)}
                       className="mt-2 h-11 bg-whitesmoke rounded-lg border border-[#C0BFC4] text-[#5F8555] placeholder:text-xl placeholder:text-[#5F8555] text-xl shadow-none"
                     />
                   </div>

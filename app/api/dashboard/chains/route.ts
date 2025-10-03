@@ -7,6 +7,19 @@ import { donations } from '@/lib/schema/donations';
 import { eq, and, desc, inArray } from 'drizzle-orm';
 
 async function getUserFromRequest(request: NextRequest) {
+  // Try authorization header first (Bearer token)
+  const authHeader = request.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    try {
+      const token = authHeader.replace('Bearer ', '');
+      const userPayload = JSON.parse(atob(token.split('.')[1]));
+      return userPayload.email;
+    } catch {
+      // Fall through to cookie method
+    }
+  }
+
+  // Fallback to cookie authentication
   const cookie = request.headers.get('cookie') || '';
   const cookies = cookie.split(';').reduce((acc, curr) => {
     const [key, value] = curr.trim().split('=');
@@ -44,7 +57,7 @@ export async function GET(request: NextRequest) {
     const userCampaigns = await db.select().from(campaigns).where(eq(campaigns.creatorId, userId));
     
     if (userCampaigns.length === 0) {
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         campaigns: [],
         donations: [],
@@ -55,6 +68,13 @@ export async function GET(request: NextRequest) {
           totalCommissionsPaid: 0
         }
       });
+
+      // Add cache control headers to prevent stale data
+      response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+
+      return response;
     }
 
     const campaignIds = userCampaigns.map(c => c.id);
@@ -153,7 +173,7 @@ export async function GET(request: NextRequest) {
       donorName: donation.isAnonymous ? 'Anonymous' : donation.donorName
     }));
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       campaigns: campaignStats,
       donations: formattedDonations,
@@ -164,6 +184,13 @@ export async function GET(request: NextRequest) {
         totalCommissionsPaid
       }
     });
+
+    // Add cache control headers to prevent stale data
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+
+    return response;
 
   } catch (error) {
     console.error('Chains API error:', error);

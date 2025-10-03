@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { users, campaigns, donations, chainers } from '@/lib/schema';
+import { users, campaigns, donations } from '@/lib/schema';
 import { eq, and, sql, desc, count, sum, inArray } from 'drizzle-orm';
 import { parse } from 'cookie';
 import { verifyUserJWT } from '@/lib/auth';
@@ -94,14 +94,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Get user's chaining activity
-    const chainerStats = await db
-      .select({
-        totalChained: count(chainers.id),
-        totalEarnings: sum(chainers.commissionEarned)
-      })
-      .from(chainers)
-      .where(eq(chainers.userId, userId));
 
     // Get recent donations
     let recentDonations: Array<{
@@ -148,8 +140,6 @@ export async function GET(request: NextRequest) {
       activeCampaigns: activeCampaigns.length,
       totalDonations: totalDonationsInNGN, // Total in Naira
       totalDonors: totalDonors,
-      totalChained: Number(chainerStats[0]?.totalChained || 0),
-      totalEarnings: Number(chainerStats[0]?.totalEarnings || 0),
       primaryCurrency: 'NGN', // Always show in Naira for Nigerian users
       currencyBreakdown: currencyBreakdown, // Breakdown by original currency
       recentDonations: recentDonations.map(d => ({

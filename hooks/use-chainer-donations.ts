@@ -59,6 +59,35 @@ export function useChainerDonations() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const refetch = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/dashboard/chains', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+      });
+
+      const result: ChainerDonationsResponse = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to fetch chainer donations');
+      }
+
+      setData(result);
+    } catch (err) {
+      console.error('Error refetching chainer donations:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch chainer donations');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     async function fetchChainerDonations() {
       try {
@@ -69,6 +98,8 @@ export function useChainerDonations() {
           credentials: 'include', // Include cookies for authentication
           headers: {
             'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
           },
         });
 
@@ -90,32 +121,55 @@ export function useChainerDonations() {
     fetchChainerDonations();
   }, []);
 
-  const refetch = async () => {
-    setLoading(true);
-    setError(null);
+  // Auto-refresh chainer donations every 30 seconds when not loading
+  useEffect(() => {
+    if (loading) return;
+    
+    async function fetchChainerDonations() {
+      try {
+        setError(null);
 
-    try {
-      const response = await fetch('/api/dashboard/chains', {
-        credentials: 'include', // Include cookies for authentication
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+        const response = await fetch('/api/dashboard/chains', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          },
+        });
 
-      const result: ChainerDonationsResponse = await response.json();
+        const result: ChainerDonationsResponse = await response.json();
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch chainer donations');
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to fetch chainer donations');
+        }
+
+        setData(result);
+      } catch (err) {
+        console.error('Error fetching chainer donations:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch chainer donations');
       }
-
-      setData(result);
-    } catch (err) {
-      console.error('Error refetching chainer donations:', err);
-      setError(err instanceof Error ? err.message : 'Failed to fetch chainer donations');
-    } finally {
-      setLoading(false);
     }
-  };
+    
+    const interval = setInterval(() => {
+      fetchChainerDonations();
+    }, 30000); // 30 seconds instead of 45
+
+    return () => clearInterval(interval);
+  }, [loading]);
+
+  // Refresh when page gains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible') {
+        refetch();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleFocus);
+    return () => document.removeEventListener('visibilitychange', handleFocus);
+  }, [refetch]);
+
 
   return {
     data,

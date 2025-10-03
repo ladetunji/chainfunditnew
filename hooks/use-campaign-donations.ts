@@ -48,6 +48,29 @@ export function useCampaignDonations(campaignId: string | undefined) {
     fetchDonations();
   }, [fetchDonations]);
 
+  // Auto-refresh campaign donations every 30 seconds when not loading
+  useEffect(() => {
+    if (loading || !campaignId) return;
+    
+    const interval = setInterval(() => {
+      fetchDonations();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [fetchDonations, loading, campaignId]);
+
+  // Refresh when page gains focus
+  useEffect(() => {
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible' && campaignId) {
+        fetchDonations();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleFocus);
+    return () => document.removeEventListener('visibilitychange', handleFocus);
+  }, [fetchDonations, campaignId]);
+
   return {
     donations,
     loading,

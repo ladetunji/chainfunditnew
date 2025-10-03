@@ -77,22 +77,6 @@ describe('useDashboard', () => {
         },
       ];
 
-      const mockChaining = [
-        {
-          id: '1',
-          campaignId: '1',
-          referralCode: 'ABC123',
-          totalEarnings: 500,
-          totalDonations: 1000,
-          createdAt: '2023-01-01',
-          campaignTitle: 'Test Campaign',
-          campaignCoverImage: 'https://example.com/image',
-          campaignGoal: 1000,
-          campaignCurrent: 500,
-          campaignCurrency: 'USD',
-          progressPercentage: 50,
-        },
-      ];
 
              // Mock all fetch calls
        (fetch as jest.Mock)
@@ -116,13 +100,6 @@ describe('useDashboard', () => {
              success: true,
              donations: mockDonations,
            }),
-         })
-         .mockResolvedValueOnce({
-           ok: true,
-           json: jest.fn().mockResolvedValue({
-             success: true,
-             chaining: mockChaining,
-           }),
          });
 
       const { result } = renderHook(() => useDashboard());
@@ -134,14 +111,13 @@ describe('useDashboard', () => {
       expect(result.current.stats).toEqual(mockStats);
       expect(result.current.campaigns).toEqual(mockCampaigns);
       expect(result.current.donations).toEqual(mockDonations);
-      expect(result.current.chaining).toEqual(mockChaining);
       expect(result.current.loading).toBe(false);
       expect(result.current.error).toBeNull();
 
              expect(fetch).toHaveBeenCalledWith('/api/dashboard/stats');
        expect(fetch).toHaveBeenCalledWith('/api/dashboard/campaigns');
        expect(fetch).toHaveBeenCalledWith('/api/dashboard/donations');
-       expect(fetch).toHaveBeenCalledWith('/api/dashboard/chaining');
+       // No longer fetching chaining data - using chains component instead
     });
 
     it('should handle API errors', async () => {

@@ -27,7 +27,8 @@ interface ChainModalProps {
 
 const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign, onChainCreated }) => {
   const [step, setStep] = useState<"form" | "success">("form");
-  const [whyChain, setWhyChain] = useState("");
+  const [whyChainOption, setWhyChainOption] = useState("");
+  const [whyChainCustom, setWhyChainCustom] = useState("");
   const [proceedsOption, setProceedsOption] = useState("give-back");
   const [copied, setCopied] = useState(false);
   const [referralCode, setReferralCode] = useState("");
@@ -46,7 +47,8 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign, o
       return;
     }
 
-    if (!whyChain.trim()) {
+    const finalWhyChain = whyChainOption === "other" ? whyChainCustom : whyChainOption;
+    if (!finalWhyChain.trim()) {
       toast.error('Please explain why you want to chain this campaign');
       return;
     }
@@ -63,6 +65,7 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign, o
       campaignId: campaign.id,
       commissionDestination: commissionDestinationMap[proceedsOption as keyof typeof commissionDestinationMap],
       charityChoiceId: proceedsOption === 'donate-charity' ? undefined : undefined, // TODO: Add charity selection
+      whyChain: finalWhyChain,
     };
     try {
       const result = await createChain(chainData);
@@ -92,7 +95,8 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign, o
 
   const handleClose = () => {
     setStep("form");
-    setWhyChain("");
+    setWhyChainOption("");
+    setWhyChainCustom("");
     setProceedsOption("give-back");
     setReferralCode("");
     onOpenChange(false);
@@ -129,16 +133,50 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign, o
           {step === "form" ? (
             <div className="space-y-4">
               <div>
-                <Label htmlFor="why-chain" className="text-base font-normal text-[#5F8555]">
+                <Label className="text-base font-normal text-[#5F8555]">
                   Why do you want to chain?
                 </Label>
-                <Input
-                  id="why-chain"
-                  value={whyChain}
-                  onChange={(e) => setWhyChain(e.target.value)}
-                  placeholder="Tell us why you want to chain this campaign..."
-                  className="mt-2 h-12 p-5 bg-whitesmoke border border-[#C0BFC4] rounded-lg shadow-none"
-                />
+                <RadioGroup
+                  value={whyChainOption}
+                  onValueChange={setWhyChainOption}
+                  className="mt-3 space-y-3"
+                >
+                  <div className="flex items-center space-x-2 w-fit h-12 p-5 bg-whitesmoke border border-[#C0BFC4] rounded-lg">
+                    <RadioGroupItem value="support-cause" id="support-cause" />
+                    <Label htmlFor="support-cause" className="text-xl font-normal text-[#5F8555]">
+                      I want to support this cause
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 w-fit h-12 p-5 bg-whitesmoke border border-[#C0BFC4] rounded-lg">
+                    <RadioGroupItem value="share-with-network" id="share-with-network" />
+                    <Label htmlFor="share-with-network" className="text-xl font-normal text-[#5F8555]">
+                      I want to share this with my network
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 w-fit h-12 p-5 bg-whitesmoke border border-[#C0BFC4] rounded-lg">
+                    <RadioGroupItem value="make-impact" id="make-impact" />
+                    <Label htmlFor="make-impact" className="text-xl font-normal text-[#5F8555]">
+                      I want to make a positive impact
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 w-fit h-12 p-5 bg-whitesmoke border border-[#C0BFC4] rounded-lg">
+                    <RadioGroupItem value="other" id="other" />
+                    <Label htmlFor="other" className="text-xl font-normal text-[#5F8555]">
+                      Other
+                    </Label>
+                  </div>
+                </RadioGroup>
+                
+                {whyChainOption === "other" && (
+                  <div className="mt-3">
+                    <Input
+                      value={whyChainCustom}
+                      onChange={(e) => setWhyChainCustom(e.target.value)}
+                      placeholder="Please tell us why you want to chain this campaign..."
+                      className="h-12 p-5 bg-whitesmoke border border-[#C0BFC4] rounded-lg shadow-none"
+                    />
+                  </div>
+                )}
               </div>
 
               <div>
@@ -184,7 +222,7 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign, o
               <div className="space-y-2">
                 <Button
                   onClick={handleChainCampaign}
-                  disabled={loading || !whyChain.trim()}
+                  disabled={loading || !whyChainOption.trim() || (whyChainOption === "other" && !whyChainCustom.trim())}
                   className="w-[300px] h-16 font-medium text-2xl flex justify-between items-center"
                   type="button"
                 >

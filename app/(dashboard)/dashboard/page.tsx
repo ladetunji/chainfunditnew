@@ -31,8 +31,6 @@ interface DashboardStats {
   activeCampaigns: number;
   totalDonations: number;
   totalDonors: number;
-  totalChained: number;
-  totalEarnings: number;
   primaryCurrency: string;
   recentDonations: Array<{
     id: string;
