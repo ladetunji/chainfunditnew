@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { donations, users, campaigns, chainers } from '@/lib/schema';
-import { eq, and, count, sum, desc } from 'drizzle-orm';
+import { eq, and, count, sum, desc, sql } from 'drizzle-orm';
 
 /**
  * GET /api/admin/donations/[id]
@@ -9,10 +9,10 @@ import { eq, and, count, sum, desc } from 'drizzle-orm';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const donationId = params.id;
+    const { id: donationId } = await params;
 
     // Get donation details with donor, campaign, and chainer info
     const donation = await db
@@ -27,10 +27,7 @@ export async function GET(
         chainerId: donations.chainerId,
         createdAt: donations.createdAt,
         processedAt: donations.processedAt,
-        refundedAt: donations.refundedAt,
-        refundReason: donations.refundReason,
-        transactionId: donations.transactionId,
-        notes: donations.notes,
+        paymentIntentId: donations.paymentIntentId,
         donorName: users.fullName,
         donorEmail: users.email,
         campaignTitle: campaigns.title,
@@ -89,8 +86,8 @@ export async function GET(
     let suspiciousActivity = false;
 
     // High amount donations
-    if (donation[0].amount > 1000) fraudScore += 20;
-    if (donation[0].amount > 5000) fraudScore += 30;
+    if (Number(donation[0].amount) > 1000) fraudScore += 20;
+    if (Number(donation[0].amount) > 5000) fraudScore += 30;
 
     // Multiple donations from same donor
     const [donationCount] = await db
@@ -130,7 +127,7 @@ export async function GET(
     if (donorAccount) {
       const accountAge = Date.now() - new Date(donorAccount.createdAt).getTime();
       const hoursOld = accountAge / (1000 * 60 * 60);
-      if (hoursOld < 24 && donation[0].amount > 100) {
+      if (hoursOld < 24 && Number(donation[0].amount) > 100) {
         fraudScore += 30;
         suspiciousActivity = true;
       }
@@ -161,10 +158,10 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const donationId = params.id;
+    const { id: donationId } = await params;
     const body = await request.json();
     const { action, ...updateData } = body;
 
@@ -194,9 +191,6 @@ export async function PATCH(
           .update(donations)
           .set({ 
             paymentStatus: 'refunded',
-            refundedAt: new Date(),
-            refundReason: updateData.reason,
-            updatedAt: new Date(),
           })
           .where(eq(donations.id, donationId))
           .returning();
@@ -207,7 +201,6 @@ export async function PATCH(
           .update(donations)
           .set({ 
             paymentStatus: 'pending',
-            updatedAt: new Date(),
           })
           .where(eq(donations.id, donationId))
           .returning();
@@ -219,7 +212,6 @@ export async function PATCH(
           .set({ 
             paymentStatus: 'completed',
             processedAt: new Date(),
-            updatedAt: new Date(),
           })
           .where(eq(donations.id, donationId))
           .returning();
@@ -236,8 +228,6 @@ export async function PATCH(
           .update(donations)
           .set({ 
             paymentStatus: 'failed',
-            refundReason: updateData.reason,
-            updatedAt: new Date(),
           })
           .where(eq(donations.id, donationId))
           .returning();
@@ -253,8 +243,7 @@ export async function PATCH(
         updatedDonation = await db
           .update(donations)
           .set({ 
-            notes: updateData.notes,
-            updatedAt: new Date(),
+            // No notes field available in donations schema
           })
           .where(eq(donations.id, donationId))
           .returning();
@@ -298,10 +287,10 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const donationId = params.id;
+    const { id: donationId } = await params;
 
     // Check if donation exists
     const existingDonation = await db.query.donations.findFirst({
@@ -320,8 +309,6 @@ export async function DELETE(
       .update(donations)
       .set({ 
         paymentStatus: 'failed',
-        refundReason: 'Deleted by admin',
-        updatedAt: new Date(),
       })
       .where(eq(donations.id, donationId))
       .returning();

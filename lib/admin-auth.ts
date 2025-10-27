@@ -65,7 +65,7 @@ export async function getAdminUser(request: NextRequest): Promise<AdminUser | nu
       fullName: user.fullName,
       role: user.role as 'admin' | 'super_admin',
       isVerified: user.isVerified,
-      accountLocked: user.accountLocked,
+      accountLocked: user.accountLocked || false,
     };
 
   } catch (error) {

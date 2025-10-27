@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get users with pagination
-    let query = db
+    const baseQuery = db
       .select({
         id: users.id,
         email: users.email,
@@ -54,25 +54,19 @@ export async function GET(request: NextRequest) {
       })
       .from(users);
 
-    if (whereConditions.length > 0) {
-      query = query.where(and(...whereConditions));
-    }
-
-    const usersList = await query
+    const usersList = await baseQuery
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
       .orderBy(desc(users.createdAt))
       .limit(limit)
       .offset(offset);
 
     // Get total count for pagination
-    let countQuery = db
+    const countQuery = db
       .select({ count: count() })
       .from(users);
 
-    if (whereConditions.length > 0) {
-      countQuery = countQuery.where(and(...whereConditions));
-    }
-
-    const [totalCount] = await countQuery;
+    const [totalCount] = await countQuery
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
 
     // Get user stats for each user
     const usersWithStats = await Promise.all(
@@ -170,9 +164,7 @@ export async function POST(request: NextRequest) {
         fullName,
         phone,
         role,
-        status,
-        isVerified: true, // Admin-created users are pre-verified
-        lastActive: new Date(),
+        isVerified: true, 
       })
       .returning();
 

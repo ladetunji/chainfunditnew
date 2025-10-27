@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import twilio from 'twilio';
-import { db } from '@/lib/db';
+import { db, withRetry, findUserByEmail, findUserByPhone } from '@/lib/db';
 import { emailOtps } from '@/lib/schema/email-otps';
 import { eq, and, desc, gt, lt } from 'drizzle-orm';
 import { users } from '@/lib/schema/users';
@@ -54,8 +54,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Check if user exists with a single query
-      const existingUser = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);
+      // Check if user exists with optimized query
+      const existingUser = await findUserByEmail(email);
       if (!existingUser.length) {
         return NextResponse.json({ success: false, error: 'No account found with this email. Please sign up first or check your email address.' }, { status: 404 });
       }
@@ -63,11 +63,15 @@ export async function POST(request: NextRequest) {
       const generatedOtp = generateOtp();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
       
-      // Clean up expired OTPs first
-      await db.delete(emailOtps).where(lt(emailOtps.expiresAt, new Date()));
+      // Clean up expired OTPs first (with retry logic)
+      await withRetry(async () => {
+        await db.delete(emailOtps).where(lt(emailOtps.expiresAt, new Date()));
+      });
       
-      // Insert new OTP
-      await db.insert(emailOtps).values({ email, otp: generatedOtp, expiresAt });
+      // Insert new OTP (with retry logic)
+      await withRetry(async () => {
+        await db.insert(emailOtps).values({ email, otp: generatedOtp, expiresAt });
+      });
 
       // Send email asynchronously
       resend.emails.send({
@@ -101,8 +105,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Check if user exists with a single query
-      const existingUser = await db.select({ id: users.id }).from(users).where(eq(users.phone, phone)).limit(1);
+      // Check if user exists with optimized query
+      const existingUser = await findUserByPhone(phone);
       if (!existingUser.length) {
         return NextResponse.json({ success: false, error: 'No account found with this phone number. Please sign up first or try a different number.' }, { status: 404 });
       }
@@ -184,11 +188,13 @@ export async function POST(request: NextRequest) {
 
       const now = new Date();
       
-      // Find and delete OTP in one operation
-      const [record] = await db
-        .delete(emailOtps)
-        .where(and(eq(emailOtps.email, email), eq(emailOtps.otp, otp), gt(emailOtps.expiresAt, now)))
-        .returning();
+      // Find and delete OTP in one operation (with retry logic)
+      const [record] = await withRetry(async () => {
+        return await db
+          .delete(emailOtps)
+          .where(and(eq(emailOtps.email, email), eq(emailOtps.otp, otp), gt(emailOtps.expiresAt, now)))
+          .returning();
+      });
 
       const result = record;
 
@@ -196,12 +202,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Verification code has expired or is invalid. Please request a new code.' }, { status: 400 });
       }
 
-      // Get user details and create JWT token
-      const [user] = await db
-        .select({ id: users.id, email: users.email, fullName: users.fullName, role: users.role })
-        .from(users)
-        .where(eq(users.email, email))
-        .limit(1);
+      // Get user details and create JWT token (with retry logic)
+      const [user] = await withRetry(async () => {
+        return await db
+          .select({ id: users.id, email: users.email, fullName: users.fullName, role: users.role })
+          .from(users)
+          .where(eq(users.email, email))
+          .limit(1);
+      });
 
       if (!user) {
         return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
@@ -264,15 +272,19 @@ export async function POST(request: NextRequest) {
       }
       otpStore.delete(phone);
       
-      // Update user's phone in the database
-      await db.update(users).set({ phone }).where(eq(users.email, email));
+      // Update user's phone in the database (with retry logic)
+      await withRetry(async () => {
+        await db.update(users).set({ phone }).where(eq(users.email, email));
+      });
       
-      // Get user details and create JWT token
-      const [user] = await db
-        .select({ id: users.id, email: users.email, fullName: users.fullName, role: users.role })
-        .from(users)
-        .where(eq(users.email, email))
-        .limit(1);
+      // Get user details and create JWT token (with retry logic)
+      const [user] = await withRetry(async () => {
+        return await db
+          .select({ id: users.id, email: users.email, fullName: users.fullName, role: users.role })
+          .from(users)
+          .where(eq(users.email, email))
+          .limit(1);
+      });
 
       if (!user) {
         return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });

@@ -50,8 +50,6 @@ interface Payout {
     bankName: string;
     routingNumber?: string;
   };
-  fraudScore: number;
-  suspiciousActivity: boolean;
   notes?: string;
   approvedBy?: string;
   rejectionReason?: string;
@@ -67,7 +65,6 @@ interface PayoutStats {
   pendingAmount: number;
   approvedAmount: number;
   paidAmount: number;
-  fraudAlerts: number;
   averageProcessingTime: number;
   recentPayouts: Payout[];
 }
@@ -78,7 +75,6 @@ export default function PayoutsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [fraudFilter, setFraudFilter] = useState('all');
   const [selectedPayouts, setSelectedPayouts] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -86,7 +82,7 @@ export default function PayoutsPage() {
   useEffect(() => {
     fetchPayouts();
     fetchStats();
-  }, [currentPage, searchTerm, statusFilter, fraudFilter]);
+  }, [currentPage, searchTerm, statusFilter]);
 
   const fetchPayouts = async () => {
     try {
@@ -94,7 +90,6 @@ export default function PayoutsPage() {
         page: currentPage.toString(),
         search: searchTerm,
         status: statusFilter,
-        fraud: fraudFilter,
       });
 
       const response = await fetch(`/api/admin/payouts?${params}`);
@@ -199,12 +194,6 @@ export default function PayoutsPage() {
     );
   };
 
-  const getFraudScoreColor = (score: number) => {
-    if (score >= 80) return 'text-red-600';
-    if (score >= 60) return 'text-orange-600';
-    if (score >= 40) return 'text-yellow-600';
-    return 'text-green-600';
-  };
 
   if (loading) {
     return (
@@ -218,12 +207,13 @@ export default function PayoutsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Payout Management</h1>
-          <p className="text-gray-600">Review and approve chainer payouts with fraud detection</p>
+          <p className="text-gray-600">Review and approve chainer payouts</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -291,18 +281,6 @@ export default function PayoutsPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Fraud Alerts</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{stats.fraudAlerts}</div>
-              <p className="text-xs text-muted-foreground">
-                Require investigation
-              </p>
-            </CardContent>
-          </Card>
         </div>
       )}
 
@@ -335,18 +313,6 @@ export default function PayoutsPage() {
                 <SelectItem value="paid">Paid</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
                 <SelectItem value="failed">Failed</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={fraudFilter} onValueChange={setFraudFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Fraud Risk" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Risk Levels</SelectItem>
-                <SelectItem value="high">High Risk</SelectItem>
-                <SelectItem value="medium">Medium Risk</SelectItem>
-                <SelectItem value="low">Low Risk</SelectItem>
-                <SelectItem value="suspicious">Suspicious Activity</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -383,7 +349,6 @@ export default function PayoutsPage() {
                 <TableHead>Amount</TableHead>
                 <TableHead>Payment Method</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Fraud Score</TableHead>
                 <TableHead>Request Date</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -427,26 +392,10 @@ export default function PayoutsPage() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {getStatusBadge(payout.status)}
-                    {payout.suspiciousActivity && (
-                      <span title="Suspicious Activity" className="ml-2">
-                        <AlertTriangle className="h-4 w-4 text-red-500" />
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
                     <div className="flex items-center gap-2">
-                      <span className={`font-medium ${getFraudScoreColor(payout.fraudScore)}`}>
-                        {payout.fraudScore}%
-                      </span>
-                      {payout.suspiciousActivity && (
-                        <AlertTriangle className="h-4 w-4 text-red-500" />
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
+                      <div className="text-sm text-gray-500">
                       {new Date(payout.requestDate).toLocaleDateString()}
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -518,8 +467,9 @@ export default function PayoutsPage() {
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -9,8 +9,8 @@ export async function POST() {
     const [userCount] = await db.select({ count: count() }).from(users);
     const [campaignCount] = await db.select({ count: count() }).from(campaigns);
     
-    let createdUsers = [];
-    let createdCampaigns = [];
+    let createdUsers: any[] = [];
+    let createdCampaigns: any[] = [];
     
     // Create test users if none exist
     if (userCount.count === 0) {
@@ -41,30 +41,34 @@ export async function POST() {
       createdUsers = await db.insert(users).values(testUsers).returning();
     }
     
-    // Create test campaigns if none exist
+    // Create test campaigns if none exist - replace this with ngos from virtual mall api
     if (campaignCount.count === 0) {
       const testCampaigns = [
         {
+          creatorId: createdUsers[0]?.id || (await db.select().from(users).limit(1))[0]?.id,
           title: 'Help Save the Environment',
+          slug: 'help-save-environment',
           description: 'Supporting environmental conservation efforts',
-          goal: '5000.00',
-          raised: '0.00',
+          goalAmount: '5000.00',
           currency: 'USD',
+          minimumDonation: '10.00',
+          chainerCommissionRate: '5.0',
+          currentAmount: '0.00',
           status: 'active',
-          category: 'environment',
-          imageUrl: 'https://example.com/environment.jpg',
-          createdBy: createdUsers[0]?.id || (await db.select().from(users).limit(1))[0]?.id,
+          coverImageUrl: 'https://example.com/environment.jpg',
         },
         {
+          creatorId: createdUsers[1]?.id || (await db.select().from(users).limit(1))[0]?.id,
           title: 'Education for All',
+          slug: 'education-for-all',
           description: 'Providing educational resources to underprivileged children',
-          goal: '10000.00',
-          raised: '0.00',
+          goalAmount: '10000.00',
           currency: 'USD',
+          minimumDonation: '10.00',
+          chainerCommissionRate: '5.0',
+          currentAmount: '0.00',
           status: 'active',
-          category: 'education',
-          imageUrl: 'https://example.com/education.jpg',
-          createdBy: createdUsers[1]?.id || (await db.select().from(users).limit(1))[0]?.id,
+          coverImageUrl: 'https://example.com/education.jpg',
         }
       ];
       

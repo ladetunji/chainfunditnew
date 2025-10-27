@@ -284,7 +284,7 @@ export default function AdminUsersPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#104901] mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading users...</p>
         </div>
       </div>
@@ -306,7 +306,7 @@ export default function AdminUsersPage() {
                 <Download className="h-4 w-4 mr-2" />
                 Export Users
               </Button>
-              <Button size="sm" className="bg-purple-600 text-white hover:text-purple-600" onClick={handleBulkVerify}> 
+              <Button size="sm" className="bg-[#5F8555] text-white" onClick={handleBulkVerify}> 
                 <UserCheck className="h-4 w-4 mr-2" />
                 Bulk Verify
               </Button>
@@ -326,17 +326,17 @@ export default function AdminUsersPage() {
                 <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
                 <p className="text-xs text-gray-500 mt-1">
                   {stats.newUsers} new this month
-                </p>
+                </p>  
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-                <UserCheck className="h-4 w-4 text-green-500" />
+                <UserCheck className="h-4 w-4 text-[#5F8555]" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">{stats.activeUsers.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-[#5F8555]">{stats.activeUsers.toLocaleString()}</div>
                 <p className="text-xs text-gray-500 mt-1">
                   {Math.round((stats.activeUsers / stats.totalUsers) * 100)}% of total
                 </p>
@@ -346,7 +346,7 @@ export default function AdminUsersPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Verified Users</CardTitle>
-                <Shield className="h-4 w-4 text-blue-500" />
+                <Shield className="h-4 w-4 text-[#5F8555]" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-blue-600">{stats.verifiedUsers.toLocaleString()}</div>

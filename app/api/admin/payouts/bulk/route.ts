@@ -38,8 +38,6 @@ export async function PATCH(request: NextRequest) {
           .set({ 
             ...updateData,
             status: 'approved',
-            approvedDate: new Date(),
-            approvedBy: 'admin', // TODO: Get from auth context
           })
           .where(inArray(commissionPayouts.id, payoutIds))
           .returning();
@@ -57,7 +55,7 @@ export async function PATCH(request: NextRequest) {
           .set({ 
             ...updateData,
             status: 'rejected',
-            rejectionReason: actionData.rejectionReason,
+            notes: actionData.rejectionReason,
           })
           .where(inArray(commissionPayouts.id, payoutIds))
           .returning();
@@ -69,7 +67,7 @@ export async function PATCH(request: NextRequest) {
           .set({ 
             ...updateData,
             status: 'paid',
-            paidDate: new Date(),
+            processedAt: new Date(),
           })
           .where(inArray(commissionPayouts.id, payoutIds))
           .returning();

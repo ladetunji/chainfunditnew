@@ -44,8 +44,6 @@ export async function PATCH(request: NextRequest) {
           .set({ 
             ...updateData,
             paymentStatus: 'refunded',
-            refundedAt: new Date(),
-            refundReason: actionData.reason,
           })
           .where(inArray(donations.id, donationIds))
           .returning();
@@ -86,7 +84,6 @@ export async function PATCH(request: NextRequest) {
           .set({ 
             ...updateData,
             paymentStatus: 'failed',
-            refundReason: actionData.reason,
           })
           .where(inArray(donations.id, donationIds))
           .returning();
@@ -102,8 +99,7 @@ export async function PATCH(request: NextRequest) {
         updatedDonations = await db
           .update(donations)
           .set({ 
-            ...updateData,
-            notes: actionData.notes,
+            // No notes field available in donations schema
           })
           .where(inArray(donations.id, donationIds))
           .returning();

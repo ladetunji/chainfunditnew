@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
-import bcrypt from 'bcryptjs';
 import { generateTokenPair } from '@/lib/auth';
 
 /**
@@ -12,11 +11,11 @@ import { generateTokenPair } from '@/lib/auth';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, password } = body;
+    const { email } = body;
 
-    if (!email || !password) {
+    if (!email) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'Email is required' },
         { status: 400 }
       );
     }
@@ -27,7 +26,6 @@ export async function POST(request: NextRequest) {
         id: users.id,
         email: users.email,
         fullName: users.fullName,
-        password: users.password,
         isVerified: users.isVerified,
         accountLocked: users.accountLocked,
         role: users.role,
@@ -67,21 +65,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify password
-    if (!user.password) {
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
-      );
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
-      );
-    }
+    // Note: This system uses OAuth/OTP authentication, not password-based auth
+    // Password verification is not applicable here
 
     // Generate tokens
     const tokens = await generateTokenPair({ 

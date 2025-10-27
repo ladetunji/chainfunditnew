@@ -99,11 +99,6 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', 'react-icons'],
   },
 
-  // Server Actions configuration
-  serverActions: {
-    bodySizeLimit: '10mb', // Increase from default 1mb to 10mb for image uploads
-  },
-
   // Fix module resolution issues
   serverExternalPackages: ['tailwind-merge', 'sonner'],
 

@@ -28,59 +28,60 @@ import {
   User
 } from 'lucide-react';
 import {MoneyTick } from 'iconsax-reactjs';
+import Image from 'next/image';
 
 const navigation = [
   {
     name: 'Dashboard',
-    href: '/admin/dashboard/overview',
+    href: '/admin/admin-dashboard/overview',
     icon: LayoutDashboard,
     current: true,
   },
   {
     name: 'Users',
-    href: '/admin/dashboard/users',
+    href: '/admin/admin-dashboard/users',
     icon: Users,
     current: false,
   },
   {
     name: 'Campaigns',
-    href: '/admin/dashboard/campaigns',
+    href: '/admin/admin-dashboard/campaigns',
     icon: BarChart3,
     current: false,
   },
   {
     name: 'Ambassadors',
-    href: '/admin/dashboard/ambassadors',
+    href: '/admin/admin-dashboard/ambassadors',
     icon: Share,
     current: false,
   },
   {
     name: 'Donations',
-    href: '/admin/dashboard/donations',
+    href: '/admin/admin-dashboard/donations',
     icon: DollarSign,
     current: false,
   },
   {
     name: 'Payouts',
-    href: '/admin/dashboard/payouts',
+    href: '/admin/admin-dashboard/payouts',
     icon: MoneyTick,
     current: false,
   },
   {
     name: 'Analytics',
-    href: '/admin/dashboard/analytics',
+    href: '/admin/admin-dashboard/analytics',
     icon: BarChart3,
     current: false,
   },
   {
     name: 'Notifications',
-    href: '/admin/notifications',
+    href: '/admin/admin-dashboard/notifications',
     icon: Bell,
     current: false,
   },
   {
     name: 'Settings',
-    href: '/admin/settings',
+    href: '/admin/admin-dashboard/settings',
     icon: Settings,
     current: false,
   },
@@ -89,22 +90,22 @@ const navigation = [
 const adminTools = [
   {
     name: 'User Management',
-    href: '/admin/dashboard/users',
+    href: '/admin/admin-dashboard/users',
     icon: Users,
   },
   {
     name: 'Campaign Moderation',
-    href: '/admin/dashboard/campaigns',
+    href: '/admin/admin-dashboard/campaigns',
     icon: BarChart3,
   },
   {
     name: 'Ambassador Analytics',
-    href: '/admin/dashboard/ambassadors',
+    href: '/admin/admin-dashboard/ambassadors',
     icon: TrendingUp,
   },
   {
     name: 'Payout Approval',
-    href: '/admin/dashboard/payouts',
+    href: '/admin/admin-dashboard/payouts',
     icon: DollarSign,
   },
 ];
@@ -144,11 +145,8 @@ export default function AdminLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
-  // Remove mock notification count - now handled by NotificationPanel
   const pathname = usePathname();
   const router = useRouter();
-
-  // Check authentication on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -157,7 +155,6 @@ export default function AdminLayout({
           const data = await response.json();
           setUser(data.user);
         } else {
-          // Redirect to unified login if not authenticated
           router.push('/signin?redirect=' + encodeURIComponent(window.location.pathname));
         }
       } catch (error) {
@@ -171,19 +168,17 @@ export default function AdminLayout({
     checkAuth();
   }, [router]);
 
-  // Show loading spinner while checking auth
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#104901] mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
-  // Redirect to login if no user
   if (!user) {
     return null;
   }
@@ -208,14 +203,6 @@ export default function AdminLayout({
     window.open('/faq', '_blank');
   };
 
-  const handleInviteAdmin = () => {
-    toast.info('Admin invitation feature coming soon!');
-  };
-
-  const handleUpgrade = () => {
-    toast.info('Upgrade feature coming soon!');
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar */}
@@ -224,9 +211,7 @@ export default function AdminLayout({
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white">
           <div className="flex h-16 items-center justify-between px-4">
             <div className="flex items-center space-x-3">
-              <div className="h-8 w-8 bg-purple-600 rounded-lg flex items-center justify-center">
-                <Shield className="h-5 w-5 text-white" />
-              </div>
+              <Image src="/images/logo.svg" alt="ChainFundIt" width={32} height={32} />
               <span className="text-xl font-bold text-gray-900">Admin</span>
             </div>
             <Button
@@ -246,13 +231,13 @@ export default function AdminLayout({
                   href={item.href}
                   className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
                     isActive
-                      ? 'bg-purple-100 text-purple-700'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      ? 'bg-[#5F8555] text-white'
+                      : 'text-[#5F8555] hover:bg-[#5F8555] hover:text-white'
                   }`}
                 >
                   <item.icon
                     className={`mr-3 h-5 w-5 ${
-                      isActive ? 'text-purple-500' : 'text-gray-400 group-hover:text-gray-500'
+                      isActive ? 'text-[#104901]' : 'text-gray-400 group-hover:text-gray-500'
                     }`}
                   />
                   {item.name}
@@ -269,9 +254,7 @@ export default function AdminLayout({
           {/* Logo */}
           <div className="flex h-16 items-center px-4 border-b border-gray-200">
             <div className="flex items-center space-x-3">
-              <div className="h-8 w-8 bg-purple-600 rounded-lg flex items-center justify-center">
-                <Shield className="h-5 w-5 text-white" />
-              </div>
+              <Image src="/images/logo.svg" alt="ChainFundIt" width={32} height={32} />
               <div>
                 <span className="text-xl font-bold text-gray-900">Admin</span>
                 <p className="text-xs text-gray-500">ChainFundIt</p>
@@ -289,13 +272,13 @@ export default function AdminLayout({
                   href={item.href}
                   className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
                     isActive
-                      ? 'bg-purple-100 text-purple-700'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      ? 'bg-[#5F8555] text-white'
+                      : 'text-[#5F8555] hover:bg-[#5F8555] hover:text-white'
                   }`}
                 >
                   <item.icon
                     className={`mr-3 h-5 w-5 ${
-                      isActive ? 'text-purple-500' : 'text-gray-400 group-hover:text-gray-500'
+                      isActive ? 'text-white' : 'text-gray-600 group-hover:text-white'
                     }`}
                   />
                   {item.name}
@@ -328,23 +311,23 @@ export default function AdminLayout({
 
           {/* What's New Section */}
           <div className="p-4 border-t border-gray-200">
-            <div className="bg-purple-50 rounded-lg p-4">
+            <div className="bg-[#5F8555] rounded-lg p-4">
               <div className="flex items-center space-x-2 mb-3">
-                <Sparkles className="h-4 w-4 text-purple-600" />
-                <span className="text-sm font-medium text-purple-900">What's New</span>
+                <Sparkles className="h-4 w-4 text-white" />
+                <span className="text-sm font-medium text-white">What's New</span>
               </div>
               <div className="space-y-2">
                 {whatsNew.map((item, index) => (
                   <div key={index} className="flex items-start space-x-2">
-                    <ChevronDown className="h-3 w-3 text-purple-600 mt-0.5" />
+                    <ChevronDown className="h-3 w-3 text-white mt-0.5" />
                     <div>
-                      <p className="text-xs font-medium text-purple-900">{item.title}</p>
-                      <p className="text-xs text-purple-700">{item.description}</p>
+                      <p className="text-xs font-medium text-white">{item.title}</p>
+                      <p className="text-xs text-white">{item.description}</p>
                     </div>
                   </div>
                 ))}
               </div>
-              <p className="text-xs text-purple-600 mt-2">version: 1.0.0</p>
+              <p className="text-xs text-white mt-2">version: 1.0.0</p>
             </div>
           </div>
         </div>
@@ -382,7 +365,7 @@ export default function AdminLayout({
                   variant="ghost" 
                   size="sm" 
                   onClick={handleLogout}
-                  className="h-8 w-8 bg-purple-600 rounded-full flex items-center justify-center"
+                  className="h-8 w-8 bg-[#104901] rounded-full flex items-center justify-center"
                 >
                   <span className="text-sm font-medium text-white">
                     {user?.fullName?.charAt(0) || 'A'}

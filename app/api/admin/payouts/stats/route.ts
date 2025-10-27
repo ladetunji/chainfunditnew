@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     // Get average processing time
     const [avgProcessingTime] = await db
       .select({
-        average: sql<number>`AVG(EXTRACT(EPOCH FROM (${commissionPayouts.paidDate} - ${commissionPayouts.requestDate}))/3600)`,
+        average: sql<number>`AVG(EXTRACT(EPOCH FROM (${commissionPayouts.processedAt} - ${commissionPayouts.createdAt}))/3600)`,
       })
       .from(commissionPayouts)
       .where(eq(commissionPayouts.status, 'paid'));
@@ -82,9 +82,8 @@ export async function GET(request: NextRequest) {
         id: commissionPayouts.id,
         chainerId: commissionPayouts.chainerId,
         amount: commissionPayouts.amount,
-        currency: commissionPayouts.currency,
         status: commissionPayouts.status,
-        requestDate: commissionPayouts.requestDate,
+        createdAt: commissionPayouts.createdAt,
         chainerName: users.fullName,
         campaignTitle: campaigns.title,
       })
@@ -92,20 +91,20 @@ export async function GET(request: NextRequest) {
       .leftJoin(chainers, eq(commissionPayouts.chainerId, chainers.id))
       .leftJoin(users, eq(chainers.userId, users.id))
       .leftJoin(campaigns, eq(commissionPayouts.campaignId, campaigns.id))
-      .orderBy(desc(commissionPayouts.requestDate))
+      .orderBy(desc(commissionPayouts.createdAt))
       .limit(10);
 
     // Get payout growth over time (last 12 months)
     const payoutGrowth = await db
       .select({
-        month: sql<string>`DATE_TRUNC('month', ${commissionPayouts.requestDate})`,
+        month: sql<string>`DATE_TRUNC('month', ${commissionPayouts.createdAt})`,
         count: count(),
         total: sum(commissionPayouts.amount),
       })
       .from(commissionPayouts)
-      .where(gte(commissionPayouts.requestDate, sql`NOW() - INTERVAL '12 months'`))
-      .groupBy(sql`DATE_TRUNC('month', ${commissionPayouts.requestDate})`)
-      .orderBy(sql`DATE_TRUNC('month', ${commissionPayouts.requestDate})`);
+      .where(gte(commissionPayouts.createdAt, sql`NOW() - INTERVAL '12 months'`))
+      .groupBy(sql`DATE_TRUNC('month', ${commissionPayouts.createdAt})`)
+      .orderBy(sql`DATE_TRUNC('month', ${commissionPayouts.createdAt})`);
 
     // Get status distribution
     const statusDistribution = await db

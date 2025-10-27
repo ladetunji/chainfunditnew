@@ -62,7 +62,7 @@ export async function GET(
         totalReferrals: count(),
       })
       .from(referrals)
-      .where(eq(referrals.chainerId, chainerId));
+      .where(eq(referrals.referrerId, chainerId));
 
     // Get recent donations
     const recentDonations = await db
@@ -83,15 +83,15 @@ export async function GET(
     const referralHistory = await db
       .select({
         id: referrals.id,
-        referredUserId: referrals.referredUserId,
+        referredUserId: referrals.referredId,
         createdAt: referrals.createdAt,
-        status: referrals.status,
+        isConverted: referrals.isConverted,
         referredUserName: users.fullName,
         referredUserEmail: users.email,
       })
       .from(referrals)
-      .leftJoin(users, eq(referrals.referredUserId, users.id))
-      .where(eq(referrals.chainerId, chainerId))
+      .leftJoin(users, eq(referrals.referredId, users.id))
+      .where(eq(referrals.referrerId, chainerId))
       .orderBy(desc(referrals.createdAt))
       .limit(20);
 
@@ -104,8 +104,8 @@ export async function GET(
     if (chainer[0].totalReferrals > 100) fraudScore += 30;
 
     // High commission earned
-    if (chainer[0].commissionEarned > 1000) fraudScore += 15;
-    if (chainer[0].commissionEarned > 5000) fraudScore += 25;
+    if (Number(chainer[0].commissionEarned) > 1000) fraudScore += 15;
+    if (Number(chainer[0].commissionEarned) > 5000) fraudScore += 25;
 
     // Account age vs performance
     const accountAge = Date.now() - new Date(chainer[0].createdAt).getTime();
@@ -222,8 +222,8 @@ export async function PATCH(
           .update(chainers)
           .set({ 
             totalReferrals: 0,
-            totalRaised: 0,
-            commissionEarned: 0,
+            totalRaised: '0',
+            commissionEarned: '0',
             updatedAt: new Date(),
           })
           .where(eq(chainers.id, chainerId))

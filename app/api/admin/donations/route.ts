@@ -29,9 +29,7 @@ export async function GET(request: NextRequest) {
         chainerId: donations.chainerId,
         createdAt: donations.createdAt,
         processedAt: donations.processedAt,
-        refundedAt: donations.refundedAt,
-        refundReason: donations.refundReason,
-        transactionId: donations.transactionId,
+        paymentIntentId: donations.paymentIntentId,
         // Join data
         donorName: users.fullName,
         donorEmail: users.email,

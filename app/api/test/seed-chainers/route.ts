@@ -46,10 +46,10 @@ export async function POST(request: NextRequest) {
         status: ['active', 'suspended', 'banned'][Math.floor(Math.random() * 3)],
         commissionRate: (Math.random() * 10 + 2).toFixed(2),
         isVerified: Math.random() > 0.3,
-        notes: Math.random() > 0.7 ? `Test notes for chainer ${i + 1}` : null,
-        suspendedAt: Math.random() > 0.8 ? new Date().toISOString() : null,
+        notes: Math.random() > 0.7 ? `Test notes for ambassador ${i + 1}` : null,
+        suspendedAt: Math.random() > 0.8 ? new Date() : null,
         suspendedReason: Math.random() > 0.8 ? 'Test suspension reason' : null,
-        lastActivity: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+        lastActivity: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
       });
     }
 

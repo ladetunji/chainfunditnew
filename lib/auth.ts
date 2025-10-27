@@ -32,7 +32,7 @@ export function generateAccessToken(user: { id: string; email: string }) {
     }, 
     secret, 
     {
-      expiresIn: TOKEN_CONFIG.ACCESS_TOKEN_EXPIRY,
+      expiresIn: "30m",
     }
   );
 }
@@ -54,7 +54,7 @@ export function generateRefreshToken(user: { id: string; email: string }) {
       }, 
       secret, 
       {
-        expiresIn: `${TOKEN_CONFIG.REFRESH_TOKEN_EXPIRY_DAYS}d`,
+        expiresIn: "30d",
       }
     ),
     tokenId,

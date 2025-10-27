@@ -268,7 +268,7 @@ export default function AdminCampaignsPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#104901] mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading campaigns...</p>
         </div>
       </div>
@@ -290,7 +290,7 @@ export default function AdminCampaignsPage() {
                 <Download className="h-4 w-4 mr-2" />
                 Export Campaigns
               </Button>
-              <Button size="sm" className="bg-purple-600 text-white hover:text-purple-600" onClick={() => router.push('/admin/dashboard/analytics')}>
+              <Button size="sm" className="bg-[#104901] text-white" onClick={() => router.push('/admin/dashboard/analytics')}>
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Analytics
               </Button>

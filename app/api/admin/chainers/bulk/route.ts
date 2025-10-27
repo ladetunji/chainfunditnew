@@ -88,8 +88,8 @@ export async function PATCH(request: NextRequest) {
           .set({ 
             ...updateData,
             totalReferrals: 0,
-            totalRaised: 0,
-            commissionEarned: 0,
+            totalRaised: '0',
+            commissionEarned: '0',
           })
           .where(inArray(chainers.id, chainerIds))
           .returning();

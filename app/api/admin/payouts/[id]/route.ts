@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { commissionPayouts, chainers, users, campaigns, donations } from '@/lib/schema';
-import { eq, and, count, sum, desc } from 'drizzle-orm';
+import { eq, and, count, sum, desc, sql } from 'drizzle-orm';
 
 /**
  * GET /api/admin/payouts/[id]
@@ -9,10 +9,10 @@ import { eq, and, count, sum, desc } from 'drizzle-orm';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const payoutId = params.id;
+    const { id: payoutId } = await params;
 
     // Get payout details with chainer and campaign info
     const payout = await db
@@ -21,16 +21,11 @@ export async function GET(
         chainerId: commissionPayouts.chainerId,
         campaignId: commissionPayouts.campaignId,
         amount: commissionPayouts.amount,
-        currency: commissionPayouts.currency,
         status: commissionPayouts.status,
-        requestDate: commissionPayouts.requestDate,
-        approvedDate: commissionPayouts.approvedDate,
-        paidDate: commissionPayouts.paidDate,
-        paymentMethod: commissionPayouts.paymentMethod,
-        bankDetails: commissionPayouts.bankDetails,
+        createdAt: commissionPayouts.createdAt,
+        processedAt: commissionPayouts.processedAt,
+        transactionId: commissionPayouts.transactionId,
         notes: commissionPayouts.notes,
-        approvedBy: commissionPayouts.approvedBy,
-        rejectionReason: commissionPayouts.rejectionReason,
         chainerName: users.fullName,
         chainerEmail: users.email,
         campaignTitle: campaigns.title,
@@ -82,8 +77,8 @@ export async function GET(
 
     if (chainerStats) {
       // High payout amount
-      if (payout[0].amount > 1000) fraudScore += 20;
-      if (payout[0].amount > 5000) fraudScore += 30;
+      if (Number(payout[0].amount) > 1000) fraudScore += 20;
+      if (Number(payout[0].amount) > 5000) fraudScore += 30;
 
       // High performance in short time
       if (chainerStats.totalReferrals > 50) fraudScore += 15;
@@ -103,7 +98,7 @@ export async function GET(
         .from(commissionPayouts)
         .where(and(
           eq(commissionPayouts.chainerId, payout[0].chainerId),
-          sql`${commissionPayouts.requestDate} >= NOW() - INTERVAL '30 days'`
+          sql`${commissionPayouts.createdAt} >= NOW() - INTERVAL '30 days'`
         ));
 
       if (payoutCount.count > 3) {
@@ -137,10 +132,10 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const payoutId = params.id;
+    const { id: payoutId } = await params;
     const body = await request.json();
     const { action, ...updateData } = body;
 
@@ -164,9 +159,6 @@ export async function PATCH(
           .update(commissionPayouts)
           .set({ 
             status: 'approved',
-            approvedDate: new Date(),
-            approvedBy: 'admin', // TODO: Get from auth context
-            updatedAt: new Date(),
           })
           .where(eq(commissionPayouts.id, payoutId))
           .returning();
@@ -183,8 +175,7 @@ export async function PATCH(
           .update(commissionPayouts)
           .set({ 
             status: 'rejected',
-            rejectionReason: updateData.rejectionReason,
-            updatedAt: new Date(),
+            notes: updateData.rejectionReason,
           })
           .where(eq(commissionPayouts.id, payoutId))
           .returning();
@@ -195,8 +186,7 @@ export async function PATCH(
           .update(commissionPayouts)
           .set({ 
             status: 'paid',
-            paidDate: new Date(),
-            updatedAt: new Date(),
+            processedAt: new Date(),
           })
           .where(eq(commissionPayouts.id, payoutId))
           .returning();
@@ -207,7 +197,6 @@ export async function PATCH(
           .update(commissionPayouts)
           .set({ 
             status: 'failed',
-            updatedAt: new Date(),
           })
           .where(eq(commissionPayouts.id, payoutId))
           .returning();
@@ -224,7 +213,6 @@ export async function PATCH(
           .update(commissionPayouts)
           .set({ 
             notes: updateData.notes,
-            updatedAt: new Date(),
           })
           .where(eq(commissionPayouts.id, payoutId))
           .returning();
@@ -268,10 +256,10 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const payoutId = params.id;
+    const { id: payoutId } = await params;
 
     // Check if payout exists
     const existingPayout = await db.query.commissionPayouts.findFirst({
@@ -290,8 +278,7 @@ export async function DELETE(
       .update(commissionPayouts)
       .set({ 
         status: 'rejected',
-        rejectionReason: 'Deleted by admin',
-        updatedAt: new Date(),
+        notes: 'Deleted by admin',
       })
       .where(eq(commissionPayouts.id, payoutId))
       .returning();

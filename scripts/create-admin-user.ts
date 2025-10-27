@@ -34,7 +34,6 @@ async function createAdminUser() {
         .update(users)
         .set({
           role: role as 'admin' | 'super_admin',
-          password: hashedPassword,
           isVerified: true,
           hasCompletedProfile: true,
         })
@@ -49,7 +48,6 @@ async function createAdminUser() {
         .values({
           email,
           fullName: email.split('@')[0],
-          password: hashedPassword,
           role: role as 'admin' | 'super_admin',
           isVerified: true,
           hasCompletedProfile: true,

@@ -40,16 +40,11 @@ export async function GET(request: NextRequest) {
         chainerId: commissionPayouts.chainerId,
         campaignId: commissionPayouts.campaignId,
         amount: commissionPayouts.amount,
-        currency: commissionPayouts.currency,
         status: commissionPayouts.status,
-        requestDate: commissionPayouts.requestDate,
-        approvedDate: commissionPayouts.approvedDate,
-        paidDate: commissionPayouts.paidDate,
-        paymentMethod: commissionPayouts.paymentMethod,
-        bankDetails: commissionPayouts.bankDetails,
+        createdAt: commissionPayouts.createdAt,
+        processedAt: commissionPayouts.processedAt,
+        transactionId: commissionPayouts.transactionId,
         notes: commissionPayouts.notes,
-        approvedBy: commissionPayouts.approvedBy,
-        rejectionReason: commissionPayouts.rejectionReason,
         chainerName: users.fullName,
         chainerEmail: users.email,
         campaignTitle: campaigns.title,
@@ -59,7 +54,7 @@ export async function GET(request: NextRequest) {
       .leftJoin(users, eq(chainers.userId, users.id))
       .leftJoin(campaigns, eq(commissionPayouts.campaignId, campaigns.id))
       .where(whereClause)
-      .orderBy(desc(commissionPayouts.requestDate))
+      .orderBy(desc(commissionPayouts.createdAt))
       .limit(limit)
       .offset(offset);
 
@@ -91,8 +86,8 @@ export async function GET(request: NextRequest) {
 
         if (chainerStats) {
           // High commission amount
-          if (payout.amount > 1000) fraudScore += 20;
-          if (payout.amount > 5000) fraudScore += 30;
+          if (Number(payout.amount) > 1000) fraudScore += 20;
+          if (Number(payout.amount) > 5000) fraudScore += 30;
 
           // High performance in short time
           if (chainerStats.totalReferrals > 50) fraudScore += 15;
@@ -112,7 +107,7 @@ export async function GET(request: NextRequest) {
             .from(commissionPayouts)
             .where(and(
               eq(commissionPayouts.chainerId, payout.chainerId),
-              sql`${commissionPayouts.requestDate} >= NOW() - INTERVAL '30 days'`
+              sql`${commissionPayouts.createdAt} >= NOW() - INTERVAL '30 days'`
             ));
 
           if (payoutCount.count > 3) {
