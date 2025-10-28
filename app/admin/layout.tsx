@@ -42,55 +42,61 @@ import { TwoFactorVerification } from "@/components/admin/two-factor-verificatio
 const navigation = [
   {
     name: "Dashboard",
-    href: "/admin/admin-dashboard/overview",
+    href: "/admin/overview",
     icon: LayoutDashboard,
     current: true,
   },
   {
     name: "Users",
-    href: "/admin/admin-dashboard/users",
+    href: "/admin/users",
     icon: Users,
     current: false,
   },
   {
     name: "Campaigns",
-    href: "/admin/admin-dashboard/campaigns",
+    href: "/admin/campaigns",
     icon: BarChart3,
     current: false,
   },
   {
     name: "Ambassadors",
-    href: "/admin/admin-dashboard/ambassadors",
+    href: "/admin/ambassadors",
     icon: Share,
     current: false,
   },
   {
     name: "Donations",
-    href: "/admin/admin-dashboard/donations",
+    href: "/admin/donations",
     icon: DollarSign,
     current: false,
   },
   {
     name: "Payouts",
-    href: "/admin/admin-dashboard/payouts",
+    href: "/admin/payouts",
     icon: MoneyTick,
     current: false,
   },
   {
     name: "Analytics",
-    href: "/admin/admin-dashboard/analytics",
+    href: "/admin/analytics",
     icon: BarChart3,
     current: false,
   },
   {
     name: "Notifications",
-    href: "/admin/admin-dashboard/notifications",
+    href: "/admin/notifications",
     icon: Bell,
     current: false,
   },
   {
+    name: "Payments",
+    href: "/admin/payments",
+    icon: DollarSign,
+    current: false,
+  },
+  {
     name: "Settings",
-    href: "/admin/admin-dashboard/settings",
+    href: "/admin/settings",
     icon: Settings,
     current: false,
   },
@@ -99,41 +105,23 @@ const navigation = [
 const adminTools = [
   {
     name: "User Management",
-    href: "/admin/admin-dashboard/users",
+    href: "/admin/users",
     icon: Users,
   },
   {
     name: "Campaign Moderation",
-    href: "/admin/admin-dashboard/campaigns",
+    href: "/admin/campaigns",
     icon: BarChart3,
   },
   {
     name: "Ambassador Analytics",
-    href: "/admin/admin-dashboard/ambassadors",
+    href: "/admin/ambassadors",
     icon: TrendingUp,
   },
   {
     name: "Payout Approval",
-    href: "/admin/admin-dashboard/payouts",
+    href: "/admin/payouts",
     icon: DollarSign,
-  },
-];
-
-const whatsNew = [
-  {
-    title: "Enhanced Security",
-    description: "2FA authentication now available",
-    icon: Shield,
-  },
-  {
-    title: "Advanced Analytics",
-    description: "New reporting dashboard",
-    icon: BarChart3,
-  },
-  {
-    title: "Bulk Operations",
-    description: "Process multiple items at once",
-    icon: Wrench,
   },
 ];
 
@@ -378,30 +366,6 @@ export default function AdminLayout({
             </div>
           </div>
 
-          {/* What's New Section */}
-          <div className="p-4 border-t border-gray-200">
-            <div className="bg-[#5F8555] rounded-lg p-4">
-              <div className="flex items-center space-x-2 mb-3">
-                <Sparkles className="h-4 w-4 text-white" />
-                <span className="text-sm font-medium text-white">
-                  What's New
-                </span>
-              </div>
-              <div className="space-y-2">
-                {whatsNew.map((item, index) => (
-                  <div key={index} className="flex items-start space-x-2">
-                    <ChevronDown className="h-3 w-3 text-white mt-0.5" />
-                    <div>
-                      <p className="text-xs font-medium text-white">
-                        {item.title}
-                      </p>
-                      <p className="text-xs text-white">{item.description}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

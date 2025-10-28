@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Set 2FA verification cookie (valid for 24 hours)
+    // Set 2FA verification cookie 
     const response = NextResponse.json({
       success: true,
       message: '2FA verification successful',
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     response.cookies.set('2fa_verified', 'true', {
       httpOnly: true,
       path: '/',
-      maxAge: 24 * 60 * 60, // 24 hours
+      maxAge: 48 * 60 * 60, // 48 hours
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production',
     });

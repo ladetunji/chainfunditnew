@@ -9,16 +9,16 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
 import { Shield, ShieldCheck, ShieldX, Download, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import { TwoFactorSetup } from './two-factor-setup';
 
 interface TwoFactorSettingsProps {
   userEmail: string;
+  onStartSetup: () => void;
 }
 
-export function TwoFactorSettings({ userEmail }: TwoFactorSettingsProps) {
+export function TwoFactorSettings({ userEmail, onStartSetup }: TwoFactorSettingsProps) {
   const [isEnabled, setIsEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [showSetup, setShowSetup] = useState(false);
+  // Remove showSetup state as it's now managed by parent
   const [showDisable, setShowDisable] = useState(false);
   const [disableCode, setDisableCode] = useState('');
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
@@ -108,16 +108,7 @@ export function TwoFactorSettings({ userEmail }: TwoFactorSettingsProps) {
     URL.revokeObjectURL(url);
   };
 
-  if (showSetup) {
-    return (
-      <TwoFactorSetup 
-        onComplete={() => {
-          setShowSetup(false);
-          setIsEnabled(true);
-        }} 
-      />
-    );
-  }
+  // Remove showSetup logic as it's now handled by parent
 
   return (
     <Card className="w-full">
@@ -143,7 +134,7 @@ export function TwoFactorSettings({ userEmail }: TwoFactorSettingsProps) {
             checked={isEnabled}
             onCheckedChange={(checked) => {
               if (checked) {
-                setShowSetup(true);
+                onStartSetup();
               } else {
                 setShowDisable(true);
               }

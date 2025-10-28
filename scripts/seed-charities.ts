@@ -306,6 +306,22 @@ const sampleCharities: NewCharity[] = [
     isVerified: true,
     verifiedAt: new Date(),
   },
+  {
+    name: 'FOMWAN Orphanage',
+    slug: 'fomwan-orphanage',
+    description: 'FOMWAN Orphanage in Ibadan provides care and support for vulnerable children as part of the Federation of Muslim Women\'s Associations in Nigeria.',
+    mission: 'To provide quality care, education, and support for orphaned and vulnerable children in Ibadan and surrounding communities.',
+    email: 'info@fomwanofficial.org',
+    website: 'https://www.fomwanofficial.org',
+    logo: 'https://logo.clearbit.com/fomwanofficial.org',
+    category: 'Children & Youth',
+    focusAreas: ['Child Care', 'Education', 'Community Support', 'Women Empowerment'],
+    country: 'Nigeria',
+    city: 'Ibadan',
+    isActive: true,
+    isVerified: true,
+    verifiedAt: new Date(),
+  },
 
   // More Global Charities
   {

@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils/currency";
+import { useGeolocationCurrency } from '@/hooks/use-geolocation-currency';
 
 interface Chainer {
   id: string;
@@ -88,6 +89,8 @@ export default function ChainersPage() {
   const [selectedChainers, setSelectedChainers] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const { locationInfo } = useGeolocationCurrency();
+  const currency = locationInfo?.currency?.code || 'USD';
 
   useEffect(() => {
     fetchChainers();
@@ -240,7 +243,7 @@ export default function ChainersPage() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  Total Chainers
+                  Total Ambassadors
                 </CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
@@ -261,7 +264,7 @@ export default function ChainersPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(stats.totalCommissions, 'USD')}
+                  {formatCurrency(stats.totalCommissions, currency)}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {stats.averageCommissionRate}% avg rate
@@ -278,7 +281,7 @@ export default function ChainersPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {formatCurrency(stats.totalRaised, 'USD')}
+                  {formatCurrency(stats.totalRaised, currency)}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Through chainer referrals
@@ -400,14 +403,14 @@ export default function ChainersPage() {
                           {chainer.totalReferrals} referrals
                         </div>
                         <div className="text-sm text-gray-500">
-                          {formatCurrency(chainer.totalRaised, chainer.currency || 'USD')} raised
+                          {formatCurrency(chainer.totalRaised, chainer.currency || currency)} raised
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
                         <div className="font-medium">
-                          {formatCurrency(chainer.commissionEarned, chainer.currency || 'USD')}
+                          {formatCurrency(chainer.commissionEarned, chainer.currency || currency)}
                         </div>
                         <div className="text-sm text-gray-500">
                           {chainer.commissionRate}% rate

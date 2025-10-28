@@ -38,6 +38,7 @@ export async function GET(request: NextRequest) {
         role: users.role,
         isVerified: users.isVerified,
         accountLocked: users.accountLocked,
+        twoFactorEnabled: users.twoFactorEnabled,
         createdAt: users.createdAt,
       })
       .from(users)
@@ -67,6 +68,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log('Admin user data:', {
+      email: user.email,
+      twoFactorEnabled: user.twoFactorEnabled,
+    });
+
     return NextResponse.json({
       user: {
         id: user.id,
@@ -74,6 +80,8 @@ export async function GET(request: NextRequest) {
         fullName: user.fullName,
         role: user.role,
         isVerified: user.isVerified,
+        accountLocked: user.accountLocked,
+        twoFactorEnabled: user.twoFactorEnabled,
         createdAt: user.createdAt,
       },
     });

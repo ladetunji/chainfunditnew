@@ -131,7 +131,9 @@ export async function enableTwoFactor(
   backupCodes: string[]
 ): Promise<boolean> {
   try {
-    await db
+    console.log('Enabling 2FA for user:', userEmail);
+    
+    const result = await db
       .update(users)
       .set({
         twoFactorEnabled: true,
@@ -140,6 +142,8 @@ export async function enableTwoFactor(
       })
       .where(eq(users.email, userEmail));
 
+    console.log('Database update result:', result);
+    console.log('2FA enabled successfully for:', userEmail);
     return true;
   } catch (error) {
     console.error('Error enabling 2FA:', error);

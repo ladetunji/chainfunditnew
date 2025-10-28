@@ -287,11 +287,6 @@ export async function sendPayoutConfirmationEmail(data: PayoutEmailData) {
               <p>You will receive another email notification once the payout has been completed and the funds have been transferred to your bank account.</p>
             </div>
 
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://chainfundit.com'}/dashboard/payouts" class="cta-button">
-                View Payout Status
-              </a>
-            </div>
 
             <p><strong>Important Notes:</strong></p>
             <ul>

@@ -32,7 +32,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Enable 2FA
+    console.log('Enabling 2FA for user:', user.email);
     const success = await enableTwoFactor(user.email, secret, backupCodes);
+    console.log('2FA enable result:', success);
     
     if (!success) {
       return NextResponse.json(
@@ -41,6 +43,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('2FA enabled successfully for:', user.email);
     return NextResponse.json({
       success: true,
       message: '2FA enabled successfully',

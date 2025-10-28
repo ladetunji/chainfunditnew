@@ -7,6 +7,7 @@ import { getPayoutProvider, getPayoutConfig, isPayoutSupported } from '@/lib/pay
 import { getCurrencyCode } from '@/lib/utils/currency';
 import { convertToNaira } from '@/lib/utils/currency-conversion';
 import { sendPayoutConfirmationEmail } from '@/lib/payments/payout-email';
+import { notifyPayoutRequest } from '@/lib/notifications/payout-request-alerts';
 
 export async function GET(request: NextRequest) {
   try {
@@ -325,6 +326,29 @@ export async function POST(request: NextRequest) {
     } catch (emailError) {
       console.error('Failed to send payout confirmation email:', emailError);
       // Don't fail the payout if email fails
+    }
+
+    // Send admin notification
+    try {
+      await notifyPayoutRequest({
+        userId: user[0].id,
+        userEmail: user[0].email,
+        userName: user[0].fullName,
+        campaignId: campaign[0].id,
+        campaignTitle: campaign[0].title,
+        amount,
+        currency: currencyCode,
+        payoutId,
+        requestDate: new Date(),
+        bankDetails: user[0].accountVerified ? {
+          accountName: user[0].accountName || '',
+          accountNumber: user[0].accountNumber || '',
+          bankName: user[0].bankName || ''
+        } : undefined
+      });
+    } catch (notificationError) {
+      console.error('Failed to send admin notification:', notificationError);
+      // Don't fail the payout if notification fails
     }
     
     return NextResponse.json({

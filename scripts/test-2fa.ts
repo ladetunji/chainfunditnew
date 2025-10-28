@@ -30,7 +30,7 @@ async function testTwoFactorAuth() {
     console.log('🎉 All 2FA tests completed successfully!');
     console.log('\n📋 Next steps:');
     console.log('   1. Start the development server: pnpm dev');
-    console.log('   2. Navigate to /admin/admin-dashboard/settings');
+    console.log('   2. Navigate to /admin/settings');
     console.log('   3. Enable 2FA for an admin account');
     console.log('   4. Test the verification flow');
 

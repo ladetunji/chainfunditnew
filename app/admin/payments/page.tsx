@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useGeolocationCurrency } from '@/hooks/use-geolocation-currency';
+import { formatCurrency } from '@/lib/utils/currency';
 
 interface PendingPayment {
   id: string;
@@ -19,6 +21,8 @@ export default function AdminPaymentsPage() {
   const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState<string | null>(null);
+  const { locationInfo } = useGeolocationCurrency();
+  const currency = locationInfo?.currency?.code || 'USD';
 
   const fetchPendingPayments = async () => {
     try {
@@ -74,11 +78,8 @@ export default function AdminPaymentsPage() {
     return new Date(dateString).toLocaleString();
   };
 
-  const formatCurrency = (amount: string, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-    }).format(parseFloat(amount));
+  const formatPaymentCurrency = (amount: string, paymentCurrency: string) => {
+    return formatCurrency(parseFloat(amount), paymentCurrency);
   };
 
   useEffect(() => {
@@ -146,7 +147,7 @@ export default function AdminPaymentsPage() {
                       {payment.id.slice(0, 8)}...
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(payment.amount, payment.currency)}
+                      {formatPaymentCurrency(payment.amount, payment.currency)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">

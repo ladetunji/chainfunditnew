@@ -11,9 +11,10 @@ import { toast } from 'sonner';
 
 interface TwoFactorSetupProps {
   onComplete: () => void;
+  onCancel?: () => void;
 }
 
-export function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
+export function TwoFactorSetup({ onComplete, onCancel }: TwoFactorSetupProps) {
   const [step, setStep] = useState<'setup' | 'verify' | 'complete'>('setup');
   const [setupData, setSetupData] = useState<{
     secret: string;
@@ -125,9 +126,17 @@ export function TwoFactorSetup({ onComplete }: TwoFactorSetupProps) {
             </AlertDescription>
           </Alert>
           
-          <Button onClick={generateSetup} disabled={isLoading} className="w-full">
-            {isLoading ? 'Generating...' : 'Start Setup'}
-          </Button>
+          <div className="space-y-2">
+            <Button onClick={generateSetup} disabled={isLoading} className="w-full">
+              {isLoading ? 'Generating...' : 'Start Setup'}
+            </Button>
+            
+            {onCancel && (
+              <Button variant="outline" onClick={onCancel} className="w-full">
+                Cancel
+              </Button>
+            )}
+          </div>
           
           {error && (
             <Alert variant="destructive">

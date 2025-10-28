@@ -255,7 +255,7 @@ function OtpPageInner() {
       } else {
         // Role-based redirect for login
         if (userRole === 'admin' || userRole === 'super_admin') {
-          router.push("/admin/admin-dashboard/overview");
+          router.push("/admin/overview");
         } else if (redirect && isSafeRedirect(redirect)) {
           router.replace(redirect);
         } else {

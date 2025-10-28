@@ -9,6 +9,7 @@ import {
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useGeolocationCurrency } from '@/hooks/use-geolocation-currency';
+import { formatCurrency } from '@/lib/utils/currency';
 import { ModernDashboard } from '@/components/ui/dashboard';
 
 interface DashboardStats {
@@ -64,7 +65,7 @@ export default function AdminDashboardOverview() {
   const [timeRange, setTimeRange] = useState('30d');
   const router = useRouter();
   const { locationInfo } = useGeolocationCurrency();
-  const currency = locationInfo?.currency?.code;
+  const currency = locationInfo?.currency?.code || 'USD';
   const country = locationInfo?.country;
 
   useEffect(() => {
@@ -115,7 +116,7 @@ export default function AdminDashboardOverview() {
       ['Total Users', stats.totalUsers.toString(), '+12%', timestamp],
       ['Active Campaigns', stats.totalCampaigns.toString(), '+8%', timestamp],
       ['Total Donations', stats.totalDonations.toString(), '+15%', timestamp],
-      ['Total Revenue', `$${stats.totalRevenue.toLocaleString()}`, '+18%', timestamp],
+      ['Total Revenue', `${formatCurrency(stats.totalRevenue, currency)}`, '+18%', timestamp],
       ['Pending Payouts', stats.pendingPayouts.toString(), '', timestamp],
       ['Active Chainers', stats.activeChainers.toString(), '', timestamp],
       ['', '', '', ''],
@@ -127,8 +128,8 @@ export default function AdminDashboardOverview() {
       ['Campaign Title', 'Raised Amount', 'Goal', 'Status'],
       ...stats.topCampaigns.map(campaign => [
         campaign.title,
-        `$${campaign.raised.toLocaleString()}`,
-        `$${campaign.goal.toLocaleString()}`,
+        formatCurrency(campaign.raised, currency),
+        formatCurrency(campaign.goal, currency),
         campaign.status
       ]),
       ['', '', '', ''],
@@ -167,7 +168,7 @@ export default function AdminDashboardOverview() {
   };
 
   const handleSettings = () => {
-    router.push('/admin/admin-dashboard/settings');
+    router.push('/admin/settings');
   };
 
   const handleDownloadReport = () => {
@@ -250,7 +251,7 @@ export default function AdminDashboardOverview() {
             </div>
             <div class="metric">
               <h3>Total Revenue</h3>
-              <p>$${stats.totalRevenue.toLocaleString()}</p>
+              <p>${formatCurrency(stats.totalRevenue, currency)}</p>
             </div>
           </div>
         </div>
@@ -270,8 +271,8 @@ export default function AdminDashboardOverview() {
               ${stats.topCampaigns.map(campaign => `
                 <tr>
                   <td>${campaign.title}</td>
-                  <td>$${campaign.raised.toLocaleString()}</td>
-                  <td>$${campaign.goal.toLocaleString()}</td>
+                  <td>${formatCurrency(campaign.raised, currency)}</td>
+                  <td>${formatCurrency(campaign.goal, currency)}</td>
                   <td>${campaign.status}</td>
                 </tr>
               `).join('')}
@@ -308,11 +309,11 @@ export default function AdminDashboardOverview() {
   };
 
   const handleReviewCampaign = (campaignId: string) => {
-    router.push(`/admin/admin-dashboard/campaigns?id=${campaignId}`);
+    router.push(`/admin/campaigns?id=${campaignId}`);
   };
 
   const handleReviewUser = (userId: string) => {
-    router.push(`/admin/admin-dashboard/users?id=${userId}`);
+    router.push(`/admin/users?id=${userId}`);
   };
 
   return (
