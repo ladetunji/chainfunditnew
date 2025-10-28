@@ -164,7 +164,7 @@ const MetricCard = ({
     <Card className="bg-gray-50 border-gray-200">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-gray-900">{title}</CardTitle>
-        <Icon className="h-4 w-4 text-gray-200" />
+        <Icon className="h-4 w-4 text-gray-500" />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold text-gray-900 mb-1">{value}</div>
@@ -409,11 +409,6 @@ export const ModernDashboard = ({
   stats,
   loading,
   currency = 'USD',
-  onExportReport,
-  onExportPDF,
-  onSettings,
-  onReviewCampaign,
-  onReviewUser
 }: DashboardProps) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

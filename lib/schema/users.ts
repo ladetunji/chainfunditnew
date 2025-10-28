@@ -31,6 +31,10 @@ export const users = pgTable('users', {
   accountChangeRequested: boolean('account_change_requested').default(false),
   accountChangeReason: text('account_change_reason'),
   role: varchar('role', { length: 20 }).default('user'),
+  // 2FA fields
+  twoFactorEnabled: boolean('two_factor_enabled').default(false),
+  twoFactorSecret: text('two_factor_secret'),
+  twoFactorBackupCodes: text('two_factor_backup_codes'),
 }, (table) => ({
   emailIdx: index('users_email_idx').on(table.email),
   phoneIdx: index('users_phone_idx').on(table.phone),

@@ -11,6 +11,7 @@ export interface AdminUser {
   role: 'admin' | 'super_admin';
   isVerified: boolean;
   accountLocked: boolean;
+  twoFactorEnabled: boolean;
 }
 
 /**
@@ -40,6 +41,7 @@ export async function getAdminUser(request: NextRequest): Promise<AdminUser | nu
         role: users.role,
         isVerified: users.isVerified,
         accountLocked: users.accountLocked,
+        twoFactorEnabled: users.twoFactorEnabled,
       })
       .from(users)
       .where(eq(users.email, userPayload.email))
@@ -66,6 +68,7 @@ export async function getAdminUser(request: NextRequest): Promise<AdminUser | nu
       role: user.role as 'admin' | 'super_admin',
       isVerified: user.isVerified,
       accountLocked: user.accountLocked || false,
+      twoFactorEnabled: user.twoFactorEnabled || false,
     };
 
   } catch (error) {
@@ -113,6 +116,34 @@ export async function requireSuperAdminAuth(request: NextRequest): Promise<Admin
 
   if (!isSuperAdmin(user)) {
     throw new Error('Super admin privileges required');
+  }
+
+  return user;
+}
+
+/**
+ * Check if 2FA is required for admin access
+ */
+export function requiresTwoFactor(user: AdminUser | null): boolean {
+  return user?.twoFactorEnabled || false;
+}
+
+/**
+ * Require admin authentication with 2FA verification
+ */
+export async function requireAdminAuthWith2FA(request: NextRequest): Promise<AdminUser> {
+  const user = await getAdminUser(request);
+  
+  if (!user) {
+    throw new Error('Authentication required');
+  }
+
+  // If 2FA is enabled, check for 2FA verification in session
+  if (user.twoFactorEnabled) {
+    const twoFactorVerified = request.cookies.get('2fa_verified')?.value === 'true';
+    if (!twoFactorVerified) {
+      throw new Error('2FA verification required');
+    }
   }
 
   return user;

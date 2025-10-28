@@ -167,7 +167,7 @@ export default function AdminDashboardOverview() {
   };
 
   const handleSettings = () => {
-    router.push('/admin/settings');
+    router.push('/admin/admin-dashboard/settings');
   };
 
   const handleDownloadReport = () => {
@@ -308,11 +308,11 @@ export default function AdminDashboardOverview() {
   };
 
   const handleReviewCampaign = (campaignId: string) => {
-    router.push(`/admin/dashboard/campaigns?id=${campaignId}`);
+    router.push(`/admin/admin-dashboard/campaigns?id=${campaignId}`);
   };
 
   const handleReviewUser = (userId: string) => {
-    router.push(`/admin/dashboard/users?id=${userId}`);
+    router.push(`/admin/admin-dashboard/users?id=${userId}`);
   };
 
   return (

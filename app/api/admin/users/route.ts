@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users, donations, campaigns, chainers } from '@/lib/schema';
 import { eq, like, and, desc, count, sum, sql } from 'drizzle-orm';
+import { requireAdminAuthWith2FA } from '@/lib/admin-auth';
 
 /**
  * GET /api/admin/users
@@ -9,6 +10,9 @@ import { eq, like, and, desc, count, sum, sql } from 'drizzle-orm';
  */
 export async function GET(request: NextRequest) {
   try {
+    // Require admin authentication with 2FA
+    await requireAdminAuthWith2FA(request);
+    
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -120,6 +124,22 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error fetching users:', error);
+    
+    if (error instanceof Error) {
+      if (error.message === 'Authentication required') {
+        return NextResponse.json(
+          { error: 'Authentication required' },
+          { status: 401 }
+        );
+      }
+      if (error.message === '2FA verification required') {
+        return NextResponse.json(
+          { error: '2FA verification required' },
+          { status: 403 }
+        );
+      }
+    }
+    
     return NextResponse.json(
       { error: 'Failed to fetch users' },
       { status: 500 }
@@ -133,6 +153,9 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Require admin authentication with 2FA
+    await requireAdminAuthWith2FA(request);
+    
     const body = await request.json();
     const { email, fullName, phone, role = 'user', status = 'active' } = body;
 
@@ -175,6 +198,22 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creating user:', error);
+    
+    if (error instanceof Error) {
+      if (error.message === 'Authentication required') {
+        return NextResponse.json(
+          { error: 'Authentication required' },
+          { status: 401 }
+        );
+      }
+      if (error.message === '2FA verification required') {
+        return NextResponse.json(
+          { error: '2FA verification required' },
+          { status: 403 }
+        );
+      }
+    }
+    
     return NextResponse.json(
       { error: 'Failed to create user' },
       { status: 500 }
