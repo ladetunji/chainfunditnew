@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
             const userData = await userResponse.json();
             const userRole = userData.user?.role;
             if (userRole === 'admin' || userRole === 'super_admin') {
-              redirectUrl = '/admin/dashboard/overview';
+              redirectUrl = '/admin/admin-dashboard/overview';
             }
           }
         } catch (error) {

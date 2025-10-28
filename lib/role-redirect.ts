@@ -41,7 +41,7 @@ export function getRoleBasedRedirect(role: string | null, redirect?: string): st
   switch (role) {
     case 'admin':
     case 'super_admin':
-      return '/admin/dashboard/overview';
+      return '/admin/admin-dashboard/overview';
     case 'user':
     default:
       return '/dashboard';

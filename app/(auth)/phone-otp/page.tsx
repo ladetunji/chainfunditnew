@@ -243,7 +243,7 @@ function PhoneOtpPageInner() {
           
           // Role-based redirect
           if (userRole === 'admin' || userRole === 'super_admin') {
-            router.push("/admin/dashboard/overview");
+            router.push("/admin/admin-dashboard/overview");
           } else {
             router.push("/dashboard");
           }
