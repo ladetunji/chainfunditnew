@@ -14,7 +14,10 @@
     "update-creators": "tsx scripts/update-campaign-creators.ts",
     "scrape-charities": "tsx scripts/scrape-charities.ts",
     "seed-charities": "tsx scripts/seed-charities.ts",
-    "update-test-donations": "tsx scripts/update-test-donations.ts"
+    "update-test-donations": "tsx scripts/update-test-donations.ts",
+    "setup-admin-notifications": "tsx scripts/setup-admin-notifications.ts",
+    "debug-bank-names": "tsx scripts/debug-bank-names.ts",
+    "check-admin-notifications": "tsx scripts/check-admin-notifications.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.883.0",

@@ -39,14 +39,12 @@ interface Donation {
   donorEmail: string;
   amount: number;
   currency: string;
-  paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded';
+  paymentStatus: 'pending' | 'completed' | 'failed';
   paymentMethod: string;
   chainerId?: string;
   chainerName?: string;
   createdAt: string;
   processedAt?: string;
-  refundedAt?: string;
-  refundReason?: string;
   transactionId: string;
 }
 
@@ -74,11 +72,9 @@ interface DonationStats {
   completedDonations: number;
   pendingDonations: number;
   failedDonations: number;
-  refundedDonations: number;
   totalAmount: number;
   completedAmount: number;
   pendingAmount: number;
-  refundedAmount: number;
   averageDonation: number;  
   recentDonations: Donation[];
 }
@@ -260,14 +256,12 @@ export default function DonationsPage() {
       pending: 'secondary',
       completed: 'default',
       failed: 'destructive',
-      refunded: 'outline',
     } as const;
 
     const icons = {
       pending: Clock,
       completed: CheckCircle,
       failed: XCircle,
-      refunded: RefreshCw,
     } as const;
 
     const Icon = icons[status as keyof typeof icons];
@@ -347,14 +341,6 @@ export default function DonationsPage() {
             <p className="text-gray-600">Track and manage all platform donations</p>
           </div>
           <div className="flex gap-2">
-            <Button
-              onClick={() => handleBulkAction('refund')}
-              disabled={selectedDonations.length === 0}
-              variant="destructive"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refund Selected
-            </Button>
             <Button variant="outline" onClick={handleExportDonations}>
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -448,7 +434,6 @@ export default function DonationsPage() {
                       <SelectItem value="pending">Pending</SelectItem>
                       <SelectItem value="completed">Completed</SelectItem>
                       <SelectItem value="failed">Failed</SelectItem>
-                      <SelectItem value="refunded">Refunded</SelectItem>
                     </SelectContent>
                   </Select>
                   <Select value={currencyFilter} onValueChange={setCurrencyFilter}>
@@ -564,24 +549,6 @@ export default function DonationsPage() {
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            {donation.paymentStatus === 'completed' && (
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleDonationAction(donation.id, 'refund')}
-                              >
-                                <RefreshCw className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {donation.paymentStatus === 'failed' && (
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => handleDonationAction(donation.id, 'retry')}
-                              >
-                                <RefreshCw className="h-4 w-4" />
-                              </Button>
-                            )}
                           </div>
                         </TableCell>
                       </TableRow>

@@ -193,7 +193,13 @@ const PayoutsPage = () => {
     try {
       setProcessingPayouts(prev => new Set(prev).add(campaignId));
       
-      const response = await fetch('/api/payouts', {
+      // Create a timeout promise
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timeout. Please try again.')), 20000)
+      );
+
+      // Create the fetch promise
+      const fetchPromise = fetch('/api/payouts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -206,29 +212,30 @@ const PayoutsPage = () => {
         }),
       });
 
+      // Race between fetch and timeout
+      const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to process payout' }));
+        throw new Error(errorData.error || `Server error: ${response.status}`);
+      }
+
       const result = await response.json();
       
       if (result.success) {
         toast.success(result.data.message);
-        // Refresh payout data
-        await fetchPayoutData();
-        setShowPayoutModal(false);
-        setSelectedCampaign(null);
+        // Refresh payout data in background
+        fetchPayoutData().catch(err => console.error('Error refreshing payout data:', err));
+        // Don't close modal here - let the modal show success dialog
+        // The modal will handle closing itself after showing success
       } else {
-        // Handle specific 50% requirement error
-        if (result.error && result.error.includes('50%')) {
-          toast.error(result.error, {
-            description: result.details ? 
-              `Current progress: ${result.details.currentProgress}% (Needs ${result.details.requiredProgress}%)` : 
-              undefined,
-            duration: 6000
-          });
-        } else {
-          toast.error(result.error || 'Failed to process payout');
-        }
+        // Throw error so modal can handle it
+        throw new Error(result.error || 'Failed to process payout');
       }
     } catch (err) {
-      toast.error('Failed to process payout');
+      // Re-throw error so modal can handle it
+      const errorMessage = err instanceof Error ? err.message : 'Failed to process payout';
+      throw new Error(errorMessage);
     } finally {
       setProcessingPayouts(prev => {
         const newSet = new Set(prev);

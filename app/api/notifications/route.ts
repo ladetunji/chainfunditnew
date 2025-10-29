@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { notifications } from '@/lib/schema/notifications';
 import { users } from '@/lib/schema/users';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and } from 'drizzle-orm';
 import { getUserFromRequest } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
@@ -25,10 +25,10 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10');
     const unreadOnly = searchParams.get('unreadOnly') === 'true';
 
-    // Build where clause
+    // Build where clause - always filter by userId, optionally filter by isRead
     let whereClause = eq(notifications.userId, userId);
     if (unreadOnly) {
-      whereClause = eq(notifications.isRead, false);
+      whereClause = and(eq(notifications.userId, userId), eq(notifications.isRead, false))!;
     }
 
     // Get notifications

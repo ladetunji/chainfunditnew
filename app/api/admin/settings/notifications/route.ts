@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { adminSettings, type NewAdminSettings } from '@/lib/schema/admin-settings';
 import { eq } from 'drizzle-orm';
+import { getAdminUser } from '@/lib/admin-auth';
 
 /**
  * GET /api/admin/settings/notifications
@@ -9,20 +10,38 @@ import { eq } from 'drizzle-orm';
  */
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Get current admin user ID from session
-    // For now, we'll use a placeholder
-    const adminUserId = request.headers.get('x-admin-user-id') || 'admin-user-id';
+    // Get current admin user from session
+    const adminUser = await getAdminUser(request);
+    if (!adminUser) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
 
     let settings = await db.query.adminSettings.findFirst({
-      where: eq(adminSettings.userId, adminUserId),
+      where: eq(adminSettings.userId, adminUser.id),
     });
+
+    // Helper function to serialize settings for JSON response
+    const serializeSettings = (settings: any) => {
+      return {
+        ...settings,
+        createdAt: settings.createdAt instanceof Date 
+          ? settings.createdAt.toISOString() 
+          : settings.createdAt,
+        updatedAt: settings.updatedAt instanceof Date 
+          ? settings.updatedAt.toISOString() 
+          : settings.updatedAt,
+      };
+    };
 
     // If no settings exist, create default ones
     if (!settings) {
       const [newSettings] = await db
         .insert(adminSettings)
         .values({
-          userId: adminUserId,
+          userId: adminUser.id,
           emailNotificationsEnabled: true,
           notifyOnCharityDonation: true,
           notifyOnCampaignDonation: true,
@@ -39,7 +58,7 @@ export async function GET(request: NextRequest) {
       settings = newSettings;
     }
 
-    return NextResponse.json({ settings });
+    return NextResponse.json({ settings: serializeSettings(settings) });
   } catch (error) {
     console.error('Error fetching admin settings:', error);
     return NextResponse.json(
@@ -55,43 +74,72 @@ export async function GET(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    // TODO: Get current admin user ID from session
-    const adminUserId = request.headers.get('x-admin-user-id') || 'admin-user-id';
+    // Get current admin user from session
+    const adminUser = await getAdminUser(request);
+    if (!adminUser) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
+
+    // Filter out fields that shouldn't be updated
+    const {
+      id,
+      userId,
+      createdAt,
+      updatedAt,
+      ...updateableFields
+    } = body;
 
     // Find existing settings
     const existing = await db.query.adminSettings.findFirst({
-      where: eq(adminSettings.userId, adminUserId),
+      where: eq(adminSettings.userId, adminUser.id),
     });
+
+    // Helper function to serialize settings for JSON response
+    const serializeSettings = (settings: any) => {
+      return {
+        ...settings,
+        createdAt: settings.createdAt instanceof Date 
+          ? settings.createdAt.toISOString() 
+          : settings.createdAt,
+        updatedAt: settings.updatedAt instanceof Date 
+          ? settings.updatedAt.toISOString() 
+          : settings.updatedAt,
+      };
+    };
 
     if (existing) {
       // Update existing settings
       const [updated] = await db
         .update(adminSettings)
         .set({
-          ...body,
+          ...updateableFields,
           updatedAt: new Date(),
         })
-        .where(eq(adminSettings.userId, adminUserId))
+        .where(eq(adminSettings.userId, adminUser.id))
         .returning();
 
       return NextResponse.json({
         message: 'Settings updated successfully',
-        settings: updated,
+        settings: serializeSettings(updated),
       });
     } else {
       // Create new settings
       const [created] = await db
         .insert(adminSettings)
         .values({
-          userId: adminUserId,
-          ...body,
+          userId: adminUser.id,
+          ...updateableFields,
         })
         .returning();
 
       return NextResponse.json({
         message: 'Settings created successfully',
-        settings: created,
+        settings: serializeSettings(created),
       });
     }
   } catch (error) {

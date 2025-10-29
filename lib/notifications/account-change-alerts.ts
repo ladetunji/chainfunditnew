@@ -1,7 +1,8 @@
 import { Resend } from 'resend';
 import { db } from '@/lib/db';
 import { adminSettings } from '@/lib/schema/admin-settings';
-import { eq } from 'drizzle-orm';
+import { users } from '@/lib/schema';
+import { eq, or } from 'drizzle-orm';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -22,27 +23,50 @@ interface AccountChangeRequestData {
  */
 export async function notifyAdminsOfAccountChangeRequest(requestData: AccountChangeRequestData) {
   try {
-    // Get all admin users with notification settings enabled for account changes
+    // Get all admin users first
+    const adminUsers = await db.query.users.findMany({
+      where: or(
+        eq(users.role, 'admin'),
+        eq(users.role, 'super_admin')
+      ),
+    });
+
+    if (adminUsers.length === 0) {
+      console.log('No admin users found in the system');
+      return;
+    }
+
+    // Get admin settings for each admin user
     const adminConfigs = await db.query.adminSettings.findMany({
       where: eq(adminSettings.notifyOnAccountChangeRequest, true),
     });
 
-    if (adminConfigs.length === 0) {
-      console.log('No admins configured for account change request notifications');
-      // Still return success - this is not critical
-      return;
-    }
+    // Create a map of userId to settings for quick lookup
+    const settingsMap = new Map(adminConfigs.map(config => [config.userId, config]));
 
-    for (const config of adminConfigs) {
-      if (!config.emailNotificationsEnabled) continue;
+    let notificationsSent = 0;
 
-      const recipientEmail = config.notificationEmail || process.env.ADMIN_EMAIL;
+    for (const adminUser of adminUsers) {
+      const config = settingsMap.get(adminUser.id);
+      
+      // If no specific settings found, use defaults (notify by default)
+      const shouldNotify = config ? config.notifyOnAccountChangeRequest : true;
+      const emailEnabled = config ? config.emailNotificationsEnabled : true;
+      
+      if (!shouldNotify || !emailEnabled) continue;
+
+      const recipientEmail = config?.notificationEmail || process.env.ADMIN_EMAIL;
       if (!recipientEmail) continue;
 
       await sendAccountChangeRequestEmailToAdmin(recipientEmail, requestData);
+      notificationsSent++;
     }
 
-    console.log('✅ Account change request notifications sent to admins');
+    if (notificationsSent === 0) {
+      console.log('No admins configured for account change request notifications');
+    } else {
+      console.log(`✅ Account change request notifications sent to ${notificationsSent} admin(s)`);
+    }
   } catch (error) {
     console.error('Error notifying admins of account change request:', error);
     // Don't throw - notification failure shouldn't break the request flow

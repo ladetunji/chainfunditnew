@@ -1,7 +1,8 @@
 import { Resend } from 'resend';
 import { db } from '@/lib/db';
 import { adminSettings } from '@/lib/schema/admin-settings';
-import { eq } from 'drizzle-orm';
+import { users } from '@/lib/schema';
+import { eq, or } from 'drizzle-orm';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -22,42 +23,62 @@ interface CharityDonationData {
  */
 export async function notifyAdminOfCharityDonation(donationData: CharityDonationData) {
   try {
-    // Get all admin users with notification settings
+    // Get all admin users first
+    const adminUsers = await db.query.users.findMany({
+      where: or(
+        eq(users.role, 'admin'),
+        eq(users.role, 'super_admin')
+      ),
+    });
+
+    if (adminUsers.length === 0) {
+      console.log('No admin users found in the system');
+      return;
+    }
+
+    // Get admin settings for each admin user
     const adminConfigs = await db.query.adminSettings.findMany({
       where: eq(adminSettings.notifyOnCharityDonation, true),
     });
 
-    if (adminConfigs.length === 0) {
-      console.log('No admins configured for charity donation notifications');
-      return;
-    }
+    // Create a map of userId to settings for quick lookup
+    const settingsMap = new Map(adminConfigs.map(config => [config.userId, config]));
 
-    // Check if this is a large donation
-    const isLargeDonation = adminConfigs.some(config => {
-      const threshold = parseFloat(config.largeDonationThreshold || '1000');
-      const amount = parseFloat(donationData.amount);
-      return amount >= threshold && config.notifyOnLargeDonation;
-    });
+    const amount = parseFloat(donationData.amount);
+    let notificationsSent = 0;
 
-    for (const config of adminConfigs) {
-      if (!config.emailNotificationsEnabled) continue;
+    for (const adminUser of adminUsers) {
+      const config = settingsMap.get(adminUser.id);
+      
+      // If no specific settings found, use defaults (notify by default)
+      const shouldNotifyCharity = config ? config.notifyOnCharityDonation : true;
+      const emailEnabled = config ? config.emailNotificationsEnabled : true;
+      
+      if (!shouldNotifyCharity || !emailEnabled) continue;
 
-      const recipientEmail = config.notificationEmail || process.env.ADMIN_EMAIL;
+      const recipientEmail = config?.notificationEmail || process.env.ADMIN_EMAIL;
       if (!recipientEmail) continue;
 
-      // Check if admin wants to be notified about this donation
-      const threshold = parseFloat(config.largeDonationThreshold || '1000');
-      const amount = parseFloat(donationData.amount);
+      // Check if this is a large donation for this admin
+      const threshold = config ? parseFloat(config.largeDonationThreshold || '1000') : 1000;
+      const isLargeDonation = amount >= threshold;
+      const shouldNotifyLarge = config ? config.notifyOnLargeDonation : true;
       
       // Send notification if:
       // 1. Admin has notify_on_charity_donation enabled, OR
       // 2. It's a large donation and admin has notify_on_large_donation enabled
-      const shouldNotify = config.notifyOnCharityDonation || 
-                          (isLargeDonation && amount >= threshold);
+      const shouldNotify = shouldNotifyCharity || (isLargeDonation && shouldNotifyLarge);
 
       if (!shouldNotify) continue;
 
       await sendCharityDonationEmail(recipientEmail, donationData, isLargeDonation);
+      notificationsSent++;
+    }
+
+    if (notificationsSent === 0) {
+      console.log('No admins configured for charity donation notifications');
+    } else {
+      console.log(`✅ Charity donation notifications sent to ${notificationsSent} admin(s)`);
     }
   } catch (error) {
     console.error('Error notifying admin of charity donation:', error);
@@ -146,7 +167,7 @@ async function sendCharityDonationEmail(
               ` : ''}
               
               <div style="text-align: center;">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/charity-payouts" class="button">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}admin/charity-payouts" class="button">
                   View in Admin Dashboard →
                 </a>
               </div>
@@ -159,7 +180,7 @@ async function sendCharityDonationEmail(
             
             <div class="footer">
               <p>ChainFundit Admin Notifications</p>
-              <p>To manage your notification preferences, visit <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/settings">Admin Settings</a></p>
+                <p>To manage your notification preferences, visit <a href="${process.env.NEXT_PUBLIC_APP_URL}admin/settings">Admin Settings</a></p>
             </div>
           </div>
         </body>

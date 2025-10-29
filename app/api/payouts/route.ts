@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { campaigns, donations, users, chainers } from '@/lib/schema';
+import { campaigns, donations, users, chainers, campaignPayouts } from '@/lib/schema';
 import { eq, and, sum, count, inArray, isNotNull } from 'drizzle-orm';
 import { getPayoutProvider, getPayoutConfig, isPayoutSupported } from '@/lib/payments/payout-config';
 import { getCurrencyCode } from '@/lib/utils/currency';
@@ -198,6 +198,7 @@ export async function POST(request: NextRequest) {
         fullName: users.fullName,
         email: users.email,
         accountNumber: users.accountNumber,
+        bankCode: users.bankCode,
         bankName: users.bankName,
         accountName: users.accountName,
         accountVerified: users.accountVerified
@@ -303,10 +304,58 @@ export async function POST(request: NextRequest) {
 
     const fees = calculateFees();
     const payoutId = `payout_${Date.now()}`;
+    const reference = `CP-${Date.now()}-${campaign[0].id.substring(0, 8)}`;
     
-    // Send confirmation email
+    console.log('Processing payout request:', {
+      userId: user[0].id,
+      campaignId: campaign[0].id,
+      amount,
+      currency: currencyCode,
+      payoutProvider
+    });
+    
+    // Get bank name - use stored value or fallback
+    let bankName = user[0].bankName || '';
+    if (!bankName && user[0].bankCode) {
+      bankName = 'Bank (Code: ' + user[0].bankCode + ')';
+    }
+
+    // Save payout request to database FIRST (before sending notifications)
+    let savedPayout;
     try {
-      await sendPayoutConfirmationEmail({
+      const [payout] = await db
+        .insert(campaignPayouts)
+        .values({
+          userId: user[0].id,
+          campaignId: campaign[0].id,
+          requestedAmount: amount.toString(),
+          grossAmount: amount.toString(),
+          fees: fees.totalFees.toString(),
+          netAmount: fees.netAmount.toString(),
+          currency: currencyCode,
+          status: 'pending',
+          payoutProvider,
+          reference,
+          bankName: user[0].bankName || null,
+          accountNumber: user[0].accountNumber || null,
+          accountName: user[0].accountName || null,
+          bankCode: user[0].bankCode || null,
+        })
+        .returning();
+
+      savedPayout = payout;
+      console.log('✅ Payout request saved to database:', savedPayout.id);
+    } catch (dbError) {
+      console.error('❌ Failed to save payout request to database:', dbError);
+      return NextResponse.json(
+        { error: 'Failed to save payout request' },
+        { status: 500 }
+      );
+    }
+    
+    // Send confirmation email 
+    try {
+      const emailPromise = sendPayoutConfirmationEmail({
         userEmail: user[0].email,
         userName: user[0].fullName,
         campaignTitle: campaign[0].title,
@@ -320,17 +369,24 @@ export async function POST(request: NextRequest) {
         bankDetails: user[0].accountVerified ? {
           accountName: user[0].accountName || '',
           accountNumber: user[0].accountNumber || '',
-          bankName: user[0].bankName || ''
+          bankName: bankName
         } : undefined
       });
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Email timeout')), 10000)
+      );
+
+      await Promise.race([emailPromise, timeoutPromise]);
     } catch (emailError) {
       console.error('Failed to send payout confirmation email:', emailError);
-      // Don't fail the payout if email fails
     }
 
-    // Send admin notification
+    // Send admin notification 
     try {
-      await notifyPayoutRequest({
+      console.log('Sending admin notification for payout request...');
+      
+      const notificationPromise = notifyPayoutRequest({
         userId: user[0].id,
         userEmail: user[0].email,
         userName: user[0].fullName,
@@ -338,27 +394,42 @@ export async function POST(request: NextRequest) {
         campaignTitle: campaign[0].title,
         amount,
         currency: currencyCode,
-        payoutId,
+        payoutId: savedPayout.id, // Use database ID instead of timestamp-based ID
         requestDate: new Date(),
         bankDetails: user[0].accountVerified ? {
           accountName: user[0].accountName || '',
           accountNumber: user[0].accountNumber || '',
-          bankName: user[0].bankName || ''
+          bankName: bankName
         } : undefined
       });
+
+      // Increased timeout to 15 seconds for notification processing
+      const notificationTimeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Notification timeout after 15 seconds')), 15000)
+      );
+
+      await Promise.race([notificationPromise, notificationTimeoutPromise]);
+      console.log('✅ Admin notification sent successfully');
     } catch (notificationError) {
-      console.error('Failed to send admin notification:', notificationError);
-      // Don't fail the payout if notification fails
+      console.error('❌ Failed to send admin notification:', notificationError);
+      // Log detailed error information
+      if (notificationError instanceof Error) {
+        console.error('Notification error details:', {
+          message: notificationError.message,
+          stack: notificationError.stack
+        });
+      }
     }
     
     return NextResponse.json({
       success: true,
       data: {
-        payoutId,
+        payoutId: savedPayout.id,
+        payoutReference: savedPayout.reference,
         amount,
         currency: currencyCode,
         provider: payoutProvider,
-        status: 'processing',
+        status: savedPayout.status,
         estimatedDelivery: payoutProvider === 'stripe' ? '2-7 business days' : '1-3 business days',
         netAmount: fees.netAmount,
         fees: fees.totalFees,

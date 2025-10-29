@@ -1,4 +1,5 @@
-import { Resend } from 'resend';
+import { Resend } from "resend";
+import { CheckCircle } from "lucide-react";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -22,7 +23,19 @@ interface PayoutEmailData {
 
 export async function sendPayoutConfirmationEmail(data: PayoutEmailData) {
   try {
-    const { userEmail, userName, campaignTitle, payoutAmount, currency, netAmount, fees, payoutProvider, processingTime, payoutId, bankDetails } = data;
+    const {
+      userEmail,
+      userName,
+      campaignTitle,
+      payoutAmount,
+      currency,
+      netAmount,
+      fees,
+      payoutProvider,
+      processingTime,
+      payoutId,
+      bankDetails,
+    } = data;
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -206,7 +219,9 @@ export async function sendPayoutConfirmationEmail(data: PayoutEmailData) {
       <body>
         <div class="container">
           <div class="header">
-            <div class="success-icon"></div>
+            <div class="success-icon">
+              <CheckCircle className="h-10 w-10 text-white" />
+            </div>
             <div class="logo">ChainFundIt</div>
             <div class="title">Payout Request Confirmed</div>
             <div class="subtitle">Your payout has been successfully initiated</div>
@@ -228,17 +243,23 @@ export async function sendPayoutConfirmationEmail(data: PayoutEmailData) {
               </div>
               <div class="info-row">
                 <span class="info-label">Payout Provider:</span>
-                <span class="info-value">${payoutProvider.charAt(0).toUpperCase() + payoutProvider.slice(1)}</span>
+                <span class="info-value">${
+                  payoutProvider.charAt(0).toUpperCase() +
+                  payoutProvider.slice(1)
+                }</span>
               </div>
               <div class="info-row">
                 <span class="info-label">Request Date:</span>
-                <span class="info-value">${new Date().toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}</span>
+                <span class="info-value">${new Date().toLocaleDateString(
+                  "en-US",
+                  {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }
+                )}</span>
               </div>
             </div>
 
@@ -262,7 +283,9 @@ export async function sendPayoutConfirmationEmail(data: PayoutEmailData) {
               </div>
             </div>
 
-            ${bankDetails ? `
+            ${
+              bankDetails
+                ? `
             <div class="bank-details">
               <div class="bank-title">🏦 Bank Account Details</div>
               <div class="info-row">
@@ -278,7 +301,9 @@ export async function sendPayoutConfirmationEmail(data: PayoutEmailData) {
                 <span class="info-value">${bankDetails.bankName}</span>
               </div>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
 
             <div class="processing-info">
               <div class="processing-title">⏰ Processing Information</div>
@@ -302,9 +327,15 @@ export async function sendPayoutConfirmationEmail(data: PayoutEmailData) {
           <div class="footer">
             <p>This email was sent to ${userEmail}</p>
             <p>
-              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://chainfundit.com'}">ChainFundIt</a> | 
-              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://chainfundit.com'}/support">Support</a> | 
-              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://chainfundit.com'}/privacy">Privacy Policy</a>
+              <a href="${
+                process.env.NEXT_PUBLIC_APP_URL || "https://chainfundit.com"
+              }">ChainFundIt</a> | 
+              <a href="${
+                process.env.NEXT_PUBLIC_APP_URL || "https://chainfundit.com"
+              }/support">Support</a> | 
+              <a href="${
+                process.env.NEXT_PUBLIC_APP_URL || "https://chainfundit.com"
+              }/privacy">Privacy Policy</a>
             </p>
             <p>© ${new Date().getFullYear()} ChainFundIt. All rights reserved.</p>
           </div>
@@ -314,23 +345,34 @@ export async function sendPayoutConfirmationEmail(data: PayoutEmailData) {
     `;
 
     const result = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'noreply@chainfundit.com',
+      from: process.env.RESEND_FROM_EMAIL || "noreply@chainfundit.com",
       to: userEmail,
       subject: `Payout Confirmation - ${currency} ${netAmount.toLocaleString()} - ChainFundIt`,
       html: emailHtml,
     });
 
-    console.log('Payout confirmation email sent:', result);
+    console.log("Payout confirmation email sent:", result);
     return result;
   } catch (error) {
-    console.error('Error sending payout confirmation email:', error);
+    console.error("Error sending payout confirmation email:", error);
     throw error;
   }
 }
 
-export async function sendPayoutCompletionEmail(data: PayoutEmailData & { completionDate: string }) {
+export async function sendPayoutCompletionEmail(
+  data: PayoutEmailData & { completionDate: string }
+) {
   try {
-    const { userEmail, userName, campaignTitle, netAmount, currency, payoutId, bankDetails, completionDate } = data;
+    const {
+      userEmail,
+      userName,
+      campaignTitle,
+      netAmount,
+      currency,
+      payoutId,
+      bankDetails,
+      completionDate,
+    } = data;
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -504,16 +546,22 @@ export async function sendPayoutCompletionEmail(data: PayoutEmailData & { comple
                 <span class="info-label">Completion Date:</span>
                 <span class="info-value">${completionDate}</span>
               </div>
-              ${bankDetails ? `
+              ${
+                bankDetails
+                  ? `
               <div class="info-row">
                 <span class="info-label">Account:</span>
                 <span class="info-value">${bankDetails.accountName} (${bankDetails.accountNumber})</span>
               </div>
-              ` : ''}
+              `
+                  : ""
+              }
             </div>
 
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://chainfundit.com'}/dashboard/payouts" class="cta-button">
+              <a href="${
+                process.env.NEXT_PUBLIC_APP_URL || "https://chainfundit.com"
+              }/dashboard/payouts" class="cta-button">
                 View All Payouts
               </a>
             </div>
@@ -524,8 +572,12 @@ export async function sendPayoutCompletionEmail(data: PayoutEmailData & { comple
           <div class="footer">
             <p>This email was sent to ${userEmail}</p>
             <p>
-              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://chainfundit.com'}">ChainFundIt</a> | 
-              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://chainfundit.com'}/support">Support</a>
+              <a href="${
+                process.env.NEXT_PUBLIC_APP_URL || "https://chainfundit.com"
+              }">ChainFundIt</a> | 
+              <a href="${
+                process.env.NEXT_PUBLIC_APP_URL || "https://chainfundit.com"
+              }/support">Support</a>
             </p>
             <p>© ${new Date().getFullYear()} ChainFundIt. All rights reserved.</p>
           </div>
@@ -535,16 +587,16 @@ export async function sendPayoutCompletionEmail(data: PayoutEmailData & { comple
     `;
 
     const result = await resend.emails.send({
-      from: process.env.RESEND_FROM_EMAIL || 'noreply@chainfundit.com',
+      from: process.env.RESEND_FROM_EMAIL || "noreply@chainfundit.com",
       to: userEmail,
       subject: `Payout Completed - ${currency} ${netAmount.toLocaleString()} - ChainFundIt`,
       html: emailHtml,
     });
 
-    console.log('Payout completion email sent:', result);
+    console.log("Payout completion email sent:", result);
     return result;
   } catch (error) {
-    console.error('Error sending payout completion email:', error);
+    console.error("Error sending payout completion email:", error);
     throw error;
   }
 }
