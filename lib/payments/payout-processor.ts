@@ -217,19 +217,25 @@ export async function processAmbassadorPayout(
 
 /**
  * Process payout using Stripe
+ * For foreign currencies, uses bank account details instead of Stripe Connect
  */
 async function processStripePayout(
   payout: any,
   type: 'campaign' | 'ambassador'
 ): Promise<PayoutProcessingResult> {
   try {
-    const { createStripePayout, isStripeAccountReadyForPayouts } = await import('@/lib/payments/stripe');
+    const { 
+      createStripePayout, 
+      isStripeAccountReadyForPayouts,
+      createStripeExternalBankAccount,
+      createStripePayoutToExternalAccount
+    } = await import('@/lib/payments/stripe');
     const { db } = await import('@/lib/db');
     const { users } = await import('@/lib/schema');
     const { eq } = await import('drizzle-orm');
 
-    // Get user's Stripe Connect account ID
-    let stripeAccountId: string;
+    const amount = parseFloat(type === 'campaign' ? payout.netAmount : payout.amount);
+    const currency = type === 'campaign' ? payout.currency : (payout.currency || 'USD');
     
     if (type === 'campaign') {
       const userId = payout.userId || payout.user?.id;
@@ -242,28 +248,119 @@ async function processStripePayout(
       }
 
       const user = await db
-        .select({ stripeAccountId: users.stripeAccountId })
+        .select({
+          stripeAccountId: users.stripeAccountId,
+          stripeAccountReady: users.stripeAccountReady,
+          // International bank account fields
+          internationalBankAccountNumber: users.internationalBankAccountNumber,
+          internationalBankRoutingNumber: users.internationalBankRoutingNumber,
+          internationalBankSwiftBic: users.internationalBankSwiftBic,
+          internationalBankCountry: users.internationalBankCountry,
+          internationalBankName: users.internationalBankName,
+          internationalAccountName: users.internationalAccountName,
+          internationalAccountVerified: users.internationalAccountVerified,
+        })
         .from(users)
         .where(eq(users.id, userId))
         .limit(1);
 
-      if (!user.length || !user[0].stripeAccountId) {
+      if (!user.length) {
         return {
           success: false,
-          error: 'User has not linked a Stripe Connect account',
+          error: 'User not found',
           status: 'failed',
         };
       }
 
-      stripeAccountId = user[0].stripeAccountId;
+      // Check if currency is foreign (not NGN) - use bank account details
+      const isForeignCurrency = currency !== 'NGN';
+      
+      if (isForeignCurrency) {
+        // For foreign currencies, use bank account details
+        if (!user[0].internationalAccountVerified) {
+          return {
+            success: false,
+            error: 'International bank account not verified. Please add and verify your bank account details.',
+            status: 'failed',
+          };
+        }
 
-      // Verify account is ready
-      const isReady = await isStripeAccountReadyForPayouts(stripeAccountId);
-      if (!isReady) {
+        if (!user[0].internationalBankAccountNumber || !user[0].internationalBankCountry) {
+          return {
+            success: false,
+            error: 'International bank account details incomplete',
+            status: 'failed',
+          };
+        }
+
+        // Determine if account number is IBAN (starts with country code)
+        const accountNumber = user[0].internationalBankAccountNumber!;
+        const isIban = /^[A-Z]{2}[0-9]{2}/.test(accountNumber);
+        
+        // Create external bank account in Stripe
+        const externalAccount = await createStripeExternalBankAccount({
+          accountNumber: accountNumber,
+          routingNumber: user[0].internationalBankCountry === 'US' ? (user[0].internationalBankRoutingNumber || undefined) : undefined,
+          sortCode: user[0].internationalBankCountry === 'GB' ? accountNumber.substring(0, 6) : undefined, // Extract sort code from UK account
+          iban: isIban ? accountNumber : undefined,
+          swiftBic: user[0].internationalBankSwiftBic || undefined,
+          country: user[0].internationalBankCountry!,
+          accountHolderName: user[0].internationalAccountName || payout.user?.fullName || 'User',
+          currency: currency.toLowerCase(),
+        });
+
+        // Create payout to external bank account
+        const stripePayout = await createStripePayoutToExternalAccount(
+          amount,
+          currency,
+          externalAccount.id,
+          `Payout for campaign: ${payout.id}`,
+          {
+            payoutId: payout.id,
+            type: 'campaign',
+          }
+        );
+
         return {
-          success: false,
-          error: 'Stripe Connect account is not ready for payouts. Please complete onboarding.',
-          status: 'failed',
+          success: true,
+          transactionId: stripePayout.id,
+          status: 'completed',
+        };
+      } else {
+        // For NGN, fall back to old Stripe Connect flow (though this shouldn't happen as NGN uses Paystack)
+        // This is kept for backward compatibility
+        if (!user[0].stripeAccountId) {
+          return {
+            success: false,
+            error: 'User has not linked a Stripe Connect account',
+            status: 'failed',
+          };
+        }
+
+        const isReady = await isStripeAccountReadyForPayouts(user[0].stripeAccountId);
+        if (!isReady) {
+          return {
+            success: false,
+            error: 'Stripe Connect account is not ready for payouts. Please complete onboarding.',
+            status: 'failed',
+          };
+        }
+
+        const transfer = await createStripePayout(
+          amount,
+          currency,
+          user[0].stripeAccountId,
+          `Payout for ${type === 'campaign' ? 'campaign' : 'commission'}: ${payout.id}`,
+          {
+            payoutId: payout.id,
+            type,
+          }
+        );
+
+        return {
+          success: true,
+          transactionId: transfer.id,
+          status: 'completed',
         };
       }
     } else {
@@ -273,27 +370,6 @@ async function processStripePayout(
         status: 'failed',
       };
     }
-
-    // Create transfer to Stripe Connect account
-    const amount = parseFloat(type === 'campaign' ? payout.netAmount : payout.amount);
-    const currency = type === 'campaign' ? payout.currency : (payout.currency || 'USD');
-    
-    const transfer = await createStripePayout(
-      amount,
-      currency,
-      stripeAccountId,
-      `Payout for ${type === 'campaign' ? 'campaign' : 'commission'}: ${payout.id}`,
-      {
-        payoutId: payout.id,
-        type,
-      }
-    );
-
-    return {
-      success: true,
-      transactionId: transfer.id,
-      status: 'completed',
-    };
   } catch (error) {
     console.error('Error processing Stripe payout:', error);
     return {

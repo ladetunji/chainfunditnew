@@ -25,7 +25,16 @@ const Account = (props: Props) => {
   // Fetch user profile on mount
   useEffect(() => {
     fetch("/api/user/profile", { method: "GET" })
-      .then(res => res.json())
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const text = await res.text();
+        if (!text) {
+          throw new Error("Empty response from server");
+        }
+        return JSON.parse(text);
+      })
       .then(data => {
         if (data.success && data.user) {
           setForm({
@@ -41,6 +50,10 @@ const Account = (props: Props) => {
           });
           setPreview(data.user.avatar || null);
         }
+      })
+      .catch((error) => {
+        console.error("Error fetching user profile:", error);
+        toast.error("Failed to load profile");
       });
   }, []);
 

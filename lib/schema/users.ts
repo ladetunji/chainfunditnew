@@ -35,10 +35,19 @@ export const users = pgTable('users', {
   twoFactorEnabled: boolean('two_factor_enabled').default(false),
   twoFactorSecret: text('two_factor_secret'),
   twoFactorBackupCodes: text('two_factor_backup_codes'),
-  // Stripe Connect fields
+  // Stripe Connect fields (deprecated for foreign currencies - now using bank accounts)
   stripeAccountId: varchar('stripe_account_id', { length: 255 }),
   stripeAccountReady: boolean('stripe_account_ready').default(false),
   stripeAccountOnboardedAt: timestamp('stripe_account_onboarded_at'),
+  // International bank account details for foreign currency payouts (via Stripe)
+  internationalBankAccountNumber: varchar('international_bank_account_number', { length: 50 }), // IBAN
+  internationalBankRoutingNumber: varchar('international_bank_routing_number', { length: 50 }), // Routing/Sort Code
+  internationalBankSwiftBic: varchar('international_bank_swift_bic', { length: 20 }), // SWIFT/BIC code
+  internationalBankCountry: varchar('international_bank_country', { length: 5 }), // Country code (US, GB, etc.)
+  internationalBankName: varchar('international_bank_name', { length: 255 }), // Bank name (e.g., "Sterling Bank UK", "Citi Bank US")
+  internationalAccountName: varchar('international_account_name', { length: 255 }), // Account holder name
+  internationalAccountVerified: boolean('international_account_verified').default(false),
+  internationalAccountVerificationDate: timestamp('international_account_verification_date'),
 }, (table) => ({
   emailIdx: index('users_email_idx').on(table.email),
   phoneIdx: index('users_phone_idx').on(table.phone),

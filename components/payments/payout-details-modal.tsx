@@ -50,8 +50,18 @@ interface PayoutDetailsModalProps {
     bankCode?: string;
     accountName?: string;
     accountVerified?: boolean;
+    accountChangeRequested?: boolean;
+    accountChangeReason?: string;
     stripeAccountId?: string;
     stripeAccountReady?: boolean;
+    // International bank account fields
+    internationalBankAccountNumber?: string;
+    internationalBankRoutingNumber?: string;
+    internationalBankSwiftBic?: string;
+    internationalBankCountry?: string;
+    internationalBankName?: string;
+    internationalAccountName?: string;
+    internationalAccountVerified?: boolean;
   };
   onConfirmPayout: (
     campaignId: string,
@@ -94,8 +104,10 @@ export function PayoutDetailsModal({
       };
       fetchBanks();
       
-      // Check Stripe Connect status if using Stripe
-      if (campaign.payoutProvider === 'stripe') {
+      // Check Stripe Connect status if using Stripe (only for legacy NGN payouts)
+      // For foreign currencies, we use bank accounts instead
+      const isForeignCurrency = campaign.currencyCode !== 'NGN';
+      if (campaign.payoutProvider === 'stripe' && !isForeignCurrency) {
         checkStripeAccountStatus();
       }
     }
@@ -395,70 +407,147 @@ export function PayoutDetailsModal({
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
-                Bank Account
+                {campaign.currencyCode !== 'NGN' ? 'International Bank Account' : 'Bank Account'}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {userProfile?.accountVerified ? (
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Account Name:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{userProfile.accountName || "N/A"}</span>
+              {(() => {
+                const isForeignCurrency = campaign.currencyCode !== 'NGN';
+                const isVerified = isForeignCurrency 
+                  ? userProfile?.internationalAccountVerified 
+                  : userProfile?.accountVerified;
+
+                if (isVerified) {
+                  if (isForeignCurrency) {
+                    // Show international bank account details
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">Account Name:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{userProfile?.internationalAccountName || "N/A"}</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => copyToClipboard(userProfile?.internationalAccountName || "", "Account name")}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">Account Number:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-medium">
+                              {userProfile?.internationalBankAccountNumber || "N/A"}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => copyToClipboard(userProfile?.internationalBankAccountNumber || "", "Account number")}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        {userProfile?.internationalBankRoutingNumber && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Routing Number:</span>
+                            <span className="font-mono font-medium">{userProfile.internationalBankRoutingNumber}</span>
+                          </div>
+                        )}
+                        {userProfile?.internationalBankSwiftBic && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-gray-600">SWIFT/BIC:</span>
+                            <span className="font-mono font-medium">{userProfile.internationalBankSwiftBic}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">Bank:</span>
+                          <span className="font-medium">{userProfile?.internationalBankName || "N/A"}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">Country:</span>
+                          <span className="font-medium">{userProfile?.internationalBankCountry || "N/A"}</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <Badge variant="default" className="bg-green-100 text-green-800">
+                            Verified
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  } else {
+                    // Show Nigerian bank account details
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">Account Name:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{userProfile?.accountName || "N/A"}</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => copyToClipboard(userProfile?.accountName || "", "Account name")}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">Account Number:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-medium">
+                              {userProfile?.accountNumber || "N/A"}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => copyToClipboard(userProfile?.accountNumber || "", "Account number")}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600">Bank:</span>
+                          <span className="font-medium">{getBankName()}</span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                          <Badge variant="default" className="bg-green-100 text-green-800">
+                            Verified
+                          </Badge>
+                        </div>
+                      </div>
+                    );
+                  }
+                } else {
+                  // Not verified - show message to add bank account
+                  return (
+                    <div className="text-center py-4">
+                      <AlertCircle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600 mb-3">
+                        {isForeignCurrency 
+                          ? 'International bank account not verified. Please add your bank account details in settings.'
+                          : 'Bank account not verified. Please complete your profile setup.'}
+                      </p>
                       <Button
+                        variant="outline"
                         size="sm"
-                        variant="ghost"
-                        onClick={() => copyToClipboard(userProfile.accountName || "", "Account name")}
+                        onClick={() => {
+                          onClose();
+                          router.push("/settings");
+                        }}
                       >
-                        <Copy className="h-3 w-3" />
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        {isForeignCurrency ? 'Add Bank Account' : 'Complete Profile'}
                       </Button>
                     </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Account Number:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-medium">
-                        {userProfile.accountNumber || "N/A"}
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => copyToClipboard(userProfile.accountNumber || "", "Account number")}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Bank:</span>
-                    <span className="font-medium">{getBankName()}</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <Badge variant="default" className="bg-green-100 text-green-800">
-                      Verified
-                    </Badge>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-4">
-                  <AlertCircle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600 mb-3">
-                    Bank account not verified. Please complete your profile setup.
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      onClose();
-                      router.push("/settings");
-                    }}
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Complete Profile
-                  </Button>
-                </div>
-              )}
+                  );
+                }
+              })()}
             </CardContent>
           </Card>
 
@@ -509,13 +598,16 @@ export function PayoutDetailsModal({
             </Button>
             <Button
               onClick={handleConfirmPayout}
+              // move confirmPayout here
               className="flex-1 bg-[#104901] text-white"
               disabled={
                 isSubmitting ||
                 isProcessing ||
                 !campaign.payoutProvider ||
+                userProfile?.accountChangeRequested ||
                 (campaign.payoutProvider === 'paystack' && !userProfile?.accountVerified) ||
-                (campaign.payoutProvider === 'stripe' && !userProfile?.stripeAccountReady)
+                (campaign.payoutProvider === 'stripe' && campaign.currencyCode !== 'NGN' && !userProfile?.internationalAccountVerified) ||
+                (campaign.payoutProvider === 'stripe' && campaign.currencyCode === 'NGN' && !userProfile?.stripeAccountReady)
               }
             >
               {isSubmitting || isProcessing ? (
@@ -532,8 +624,8 @@ export function PayoutDetailsModal({
             </Button>
           </div>
 
-          {/* Stripe Connect Account Required */}
-          {campaign.payoutProvider === 'stripe' && !userProfile?.stripeAccountReady && (
+          {/* Stripe Connect Account Required (only for legacy NGN payouts) */}
+          {campaign.payoutProvider === 'stripe' && campaign.currencyCode === 'NGN' && !userProfile?.stripeAccountReady && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <CreditCard className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
@@ -573,8 +665,69 @@ export function PayoutDetailsModal({
             </div>
           )}
 
+          {/* International Bank Account Required for Foreign Currencies */}
+          {campaign.payoutProvider === 'stripe' && campaign.currencyCode !== 'NGN' && !userProfile?.internationalAccountVerified && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium text-amber-900 mb-1">International Bank Account Required</p>
+                  <p className="text-sm text-amber-800 mb-3">
+                    You need to add and verify your international bank account details to receive payouts in {campaign.currencyCode}.
+                  </p>
+                  <Button
+                    onClick={() => {
+                      onClose();
+                      router.push("/settings");
+                    }}
+                    size="sm"
+                    className="bg-amber-600 hover:bg-amber-700"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Add Bank Account
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Account Change Request Pending Warning */}
+          {userProfile?.accountChangeRequested && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <p className="font-medium text-blue-900 mb-1">Account Change Request Pending</p>
+                  <p className="text-sm text-blue-800 mb-2">
+                    You have a pending request to change your bank account details. Please wait for admin approval before requesting payouts.
+                  </p>
+                  {userProfile.accountChangeReason && (
+                    <div className="bg-white bg-opacity-50 rounded p-2 mt-2">
+                      <p className="text-xs font-medium text-blue-900 mb-1">Your Request Reason:</p>
+                      <p className="text-xs text-blue-700 whitespace-pre-wrap">
+                        {userProfile.accountChangeReason}
+                      </p>
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => {
+                      onClose();
+                      router.push("/dashboard/settings/payments");
+                    }}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View Request Status
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Bank Account Verification Required (for Paystack) */}
-          {campaign.payoutProvider === 'paystack' && !userProfile?.accountVerified && (
+          {campaign.payoutProvider === 'paystack' && !userProfile?.accountVerified && !userProfile?.accountChangeRequested && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />

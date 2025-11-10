@@ -1,308 +1,359 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { PayoutDetailsModal } from '@/components/payments/payout-details-modal';
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { PayoutDetailsModal } from "@/components/payments/payout-details-modal";
 
-import { 
-  DollarSign, 
-  TrendingUp, 
-  Clock, 
-  CheckCircle, 
+import {
+  DollarSign,
+  TrendingUp,
+  Clock,
+  CheckCircle,
   AlertCircle,
   ExternalLink,
-  Info
-} from 'lucide-react';
-import { formatCurrency } from '@/lib/utils/currency';
-import { toast } from 'sonner';
-import { useGeolocation, useCurrencyConversion } from '@/hooks/use-geolocation';
+  Info,
+} from "lucide-react";
+import { formatCurrency } from "@/lib/utils/currency";
+import { toast } from "sonner";
+import { useGeolocation, useCurrencyConversion } from "@/hooks/use-geolocation";
+import {
+  fetchUserProfile,
+  fetchPayoutData,
+  fetchCampaignDetails,
+  // requestPayout,
+  type CampaignPayout,
+  type PayoutData,
+} from "@/app/utils/api/payouts"
 
-interface CampaignPayout {
-  id: string;
-  title: string;
-  currency: string;
-  currencyCode: string;
-  targetAmount: number;
-  currentAmount: number;
-  totalRaised: number;
-  totalRaisedInNGN: number; // Amount in Naira
-  status: string;
-  createdAt: string;
-  payoutSupported: boolean;
-  payoutProvider: string | null;
-  payoutConfig: any;
-  goalProgress: number;
-  hasReached50Percent: boolean;
-  availableForPayout: boolean;
-  donationsByStatus?: Array<{
-    status: string;
-    total: string;
-    count: string;
-  }>;
+async function requestPayout(
+  params: any
+): Promise<any> {
+  const { campaignId, amount, currency, payoutProvider } = params;
+
+  console.log("Starting payout request...", {
+    campaignId,
+    amount,
+    currency,
+    payoutProvider,
+  });
+
+  try {
+    console.log("Making API request to save payout");
+
+    const response = await fetch("/api/payouts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        campaignId,
+        amount,
+        currency,
+        payoutProvider,
+      }),
+    });
+
+    console.log(
+      "API response received:",
+      response.status,
+      response.ok,
+      response.headers.get("content-type")
+    );
+
+    // Handle non-OK responses
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: "Failed to process payout" }));
+      
+      console.error("API error:", errorData);
+
+      if (response.status === 409 && errorData.existingPayout) {
+        return {
+          success: false,
+          error: errorData.error,
+          existingPayout: errorData.existingPayout,
+        };
+      }
+
+      return {
+        success: false,
+        error: errorData.error || `Server error: ${response.status}`,
+      };
+    }
+
+    // Parse successful response
+    const result = await response.json();
+    console.log("Response parsed:", result);
+
+    if (result.success) {
+      console.log("Payout successful");
+      return {
+        success: true,
+        data: result.data,
+      };
+    } else {
+      console.error("Payout failed:", result.error);
+      return {
+        success: false,
+        error: result.error || "Failed to process payout",
+      };
+    }
+
+  } catch (error) {
+    console.error("Payout error caught:", error);
+    
+    // Handle timeout errors
+    if (error instanceof Error && error.name === "AbortError") {
+      return {
+        success: false,
+        error: "Request timeout. The server took too long to respond.",
+      };
+    }
+
+    // Handle network errors
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      return {
+        success: false,
+        error: "Network error. Please check your connection.",
+      };
+    }
+
+    // Generic error handler
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to process payout";
+    
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
 }
 
-interface ChainerDonation {
-  id: string;
-  amount: string;
-  currency: string;
-  paymentStatus: string;
-  campaignId: string;
-  campaignTitle: string;
-  campaignCurrency: string;
-  createdAt: string;
-}
-
-interface PayoutData {
-  campaigns: CampaignPayout[];
-  chainerDonations: ChainerDonation[];
-  totalAvailableForPayout: number;
-  totalAvailableForPayoutInNGN: number; // Total available in Naira
-  totalRaisedInNGN: number; // Total raised in Naira
-  chainerDonationsTotal: number;
-  chainerDonationsInNGN: number; // Chainer donations in Naira
-  currencyBreakdown: { [key: string]: number }; // Breakdown by original currency
-  summary: {
-    totalCampaigns: number;
-    campaignsWithPayouts: number;
-    totalRaised: number;
-    totalRaisedInNGN: number; // Total raised in Naira
-    chainerDonationsCount: number;
-    chainerDonationsTotal: number;
-    chainerDonationsInNGN: number;
-  };
-}
 
 const PayoutsPage = () => {
   const [payoutData, setPayoutData] = useState<PayoutData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [processingPayouts, setProcessingPayouts] = useState<Set<string>>(new Set());
-  const [selectedCampaign, setSelectedCampaign] = useState<CampaignPayout | null>(null);
+  const [processingPayouts, setProcessingPayouts] = useState<Set<string>>(
+    new Set()
+  );
+  const [selectedCampaign, setSelectedCampaign] =
+    useState<CampaignPayout | null>(null);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
-  
+
   // Get user's geolocation and currency conversion capabilities
   const { geolocation, loading: geolocationLoading } = useGeolocation();
-  const { formatAmount, loading: conversionLoading } = useCurrencyConversion(geolocation);
+  const { formatAmount, loading: conversionLoading } =
+    useCurrencyConversion(geolocation);
 
   useEffect(() => {
-    fetchPayoutData();
-    fetchUserProfile();
+    loadPayoutData();
+    loadUserProfile();
   }, []);
 
-  const fetchUserProfile = async () => {
-    try {
-      const response = await fetch('/api/user/profile');
-      const result = await response.json();
-      if (result.success) {
-        setUserProfile(result.user);
-      }
-    } catch (err) {
-      console.error('Failed to fetch user profile:', err);
+  const loadUserProfile = async () => {
+    const profile = await fetchUserProfile();
+    if (profile) {
+      setUserProfile(profile);
     }
   };
 
-  const fetchPayoutData = async () => {
+  const loadPayoutData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/payouts');
-      const result = await response.json();
-      
-      if (result.success) {
-        setPayoutData(result.data);
+      const { data, error } = await fetchPayoutData();
+      if (data) {
+        setPayoutData(data);
       } else {
-        setError(result.error || 'Failed to fetch payout data');
+        setError(error || "Failed to fetch payout data");
       }
     } catch (err) {
-      setError('Failed to fetch payout data');
+      setError("Failed to fetch payout data");
     } finally {
       setLoading(false);
     }
   };
 
   const handlePayoutClick = async (campaign: CampaignPayout) => {
-    console.log('🚀 [handlePayoutClick] Starting payout click for campaign:', campaign.id);
+    console.log(
+      "[handlePayoutClick] Starting payout click for campaign:",
+      campaign.id
+    );
     try {
-      // Fetch chainer donations for this specific campaign
-      const chainerDonations = payoutData?.chainerDonations?.filter(donation => 
-        donation.campaignId === campaign.id
-      ) || [];
+      const chainerDonations =
+        payoutData?.chainerDonations?.filter(
+          (donation) => donation.campaignId === campaign.id
+        ) || [];
 
-      console.log('All chainer donations from payout data:', payoutData?.chainerDonations);
-      console.log('Filtered chainer donations for campaign:', chainerDonations);
-      console.log('Campaign ID:', campaign.id);
+      console.log(
+        "All chainer donations from payout data:",
+        payoutData?.chainerDonations
+      );
+      console.log("Filtered chainer donations for campaign:", chainerDonations);
+      console.log("Campaign ID:", campaign.id);
 
-      // Fetch campaign details to get commission rate
-      const campaignResponse = await fetch(`/api/campaigns/${campaign.id}`);
-      const campaignData = await campaignResponse.json();
-      const commissionRate = campaignData.success ? Number(campaignData.data.chainerCommissionRate) : 0;
-      
-      console.log('Campaign response:', campaignData);
-      console.log('Commission rate from campaign:', commissionRate);
+      const campaignDetails = await fetchCampaignDetails(campaign.id);
+      const commissionRate = campaignDetails
+        ? Number(campaignDetails.chainerCommissionRate)
+        : 0;
 
-      // Calculate commission amounts
-      const chainerDonationsTotal = chainerDonations.reduce((sum, d) => sum + parseFloat(d.amount), 0);
+      console.log("Campaign details:", campaignDetails);
+      console.log("Commission rate from campaign:", commissionRate);
+
+      const chainerDonationsTotal = chainerDonations.reduce(
+        (sum, d) => sum + parseFloat(d.amount),
+        0
+      );
       const chainerCommissionsTotal = chainerDonations.reduce((sum, d) => {
-        // Use the actual commission earned from the chainer data if available
         const commissionEarned = (d as any).chainerCommissionEarned;
-        console.log('Chainer donation:', d);
-        console.log('Commission earned from data:', commissionEarned);
-        console.log('Commission rate:', commissionRate);
-        
+        console.log("Chainer donation:", d);
+        console.log("Commission earned from data:", commissionEarned);
+        console.log("Commission rate:", commissionRate);
+
         if (commissionEarned && parseFloat(commissionEarned) > 0) {
           return sum + parseFloat(commissionEarned);
         }
-        // Fallback to calculating from commission rate
-        const calculatedCommission = parseFloat(d.amount) * (commissionRate / 100);
-        console.log('Calculated commission:', calculatedCommission);
+        const calculatedCommission =
+          parseFloat(d.amount) * (commissionRate / 100);
+        console.log("Calculated commission:", calculatedCommission);
         return sum + calculatedCommission;
       }, 0);
-      
-      console.log('Total chainer donations:', chainerDonationsTotal);
-      console.log('Total chainer commissions:', chainerCommissionsTotal);
 
-      // Create enhanced campaign object with chainer data
+      console.log("Total chainer donations:", chainerDonationsTotal);
+      console.log("Total chainer commissions:", chainerCommissionsTotal);
+
       const enhancedCampaign = {
         ...campaign,
         chainerDonations,
         chainerDonationsTotal,
         chainerDonationsInNGN: chainerDonations.reduce((sum, d) => {
-          // Simple conversion - in a real app, you'd use proper currency conversion
           const amount = parseFloat(d.amount);
-          return sum + (d.currency === 'NGN' ? amount : amount * 0.001); // Rough conversion
+          return sum + (d.currency === "NGN" ? amount : amount * 0.001);
         }, 0),
         chainerCommissionRate: commissionRate,
         chainerCommissionsTotal,
-        chainerCommissionsInNGN: chainerCommissionsTotal * (campaign.totalRaisedInNGN / campaign.totalRaised), // Rough conversion
+        chainerCommissionsInNGN:
+          chainerCommissionsTotal *
+          (campaign.totalRaisedInNGN / campaign.totalRaised),
       };
 
       setSelectedCampaign(enhancedCampaign);
       setShowPayoutModal(true);
     } catch (error) {
-      console.error('Error fetching chainer donations:', error);
-      // Fallback to original campaign without chainer data
+      console.error("Error fetching chainer donations:", error);
       setSelectedCampaign(campaign);
       setShowPayoutModal(true);
     }
   };
 
-  const handleConfirmPayout = async (campaignId: string, amount: number, currency: string, payoutProvider: string) => {
-    console.log('🚀 Starting payout request...', { campaignId, amount, currency, payoutProvider });
+  const handleConfirmPayout = async (
+    campaignId: string,
+    amount: number,
+    currency: string,
+    payoutProvider: string
+  ) => {
     try {
-      setProcessingPayouts(prev => new Set(prev).add(campaignId));
-      
-      // Create the fetch promise with explicit timeout
-      console.log('📡 Making API request...');
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-      
-      const fetchPromise = fetch('/api/payouts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          campaignId,
-          amount,
-          currency,
-          payoutProvider,
-        }),
-        signal: controller.signal,
+      setProcessingPayouts((prev) => new Set(prev).add(campaignId));
+
+      const result = await requestPayout({
+        campaignId,
+        amount,
+        currency,
+        payoutProvider,
       });
-
-      // Wait for fetch to complete
-      let response: Response;
-      try {
-        response = await fetchPromise;
-        clearTimeout(timeoutId);
-        console.log('✅ API response received:', response.status, response.ok, response.headers.get('content-type'));
-      } catch (fetchError) {
-        clearTimeout(timeoutId);
-        console.error('❌ Fetch error:', fetchError);
-        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-          throw new Error('Request timeout. The server took too long to respond.');
-        }
-        throw fetchError;
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to process payout' }));
-        console.error('❌ API error:', errorData);
-        
-        if (response.status === 409 && errorData.existingPayout) {
-          const existing = errorData.existingPayout;
-          throw new Error(
-            `${errorData.error}\n\n` +
-            `Existing Request Details:\n` +
-            `- Status: ${existing.status}\n` +
-            `- Amount: ${formatCurrency(parseFloat(existing.requestedAmount), currency)}\n` +
-            `- Requested: ${new Date(existing.createdAt).toLocaleDateString()}`
-          );
-        }
-        
-        throw new Error(errorData.error || `Server error: ${response.status}`);
-      }
-
-      const jsonPromise = response.json();
-      const jsonTimeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('JSON parsing timeout')), 5000)
-      );
-      
-      const result = await Promise.race([jsonPromise, jsonTimeoutPromise]) as any;
-      console.log('📦 Response data:', result);
-      
-      if (result.success) {
-        console.log('✅ Payout successful, showing toast and refreshing data...');
+      console.log(result);
+      if (result.success && result.data) {
+        console.log("Payout successful, showing toast and refreshing data...");
         toast.success(result.data.message);
         setTimeout(() => {
-          fetchPayoutData().catch(err => console.error('Error refreshing payout data:', err));
+          loadPayoutData().catch((err) =>
+            console.error("Error refreshing payout data:", err)
+          );
         }, 500);
       } else {
-        console.error('❌ Payout failed:', result.error);
-        throw new Error(result.error || 'Failed to process payout');
+        let errorMessage = result.error || "Failed to process payout";
+
+        if (result.existingPayout) {
+          const existing = result.existingPayout;
+          errorMessage =
+            `${result.error}\n\n` +
+            `Existing Request Details:\n` +
+            `- Status: ${existing.status}\n` +
+            `- Amount: ${formatCurrency(
+              parseFloat(existing.requestedAmount),
+              currency
+            )}\n` +
+            `- Requested: ${new Date(existing.createdAt).toLocaleDateString()}`;
+        }
+
+        throw new Error(errorMessage);
       }
     } catch (err) {
-      console.error('💥 Payout error caught:', err);
-      if (err instanceof Error && err.name === 'AbortError') {
-        throw new Error('Request timeout. The server took too long to respond.');
-      }
-      const errorMessage = err instanceof Error ? err.message : 'Failed to process payout';
+      console.error("Payout error caught:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to process payout";
       throw new Error(errorMessage);
     } finally {
-      console.log('🏁 Cleaning up processing state...');
-      setProcessingPayouts(prev => {
+      console.log("Cleaning up processing state...");
+      setProcessingPayouts((prev) => {
         const newSet = new Set(prev);
         newSet.delete(campaignId);
         return newSet;
       });
     }
   };
-  
-  const CurrencyDisplay = ({ amount, currency }: { amount: number; currency: string }) => {
-    const [formattedAmount, setFormattedAmount] = useState<string>('');
+
+  const CurrencyDisplay = ({
+    amount,
+    currency,
+  }: {
+    amount: number;
+    currency: string;
+  }) => {
+    const [formattedAmount, setFormattedAmount] = useState<string>("");
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
       const formatCurrencyWithConversion = async () => {
+        // Validate amount - handle NaN, null, undefined
+        const validAmount =
+          typeof amount === "number" && !isNaN(amount) && isFinite(amount)
+            ? amount
+            : 0;
+
         if (!geolocation) {
-          setFormattedAmount(formatCurrency(amount, currency));
+          setFormattedAmount(formatCurrency(validAmount, currency));
           setIsLoading(false);
           return;
         }
-        
+
         try {
-          const result = await formatAmount(amount, currency);
-          if (result.originalAmount && result.originalCurrency && result.originalCurrency !== result.currency) {
-            setFormattedAmount(`${formatCurrency(result.amount, result.currency)} (${formatCurrency(result.originalAmount, result.originalCurrency)})`);
+          const result = await formatAmount(validAmount, currency);
+          if (
+            result.originalAmount &&
+            result.originalCurrency &&
+            result.originalCurrency !== result.currency
+          ) {
+            setFormattedAmount(
+              `${formatCurrency(
+                result.amount,
+                result.currency
+              )} (${formatCurrency(
+                result.originalAmount,
+                result.originalCurrency
+              )})`
+            );
           } else {
             setFormattedAmount(formatCurrency(result.amount, result.currency));
           }
         } catch (error) {
-          console.error('Currency conversion error:', error);
-          setFormattedAmount(formatCurrency(amount, currency));
+          console.error("Currency conversion error:", error);
+          setFormattedAmount(formatCurrency(validAmount, currency));
         } finally {
           setIsLoading(false);
         }
@@ -320,10 +371,19 @@ const PayoutsPage = () => {
 
   const getProviderIcon = (provider: string) => {
     switch (provider) {
-      case 'stripe':
-        return <Image src='/icons/stripe.png' alt='Stripe' width={16} height={16}/>;
-      case 'paystack':
-        return <Image src='/icons/paystack.png' alt='Paystack' width={16} height={16}/>;
+      case "stripe":
+        return (
+          <Image src="/icons/stripe.png" alt="Stripe" width={16} height={16} />
+        );
+      case "paystack":
+        return (
+          <Image
+            src="/icons/paystack.png"
+            alt="Paystack"
+            width={16}
+            height={16}
+          />
+        );
       default:
         return <DollarSign className="h-5 w-5" />;
     }
@@ -331,14 +391,36 @@ const PayoutsPage = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'active':
-        return <Badge variant="default" className="bg-green-100 text-green-800 capitalize">Active</Badge>;
-      case 'completed':
-        return <Badge variant="default" className="bg-blue-100 text-blue-800 capitalize">Completed</Badge>;
-      case 'paused':
-        return <Badge variant="secondary" className="capitalize">Paused</Badge>;
+      case "active":
+        return (
+          <Badge
+            variant="default"
+            className="bg-green-100 text-green-800 capitalize"
+          >
+            Active
+          </Badge>
+        );
+      case "completed":
+        return (
+          <Badge
+            variant="default"
+            className="bg-blue-100 text-blue-800 capitalize"
+          >
+            Completed
+          </Badge>
+        );
+      case "paused":
+        return (
+          <Badge variant="secondary" className="capitalize">
+            Paused
+          </Badge>
+        );
       default:
-        return <Badge variant="outline">{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>;
+        return (
+          <Badge variant="outline">
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+          </Badge>
+        );
     }
   };
 
@@ -370,9 +452,11 @@ const PayoutsPage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-16">
             <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Payouts</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              Error Loading Payouts
+            </h2>
             <p className="text-gray-600 mb-6">{error}</p>
-            <Button onClick={fetchPayoutData} variant="outline">
+            <Button onClick={loadPayoutData} variant="outline">
               Try Again
             </Button>
           </div>
@@ -387,7 +471,9 @@ const PayoutsPage = () => {
         <div className="max-w-7xl mx-auto">
           <div className="text-center py-16">
             <DollarSign className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">No Payout Data</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              No Payout Data
+            </h2>
             <p className="text-gray-600">Unable to load payout information.</p>
           </div>
         </div>
@@ -402,7 +488,8 @@ const PayoutsPage = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-[#104901] mb-2">Payouts</h1>
           <p className="text-gray-600 mb-4">
-            Manage your campaign earnings and request payouts to your bank account.
+            Manage your campaign earnings and request payouts to your bank
+            account.
           </p>
         </div>
 
@@ -414,17 +501,24 @@ const PayoutsPage = () => {
                 Payouts Summary
               </h2>
               <p className="text-lg text-[#104901] opacity-80">
-                {payoutData.summary.totalCampaigns} campaign{payoutData.summary.totalCampaigns !== 1 ? 's' : ''} • {payoutData.summary.campaignsWithPayouts} ready for payout
+                {payoutData.summary.totalCampaigns} campaign
+                {payoutData.summary.totalCampaigns !== 1 ? "s" : ""} •{" "}
+                {payoutData.summary.campaignsWithPayouts} ready for payout
               </p>
               {Object.keys(payoutData.currencyBreakdown).length > 1 && (
                 <div className="mt-2 text-sm text-[#104901] opacity-70">
                   <p className="font-medium">Currency Breakdown:</p>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {Object.entries(payoutData.currencyBreakdown).map(([currency, amount]) => (
-                      <span key={currency} className="bg-white bg-opacity-50 px-2 py-1 rounded text-xs">
-                        {currency}: {formatCurrency(amount, currency)}
-                      </span>
-                    ))}
+                    {Object.entries(payoutData.currencyBreakdown).map(
+                      ([currency, amount]) => (
+                        <span
+                          key={currency}
+                          className="bg-white bg-opacity-50 px-2 py-1 rounded text-xs"
+                        >
+                          {currency}: {formatCurrency(amount, currency)}
+                        </span>
+                      )
+                    )}
                   </div>
                 </div>
               )}
@@ -556,15 +650,20 @@ const PayoutsPage = () => {
 
         {/* Campaigns List */}
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold text-[#104901]">Your Campaigns</h2>
-          
+          <h2 className="text-xl font-semibold text-[#104901]">
+            Your Campaigns
+          </h2>
+
           {payoutData.campaigns.length === 0 ? (
             <Card className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl">
               <CardContent className="text-center py-16">
                 <DollarSign className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Campaigns Found</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No Campaigns Found
+                </h3>
                 <p className="text-gray-600 mb-6">
-                  You don&apos;t have any campaigns yet. Create your first campaign to start receiving donations.
+                  You don&apos;t have any campaigns yet. Create your first
+                  campaign to start receiving donations.
                 </p>
                 <Button asChild>
                   <a href="/create-campaign">Create Campaign</a>
@@ -573,7 +672,10 @@ const PayoutsPage = () => {
             </Card>
           ) : (
             payoutData.campaigns.map((campaign) => (
-              <Card key={campaign.id} className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300">
+              <Card
+                key={campaign.id}
+                className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-300"
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -581,9 +683,31 @@ const PayoutsPage = () => {
                         {campaign.title}
                       </CardTitle>
                       <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span>Target: <CurrencyDisplay amount={campaign.targetAmount} currency={campaign.currencyCode} /></span>
-                        <span>Raised: <CurrencyDisplay amount={campaign.totalRaised} currency={campaign.currencyCode} /> (₦{campaign.totalRaisedInNGN.toLocaleString()})</span>
-                        <span>Progress: {Math.round((campaign.totalRaised / campaign.targetAmount) * 100)}%</span>
+                        <span>
+                          Target:{" "}
+                          <CurrencyDisplay
+                            amount={campaign.targetAmount}
+                            currency={campaign.currencyCode}
+                          />
+                        </span>
+                        <span>
+                          Raised:{" "}
+                          <CurrencyDisplay
+                            amount={campaign.totalRaised}
+                            currency={campaign.currencyCode}
+                          />{" "}
+                          (₦{campaign.totalRaisedInNGN.toLocaleString()})
+                        </span>
+                        <span>
+                          Progress:{" "}
+                          {campaign.targetAmount > 0
+                            ? Math.round(
+                                (campaign.totalRaised / campaign.targetAmount) *
+                                  100
+                              )
+                            : 0}
+                          %
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -591,14 +715,22 @@ const PayoutsPage = () => {
                     </div>
                   </div>
                 </CardHeader>
-                
+
                 <CardContent>
                   <div className="space-y-4">
                     {/* Progress Bar */}
                     <div className="w-full bg-gray-200 rounded-full h-2 relative">
-                      <div 
+                      <div
                         className="bg-gradient-to-r from-[#104901] to-green-500 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${Math.min((campaign.totalRaised / campaign.targetAmount) * 100, 100)}%` }}
+                        style={{
+                          width: `${Math.min(
+                            campaign.targetAmount > 0
+                              ? (campaign.totalRaised / campaign.targetAmount) *
+                                  100
+                              : 0,
+                            100
+                          )}%`,
+                        }}
                       ></div>
                       {/* Progress percentage text */}
                       <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -622,7 +754,12 @@ const PayoutsPage = () => {
                           <div className="flex items-center gap-2 text-green-600 my-2">
                             <CheckCircle className="h-5 w-5" />
                             <span className="text-sm font-medium">
-                              Payout Available: <CurrencyDisplay amount={campaign.totalRaised} currency={campaign.currencyCode} /> (₦{campaign.totalRaisedInNGN.toLocaleString()})
+                              Payout Available:{" "}
+                              <CurrencyDisplay
+                                amount={campaign.totalRaised}
+                                currency={campaign.currencyCode}
+                              />{" "}
+                              (₦{campaign.totalRaisedInNGN.toLocaleString()})
                             </span>
                           </div>
                         )}
@@ -632,7 +769,9 @@ const PayoutsPage = () => {
                         <div className="flex items-center gap-3 my-2">
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             {getProviderIcon(campaign.payoutProvider!)}
-                            <span className="capitalize">{campaign.payoutProvider}</span>
+                            <span className="capitalize">
+                              {campaign.payoutProvider}
+                            </span>
                           </div>
                           <Button
                             onClick={() => handlePayoutClick(campaign)}
@@ -653,15 +792,16 @@ const PayoutsPage = () => {
                           </Button>
                         </div>
                       )}
-                      
-                      {campaign.payoutSupported && campaign.totalRaised === 0 && (
-                        <div className="flex items-center gap-2 text-gray-500 my-2">
-                          <AlertCircle className="h-5 w-5" />
-                          <span className="text-sm">
-                            No donations received yet - payout not available
-                          </span>
-                        </div>
-                      )}
+
+                      {campaign.payoutSupported &&
+                        campaign.totalRaised === 0 && (
+                          <div className="flex items-center gap-2 text-gray-500 my-2">
+                            <AlertCircle className="h-5 w-5" />
+                            <span className="text-sm">
+                              No donations received yet - payout not available
+                            </span>
+                          </div>
+                        )}
                     </div>
 
                     {/* Payout Details */}
@@ -670,11 +810,17 @@ const PayoutsPage = () => {
                         <div className="flex items-start gap-3">
                           <Info className="h-5 w-5 text-blue-500 mt-0.5" />
                           <div className="text-sm text-gray-600">
-                            <p className="font-medium mb-1">{campaign.payoutConfig.name}</p>
-                            <p className="mb-2">{campaign.payoutConfig.description}</p>
+                            <p className="font-medium mb-1">
+                              {campaign.payoutConfig.name}
+                            </p>
+                            <p className="mb-2">
+                              {campaign.payoutConfig.description}
+                            </p>
                             <div className="grid grid-cols-2 gap-4 text-xs">
                               <div>
-                                <span className="font-medium">Processing Time:</span>
+                                <span className="font-medium">
+                                  Processing Time:
+                                </span>
                                 <br />
                                 {campaign.payoutConfig.processingTime}
                               </div>

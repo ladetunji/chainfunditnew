@@ -5,6 +5,11 @@
  * @returns Formatted currency string with symbol
  */
 export function formatCurrency(amount: number, currency: string): string {
+  // Handle NaN, null, undefined, or invalid numbers
+  if (typeof amount !== 'number' || isNaN(amount) || !isFinite(amount)) {
+    amount = 0;
+  }
+  
   const symbol = getCurrencySymbol(currency);
   
   // Format the number with commas and add the currency symbol

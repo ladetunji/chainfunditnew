@@ -19,21 +19,16 @@ import {
   LayoutDashboard,
   Users,
   BarChart3,
-  TrendingUp,
   DollarSign,
   Settings,
   Bell,
   HelpCircle,
   Share,
-  Plus,
-  ChevronDown,
   Menu,
+  Mail,
   X,
-  Shield,
-  Wrench,
-  Sparkles,
   LogOut,
-  User,
+  Shield,
 } from "lucide-react";
 import { MoneyTick } from "iconsax-reactjs";
 import Image from "next/image";
@@ -77,6 +72,12 @@ const navigation = [
     current: false,
   },
   {
+    name: "Account Requests",
+    href: "/admin/account-requests",
+    icon: Mail,
+    current: false,
+  },
+  {
     name: "Analytics",
     href: "/admin/analytics",
     icon: BarChart3,
@@ -93,6 +94,13 @@ const navigation = [
     href: "/admin/settings",
     icon: Settings,
     current: false,
+  },
+  {
+    name: "Super Admin",
+    href: "/admin/super-admin",
+    icon: Shield,
+    current: false,
+    superAdminOnly: true,
   },
 ];
 
@@ -238,29 +246,37 @@ export default function AdminLayout({
             </Button>
           </div>
           <nav className="flex-1 px-4 py-4 space-y-1">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-                    isActive
-                      ? "bg-[#5F8555] text-white"
-                      : "text-[#5F8555] hover:bg-[#5F8555] hover:text-white"
-                  }`}
-                >
-                  <item.icon
-                    className={`mr-3 h-5 w-5 ${
+            {navigation
+              .filter((item) => {
+                // Filter out super admin items for non-super admins
+                if (item.superAdminOnly && user?.role !== "super_admin") {
+                  return false;
+                }
+                return true;
+              })
+              .map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
                       isActive
-                        ? "text-[#104901]"
-                        : "text-gray-400 group-hover:text-gray-500"
+                        ? "bg-[#5F8555] text-white"
+                        : "text-[#5F8555] hover:bg-[#5F8555] hover:text-white"
                     }`}
-                  />
-                  {item.name}
-                </Link>
-              );
-            })}
+                  >
+                    <item.icon
+                      className={`mr-3 h-5 w-5 ${
+                        isActive
+                          ? "text-[#104901]"
+                          : "text-gray-400 group-hover:text-gray-500"
+                      }`}
+                    />
+                    {item.name}
+                  </Link>
+                );
+              })}
           </nav>
         </div>
       </div>
@@ -286,29 +302,37 @@ export default function AdminLayout({
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-4 space-y-1">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-                    isActive
-                      ? "bg-[#5F8555] text-white"
-                      : "text-[#5F8555] hover:bg-[#5F8555] hover:text-white"
-                  }`}
-                >
-                  <item.icon
-                    className={`mr-3 h-5 w-5 ${
+            {navigation
+              .filter((item) => {
+                // Filter out super admin items for non-super admins
+                if (item.superAdminOnly && user?.role !== "super_admin") {
+                  return false;
+                }
+                return true;
+              })
+              .map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md ${
                       isActive
-                        ? "text-white"
-                        : "text-gray-600 group-hover:text-white"
+                        ? "bg-[#5F8555] text-white"
+                        : "text-[#5F8555] hover:bg-[#5F8555] hover:text-white"
                     }`}
-                  />
-                  {item.name}
-                </Link>
-              );
-            })}
+                  >
+                    <item.icon
+                      className={`mr-3 h-5 w-5 ${
+                        isActive
+                          ? "text-white"
+                          : "text-gray-600 group-hover:text-white"
+                      }`}
+                    />
+                    {item.name}
+                  </Link>
+                );
+              })}
           </nav>
 
           {/* User Profile Section */}

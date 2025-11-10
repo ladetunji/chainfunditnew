@@ -869,22 +869,22 @@ export async function sendPayoutCompletionEmail(
 
             <div class="info-card">
               <div class="info-row">
-                <span class="info-label">Campaign:</span>
+                <span class="info-label">Campaign: {" "}</span>
                 <span class="info-value">${campaignTitle}</span>
               </div>
               <div class="info-row">
-                <span class="info-label">Transaction ID:</span>
+                <span class="info-label">Transaction ID: {" "}</span>
                 <span class="info-value">${payoutId}</span>
               </div>
               <div class="info-row">
-                <span class="info-label">Completion Date:</span>
+                <span class="info-label">Completion Date: {" "}</span>
                 <span class="info-value">${completionDate}</span>
               </div>
               ${
                 bankDetails
                   ? `
               <div class="info-row">
-                <span class="info-label">Account:</span>
+                <span class="info-label">Account: {" "}</span>
                 <span class="info-value">${bankDetails.accountName} (${bankDetails.accountNumber})</span>
               </div>
               `

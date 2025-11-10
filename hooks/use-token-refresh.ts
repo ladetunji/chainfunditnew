@@ -40,7 +40,7 @@ export function useTokenRefresh() {
       const data = await response.json();
       
       if (data.success) {
-        console.log('Token refreshed successfully');
+        // console.log('Token refreshed successfully');
         return true;
       } else {
         console.error('Token refresh failed:', data.error);

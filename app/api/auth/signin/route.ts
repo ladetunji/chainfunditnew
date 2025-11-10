@@ -103,8 +103,6 @@ export async function POST(request: NextRequest) {
             <p>If you didn't request this code, please ignore this email.</p>
           `,
         });
-        
-        console.log('Email sent successfully:', emailResult);
       } catch (error) {
         console.error('Failed to send OTP email:', error);
         return NextResponse.json({ 

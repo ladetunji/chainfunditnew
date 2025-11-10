@@ -16,15 +16,20 @@ async function getUserFromRequest(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const email = await getUserFromRequest(request);
-  if (!email) {
-    return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+  try {
+    const email = await getUserFromRequest(request);
+    if (!email) {
+      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
+    }
+    const user = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (!user.length) {
+      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, user: user[0] });
+  } catch (error) {
+    console.error('Profile GET error:', error);
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
   }
-  const user = await db.select().from(users).where(eq(users.email, email)).limit(1);
-  if (!user.length) {
-    return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
-  }
-  return NextResponse.json({ success: true, user: user[0] });
 }
 
 export async function POST(request: NextRequest) {

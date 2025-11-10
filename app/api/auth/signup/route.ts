@@ -94,7 +94,6 @@ export async function POST(request: NextRequest) {
           `,
         });
         
-        console.log('Email sent successfully:', emailResult);
       } catch (error) {
         console.error('Failed to send OTP email:', error);
         return NextResponse.json({ 

@@ -329,3 +329,172 @@ export async function notifyAccountChangeRequest(requestData: AccountChangeReque
   ]);
 }
 
+interface AccountChangeApprovalData {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  adminName: string;
+  notes?: string;
+}
+
+/**
+ * Send approval email to user when their account change request is approved
+ */
+export async function sendAccountChangeApprovalEmail(data: AccountChangeApprovalData) {
+  try {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
+            .success-box { background: #f0fdf4; border-left: 4px solid #16a34a; padding: 15px; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+            .button { display: inline-block; background: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>✅ Account Change Request Approved</h1>
+            </div>
+            
+            <div class="content">
+              <p>Hello ${data.userName},</p>
+              
+              <div class="success-box">
+                <strong>🎉 Great News!</strong><br/>
+                <p style="margin-top: 10px;">Your request to change your bank account details has been approved by our admin team.</p>
+              </div>
+              
+              <p><strong>What happens next?</strong></p>
+              <ul>
+                <li>Your account has been unlocked for changes</li>
+                <li>You can now update your bank account details in your payment settings</li>
+                <li>Please verify your new account details to ensure payouts are processed correctly</li>
+              </ul>
+              
+              ${data.notes ? `
+                <div style="background: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+                  <strong>Admin Note:</strong><br/>
+                  <p style="margin-top: 5px; white-space: pre-wrap;">${data.notes}</p>
+                </div>
+              ` : ''}
+              
+              <div style="text-align: center;">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings/payments" class="button">
+                  Update Account Details →
+                </a>
+              </div>
+              
+              <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
+                If you have any questions, please contact our support team at <a href="mailto:campaigns@chainfundit.com">campaigns@chainfundit.com</a>
+              </p>
+            </div>
+            
+            <div class="footer">
+              <p>ChainFundit Payment Settings</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'notifications@chainfundit.com',
+      to: data.userEmail,
+      subject: '✅ Account Change Request Approved - ChainFundit',
+      html,
+    });
+
+    console.log(`✅ Approval email sent to ${data.userEmail}`);
+  } catch (error) {
+    console.error('Error sending approval email:', error);
+    throw error;
+  }
+}
+
+interface AccountChangeRejectionData {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  adminName: string;
+  reason: string;
+}
+
+/**
+ * Send rejection email to user when their account change request is rejected
+ */
+export async function sendAccountChangeRejectionEmail(data: AccountChangeRejectionData) {
+  try {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: white; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; }
+            .info-box { background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
+            .button { display: inline-block; background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>❌ Account Change Request Not Approved</h1>
+            </div>
+            
+            <div class="content">
+              <p>Hello ${data.userName},</p>
+              
+              <p>We regret to inform you that your request to change your bank account details could not be approved at this time.</p>
+              
+              <div class="info-box">
+                <strong>Reason for Rejection:</strong><br/>
+                <p style="margin-top: 10px; white-space: pre-wrap;">${data.reason}</p>
+              </div>
+              
+              <p><strong>What can you do?</strong></p>
+              <ul>
+                <li>Review the reason provided above</li>
+                <li>If you believe this is an error, please contact our support team</li>
+                <li>You may submit a new request with additional information or clarification</li>
+                <li>For urgent matters, please call our support line</li>
+              </ul>
+              
+              <p style="margin-top: 30px; color: #6b7280; font-size: 14px;">
+                <strong>Need assistance?</strong><br/>
+                Contact our support team:<br/>
+                📧 <a href="mailto:campaigns@chainfundit.com">campaigns@chainfundit.com</a><br/>
+                📞 +44 203 838 0360
+              </p>
+            </div>
+            
+            <div class="footer">
+              <p>ChainFundit Payment Settings</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    await resend.emails.send({
+      from: process.env.RESEND_FROM_EMAIL || 'notifications@chainfundit.com',
+      to: data.userEmail,
+      subject: '❌ Account Change Request Not Approved - ChainFundit',
+      html,
+    });
+
+    console.log(`✅ Rejection email sent to ${data.userEmail}`);
+  } catch (error) {
+    console.error('Error sending rejection email:', error);
+    throw error;
+  }
+}
+
