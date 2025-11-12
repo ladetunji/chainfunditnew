@@ -90,7 +90,6 @@ async function createSuccessfulDonationNotification(donationId: string, campaign
       createdAt: new Date(),
     });
 
-    console.log('Success notification created for donation:', donationId);
   } catch (error) {
     console.error('Error creating success notification:', error);
   }
@@ -107,8 +106,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    console.log('Stripe callback received:', { donationId, paymentIntentId, status });
 
     // Find the donation
     const donation = await db
@@ -165,13 +162,10 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(donations.id, donationId));
 
-    console.log(`Donation ${donationId} updated to status: ${newStatus}`);
-
     // If payment succeeded, update campaign amount and create notification
     if (newStatus === 'completed') {
       await updateCampaignAmount(donationRecord.campaignId);
       await createSuccessfulDonationNotification(donationId, donationRecord.campaignId);
-      console.log(`Campaign ${donationRecord.campaignId} amount updated and notification created`);
     }
 
     return NextResponse.json({ 

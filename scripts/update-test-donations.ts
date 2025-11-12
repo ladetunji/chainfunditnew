@@ -11,7 +11,6 @@ import { eq, sql } from 'drizzle-orm';
 
 async function updateTestDonations() {
   try {
-    console.log('🔍 Finding pending charity donations...\n');
 
     // Get all pending donations
     const pendingDonations = await db.query.charityDonations.findMany({
@@ -20,22 +19,12 @@ async function updateTestDonations() {
     });
 
     if (pendingDonations.length === 0) {
-      console.log('No pending donations found.');
       return;
     }
 
-    console.log(`Found ${pendingDonations.length} pending donations:\n`);
 
     pendingDonations.forEach((donation, index) => {
-      console.log(`${index + 1}. Donation ID: ${donation.id}`);
-      console.log(`   Amount: ${donation.amount} ${donation.currency}`);
-      console.log(`   Donor: ${donation.donorEmail}`);
-      console.log(`   Payment Method: ${donation.paymentMethod}`);
-      console.log(`   Created: ${donation.createdAt}`);
-      console.log('');
     });
-
-    console.log('📝 Updating donations to completed status...\n');
 
     for (const donation of pendingDonations) {
       // Update donation to completed
@@ -57,11 +46,7 @@ async function updateTestDonations() {
         })
         .where(eq(charities.id, donation.charityId));
 
-      console.log(`✅ Updated donation ${donation.id.substring(0, 8)}...`);
     }
-
-    console.log(`\n🎉 Successfully updated ${pendingDonations.length} donations!`);
-    console.log('\nUpdated charity totals. Check your admin dashboard to see the donations.\n');
 
   } catch (error) {
     console.error('❌ Error updating donations:', error);

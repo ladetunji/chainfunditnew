@@ -26,8 +26,6 @@ import { eq } from 'drizzle-orm';
 
 async function debugBankNames() {
   try {
-    console.log('🔍 Debugging bank name issues...\n');
-    
     // Get all users with account verification
     const verifiedUsers = await db
       .select({
@@ -43,10 +41,8 @@ async function debugBankNames() {
       .from(users)
       .where(eq(users.accountVerified, true));
 
-    console.log(`📊 Found ${verifiedUsers.length} verified users\n`);
 
     if (verifiedUsers.length === 0) {
-      console.log('❌ No verified users found');
       return;
     }
 
@@ -55,16 +51,9 @@ async function debugBankNames() {
       !user.bankName || user.bankName.trim() === ''
     );
 
-    console.log(`⚠️  Users with missing bank names: ${usersWithMissingBankNames.length}`);
     
     if (usersWithMissingBankNames.length > 0) {
-      console.log('\n📋 Users with missing bank names:');
       usersWithMissingBankNames.forEach(user => {
-        console.log(`   - ${user.email} (${user.fullName})`);
-        console.log(`     Bank Code: ${user.bankCode || 'N/A'}`);
-        console.log(`     Bank Name: ${user.bankName || 'N/A'}`);
-        console.log(`     Account: ${user.accountNumber || 'N/A'}`);
-        console.log('');
       });
     }
 
@@ -73,32 +62,17 @@ async function debugBankNames() {
       user.bankCode && (!user.bankName || user.bankName.trim() === '')
     );
 
-    console.log(`🔍 Users with bank code but no bank name: ${usersWithBankCodeButNoName.length}`);
     
     if (usersWithBankCodeButNoName.length > 0) {
-      console.log('\n📋 Users with bank code but no bank name:');
       usersWithBankCodeButNoName.forEach(user => {
-        console.log(`   - ${user.email} (${user.fullName})`);
-        console.log(`     Bank Code: ${user.bankCode}`);
-        console.log(`     Bank Name: ${user.bankName || 'N/A'}`);
-        console.log('');
       });
     }
 
     // Show all verified users for reference
-    console.log('\n📋 All verified users:');
     verifiedUsers.forEach(user => {
-      console.log(`   - ${user.email} (${user.fullName})`);
-      console.log(`     Bank Code: ${user.bankCode || 'N/A'}`);
-      console.log(`     Bank Name: ${user.bankName || 'N/A'}`);
-      console.log(`     Account: ${user.accountNumber || 'N/A'}`);
-      console.log('');
     });
 
-    console.log('✅ Bank name debugging completed');
-
   } catch (error) {
-    console.error('❌ Error debugging bank names:', error);
     process.exit(1);
   }
 }

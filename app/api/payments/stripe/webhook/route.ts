@@ -229,7 +229,6 @@ async function handlePaymentSuccess(paymentIntent: any) {
       const goalAmount = parseFloat(campaign[0].goalAmount);
       
       if (shouldCloseForGoalReached(currentAmount, goalAmount)) {
-        console.log('🎯 Campaign goal reached, closing campaign...');
         await closeCampaign(campaign[0].id, 'goal_reached', campaign[0].creatorId);
       }
     }

@@ -60,12 +60,6 @@ export function TwoFactorSetup({ onComplete, onCancel }: TwoFactorSetupProps) {
         backupCodes: setupData.backupCodes,
       };
       
-      console.log('Sending 2FA enable request:', {
-        secret: requestData.secret.substring(0, 8) + '...',
-        code: requestData.code,
-        backupCodesCount: requestData.backupCodes.length
-      });
-      
       const response = await fetch('/api/admin/2fa/enable', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -73,7 +67,6 @@ export function TwoFactorSetup({ onComplete, onCancel }: TwoFactorSetupProps) {
       });
       
       const data = await response.json();
-      console.log('2FA enable response:', data);
       
       if (data.success) {
         setStep('complete');

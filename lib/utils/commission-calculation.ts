@@ -12,8 +12,6 @@ import { eq, and } from 'drizzle-orm';
  */
 export async function calculateAndDistributeCommissions(donationId: string) {
   try {
-    console.log('💰 Calculating commissions for donation:', donationId);
-
     // Get donation details
     const donation = await db
       .select({
@@ -34,7 +32,6 @@ export async function calculateAndDistributeCommissions(donationId: string) {
     }
 
     const donationData = donation[0];
-    console.log('✅ Found donation:', donationData);
 
     // Get campaign commission rate
     const campaign = await db
@@ -56,12 +53,6 @@ export async function calculateAndDistributeCommissions(donationId: string) {
     const commissionRate = Number(campaignData.chainerCommissionRate) / 100; // Convert percentage to decimal
     const donationAmount = Number(donationData.amount);
     const totalCommission = donationAmount * commissionRate;
-
-    console.log('📊 Commission calculation:', {
-      donationAmount,
-      commissionRate: campaignData.chainerCommissionRate,
-      totalCommission,
-    });
 
     // If donation came through a referral (chainerId exists)
     if (donationData.chainerId) {
@@ -87,7 +78,6 @@ export async function calculateAndDistributeCommissions(donationId: string) {
       donationData.currency
     );
 
-    console.log('✅ Commission calculation completed for donation:', donationId);
   } catch (error) {
     console.error('💥 Error calculating commissions:', error);
   }
@@ -106,7 +96,6 @@ async function handleDirectReferralCommission(
   currency: string
 ) {
   try {
-    console.log('🎯 Processing direct referral commission for chainer:', chainerId);
 
     // Get chainer details
     const chainer = await db
@@ -164,11 +153,6 @@ async function handleDirectReferralCommission(
       isConverted: true,
     });
 
-    console.log('✅ Direct referral commission processed:', {
-      chainerId,
-      commissionAmount: totalCommission,
-      newTotalEarnings: newCommissionEarned,
-    });
   } catch (error) {
     console.error('💥 Error processing direct referral commission:', error);
   }
@@ -187,7 +171,6 @@ async function handleMultiLevelReferrals(
   currency: string
 ) {
   try {
-    console.log('🔗 Checking if donor is also a chainer for this campaign:', donorId);
 
     // Check if the donor is also a chainer for this campaign
     const donorChainer = await db
@@ -207,12 +190,10 @@ async function handleMultiLevelReferrals(
       .limit(1);
 
     if (!donorChainer.length) {
-      console.log('ℹ️ Donor is not a chainer for this campaign, no self-referral commission');
       return;
     }
 
     const donorChainerData = donorChainer[0];
-    console.log('🎯 Donor is also a chainer, processing self-referral commission');
 
     // Calculate self-referral commission (full commission since they're donating to their own chained campaign)
     const selfReferralCommission = totalCommission;
@@ -241,11 +222,6 @@ async function handleMultiLevelReferrals(
       notes: `Self-referral commission from donation ${donationId} (donor chained this campaign)`,
     });
 
-    console.log('✅ Self-referral commission processed:', {
-      chainerId: donorChainerData.id,
-      commissionAmount: selfReferralCommission,
-      newTotalEarnings: newCommissionEarned,
-    });
   } catch (error) {
     console.error('💥 Error processing self-referral commission:', error);
   }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdminAuth } from '@/lib/admin-auth';
 import { enableTwoFactor, verifyTOTPCode } from '@/lib/two-factor-auth';
+import { toast } from 'sonner';
 
 /**
  * POST /api/admin/2fa/enable
@@ -20,9 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the code before enabling
-    console.log('Verifying TOTP code:', { secret: secret.substring(0, 8) + '...', code });
     const isValid = verifyTOTPCode(secret, code);
-    console.log('TOTP verification result:', isValid);
     
     if (!isValid) {
       return NextResponse.json(
@@ -32,9 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Enable 2FA
-    console.log('Enabling 2FA for user:', user.email);
     const success = await enableTwoFactor(user.email, secret, backupCodes);
-    console.log('2FA enable result:', success);
     
     if (!success) {
       return NextResponse.json(
@@ -43,15 +40,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('2FA enabled successfully for:', user.email);
     return NextResponse.json({
       success: true,
       message: '2FA enabled successfully',
     });
   } catch (error) {
-    console.error('Enable 2FA error:', error);
+    toast.error('Enable 2FA error: ' + error);
     return NextResponse.json(
-      { error: 'Authentication required' },
+      { error: 'Authentication required: ' + error },
       { status: 401 }
     );
   }

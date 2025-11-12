@@ -2,19 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { donations } from '@/lib/schema/donations';
 import { eq } from 'drizzle-orm';
+import { toast } from 'sonner';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
-    console.log('🧪 Test webhook received:', JSON.stringify(body, null, 2));
     
     // Extract donation ID from metadata
     const donationId = body.metadata?.donationId;
     const reference = body.reference;
     
     if (!donationId) {
-      console.log('❌ No donation ID in metadata');
       return NextResponse.json({ 
         success: false, 
         error: 'No donation ID in metadata' 
@@ -29,14 +27,11 @@ export async function POST(request: NextRequest) {
       .limit(1);
 
     if (!donation.length) {
-      console.log('❌ Donation not found:', donationId);
       return NextResponse.json({ 
         success: false, 
         error: 'Donation not found' 
       }, { status: 404 });
     }
-
-    console.log('✅ Found donation:', donation[0]);
 
     // Update donation status
     const updateResult = await db
@@ -52,8 +47,6 @@ export async function POST(request: NextRequest) {
       .where(eq(donations.id, donationId))
       .returning();
 
-    console.log('✅ Updated donation:', updateResult[0]);
-
     return NextResponse.json({ 
       success: true, 
       donation: updateResult[0],
@@ -61,9 +54,9 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('💥 Test webhook error:', error);
+    toast.error('Test webhook error: ' + error);
     return NextResponse.json(
-      { success: false, error: 'Test webhook failed' },
+      { success: false, error: 'Test webhook failed: ' + error },
       { status: 500 }
     );
   }

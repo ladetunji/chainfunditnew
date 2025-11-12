@@ -1,16 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { useAuth } from './use-auth';
 
-// Mock console.log to avoid noise in tests
-const originalConsoleLog = console.log;
-beforeAll(() => {
-  console.log = jest.fn();
-});
-
-afterAll(() => {
-  console.log = originalConsoleLog;
-});
-
 describe('useAuth', () => {
   beforeEach(() => {
     jest.clearAllMocks();

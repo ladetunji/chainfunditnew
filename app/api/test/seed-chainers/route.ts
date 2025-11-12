@@ -4,8 +4,6 @@ import { chainers, users, campaigns } from '@/lib/schema';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🌱 Seeding chainers...');
-
     // First, get some existing users and campaigns
     const existingUsers = await db.select().from(users).limit(5);
     const existingCampaigns = await db.select().from(campaigns).limit(3);

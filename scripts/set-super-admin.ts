@@ -41,14 +41,6 @@ async function setSuperAdmin() {
       })
       .where(eq(users.id, existingUser.id));
 
-    console.log(`✅ Successfully set ${email} as super admin`);
-    console.log(`   User ID: ${existingUser.id}`);
-    console.log(`   Full Name: ${existingUser.fullName}`);
-    console.log(`   Role: super_admin`);
-    console.log(`   Verified: true`);
-    console.log('\n🎉 Super admin setup complete!');
-    console.log('The user can now access super admin features at /admin');
-
   } catch (error) {
     console.error('❌ Error setting super admin:', error);
     process.exit(1);

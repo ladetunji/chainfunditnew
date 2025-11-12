@@ -73,7 +73,6 @@ export async function POST(request: NextRequest) {
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });
@@ -124,12 +123,6 @@ async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
       })
       .where(eq(charities.id, donation.charityId));
 
-    console.log('Payment successful:', {
-      donationId,
-      amount: donation.amount,
-      charityId: donation.charityId,
-    });
-
     // Get charity details for notification
     const charity = await db.query.charities.findFirst({
       where: eq(charities.id, donation.charityId),
@@ -177,8 +170,6 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
       })
       .where(eq(charityDonations.id, donationId));
 
-    console.log('Payment failed:', donationId);
-
     // TODO: Send failure notification to donor
   } catch (error) {
     console.error('Error handling payment failure:', error);
@@ -206,7 +197,6 @@ async function handlePaymentCanceled(paymentIntent: Stripe.PaymentIntent) {
       })
       .where(eq(charityDonations.id, donationId));
 
-    console.log('Payment canceled:', donationId);
   } catch (error) {
     console.error('Error handling payment cancellation:', error);
     throw error;
@@ -249,11 +239,6 @@ async function handleRefund(charge: Stripe.Charge) {
       })
       .where(eq(charities.id, donation.charityId));
 
-    console.log('Refund processed:', {
-      donationId: donation.id,
-      amount: donation.amount,
-    });
-
     // TODO: Send refund confirmation to donor
   } catch (error) {
     console.error('Error handling refund:', error);
@@ -270,7 +255,6 @@ async function handleTransfer(eventType: string, transfer: Stripe.Transfer) {
     const payoutType = transfer.metadata?.type; // 'campaign' | 'commission'
 
     if (!payoutId) {
-      console.log('No payout ID in transfer metadata, skipping payout update');
       return;
     }
 
@@ -306,7 +290,6 @@ async function handleTransfer(eventType: string, transfer: Stripe.Transfer) {
         })
         .where(eq(campaignPayouts.id, payoutId));
 
-      console.log(`Campaign payout ${payoutId} updated to ${status} via webhook`);
     } else if (payoutType === 'commission') {
       await db
         .update(commissionPayouts)
@@ -317,9 +300,7 @@ async function handleTransfer(eventType: string, transfer: Stripe.Transfer) {
         })
         .where(eq(commissionPayouts.id, payoutId));
 
-      console.log(`Commission payout ${payoutId} updated to ${status} via webhook`);
     } else {
-      console.log(`Unknown payout type: ${payoutType}, skipping update`);
     }
   } catch (error) {
     console.error('Error handling transfer webhook:', error);

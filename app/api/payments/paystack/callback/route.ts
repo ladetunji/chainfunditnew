@@ -5,6 +5,7 @@ import { campaigns } from '@/lib/schema/campaigns';
 import { eq, sum, and } from 'drizzle-orm';
 import { verifyPaystackPayment } from '@/lib/payments/paystack';
 import { checkAndUpdateGoalReached } from '@/lib/utils/campaign-validation';
+import { toast } from 'sonner';
 
 // Helper function to update campaign currentAmount based on completed donations
 async function updateCampaignAmount(campaignId: string) {
@@ -33,7 +34,7 @@ async function updateCampaignAmount(campaignId: string) {
     // Check if campaign reached its goal and update status
     await checkAndUpdateGoalReached(campaignId);
   } catch (error) {
-    console.error('Error updating campaign amount:', error);
+    toast.error('Error updating campaign amount: ' + error);
   }
 }
 
@@ -42,10 +43,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const reference = searchParams.get('reference');
     
-    console.log('🔗 Paystack callback received:', { reference });
-    
     if (!reference) {
-      console.log('❌ No reference in callback');
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/campaigns?donation_status=failed&error=missing_reference`
       );
@@ -55,13 +53,10 @@ export async function GET(request: NextRequest) {
     const verification = await verifyPaystackPayment(reference);
     
     if (!verification.status || verification.data.status !== 'success') {
-      console.log('❌ Transaction verification failed:', verification.message);
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/campaigns?donation_status=failed&error=verification_failed`
       );
     }
-
-    console.log('✅ Transaction verified successfully');
 
     // Find donation by payment intent ID (reference)
     let donation = await db
@@ -72,7 +67,6 @@ export async function GET(request: NextRequest) {
 
     // If not found by paymentIntentId, try to find by reference pattern
     if (!donation.length) {
-      console.log('🔍 Donation not found by paymentIntentId, trying reference pattern...');
       // Try to find by reference pattern (donation_<id>_<timestamp>)
       const referenceMatch = reference.match(/donation_(.+)_\d+/);
       if (referenceMatch) {
@@ -82,22 +76,18 @@ export async function GET(request: NextRequest) {
           .from(donations)
           .where(eq(donations.id, donationId))
           .limit(1);
-        console.log('🔍 Found donation by ID pattern:', donation.length > 0 ? donation[0].id : 'Not found');
       }
     }
 
     if (!donation.length) {
-      console.log('❌ Donation not found for reference:', reference);
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/campaigns?donation_status=failed&error=donation_not_found`
       );
     }
 
-    console.log('✅ Found donation:', donation[0].id, 'for reference:', reference);
 
     // Check if donation is already completed
     if (donation[0].paymentStatus === 'completed') {
-      console.log('ℹ️ Donation already completed, redirecting...');
       const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/campaign/${donation[0].campaignId}?donation_status=success&donation_id=${donation[0].id}`;
       return NextResponse.redirect(redirectUrl);
     }
@@ -116,11 +106,8 @@ export async function GET(request: NextRequest) {
       .where(eq(donations.id, donation[0].id))
       .returning();
 
-    console.log('✅ Updated donation status to completed:', updateResult[0]?.id);
-
     // Update campaign currentAmount
     await updateCampaignAmount(donation[0].campaignId);
-    console.log('✅ Updated campaign amount');
 
     // Redirect to campaign page with success status
     const redirectUrl = `${process.env.NEXT_PUBLIC_APP_URL}/campaign/${donation[0].campaignId}?donation_status=success&donation_id=${donation[0].id}`;
@@ -128,7 +115,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
 
   } catch (error) {
-    console.error('💥 Paystack callback error:', error);
+    toast.error('Paystack callback error: ' + error);
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/campaigns?donation_status=failed&error=callback_error`
     );

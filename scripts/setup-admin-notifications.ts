@@ -25,8 +25,6 @@ import { eq, or } from 'drizzle-orm';
 
 async function setupAdminNotifications() {
   try {
-    console.log('🔍 Finding admin users...');
-    
     // Get all admin users
     const adminUsers = await db.query.users.findMany({
       where: or(
@@ -36,28 +34,22 @@ async function setupAdminNotifications() {
     });
 
     if (adminUsers.length === 0) {
-      console.log('❌ No admin users found in the system');
-      console.log('   Please create admin users first before running this script');
       return;
     }
 
-    console.log(`✅ Found ${adminUsers.length} admin user(s):`);
     adminUsers.forEach(user => {
-      console.log(`   - ${user.email} (${user.role})`);
     });
 
     // Check existing admin settings
     const existingSettings = await db.query.adminSettings.findMany();
     const existingUserIds = new Set(existingSettings.map(s => s.userId));
 
-    console.log('\n🔍 Checking existing admin settings...');
     
     let settingsCreated = 0;
     let settingsUpdated = 0;
 
     for (const adminUser of adminUsers) {
       if (existingUserIds.has(adminUser.id)) {
-        console.log(`   ⚠️  Settings already exist for ${adminUser.email}`);
         continue;
       }
 
@@ -80,30 +72,10 @@ async function setupAdminNotifications() {
         })
         .returning();
 
-      console.log(`   ✅ Created settings for ${adminUser.email}`);
       settingsCreated++;
     }
-
-    console.log('\n📊 Summary:');
-    console.log(`   - Admin users found: ${adminUsers.length}`);
-    console.log(`   - Settings created: ${settingsCreated}`);
-    console.log(`   - Settings already existed: ${adminUsers.length - settingsCreated}`);
-
-    if (settingsCreated > 0) {
-      console.log('\n🎉 Admin notification setup completed successfully!');
-      console.log('   Admin users will now receive notifications for:');
-      console.log('   - Payout requests');
-      console.log('   - Charity donations');
-      console.log('   - Campaign donations');
-      console.log('   - Large donations (above $1000)');
-      console.log('   - Account change requests');
-      console.log('\n   Admins can customize these settings at: /admin/settings');
-    } else {
-      console.log('\n✅ All admin users already have notification settings configured');
-    }
-
+    
   } catch (error) {
-    console.error('❌ Error setting up admin notifications:', error);
     process.exit(1);
   }
 }

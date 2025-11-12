@@ -30,11 +30,8 @@ async function createAdminUser() {
       process.exit(1);
     }
 
-    console.log('🔗 Connecting to database...');
     const sql = postgres(DATABASE_URL);
     const db = drizzle(sql);
-
-    console.log('🔍 Checking if user exists...');
 
     // Check if user exists
     const existingUser = await sql`
@@ -43,7 +40,6 @@ async function createAdminUser() {
 
     if (existingUser.length > 0) {
       // Update existing user
-      console.log('👤 User exists, updating to admin role...');
       const hashedPassword = await bcrypt.hash(password, 12);
       
       await sql`
@@ -56,10 +52,8 @@ async function createAdminUser() {
         WHERE email = ${email}
       `;
 
-      console.log(`✅ Updated existing user ${email} to ${role} role`);
     } else {
       // Create new user
-      console.log('👤 Creating new admin user...');
       const hashedPassword = await bcrypt.hash(password, 12);
       
       await sql`
@@ -67,14 +61,7 @@ async function createAdminUser() {
         VALUES (${email}, ${email.split('@')[0]}, ${hashedPassword}, ${role}, true, true)
       `;
 
-      console.log(`✅ Created new ${role} user: ${email}`);
     }
-
-    console.log('\n🎉 Admin user setup complete!');
-    console.log('You can now login at /signin with these credentials');
-    console.log(`Email: ${email}`);
-    console.log(`Password: ${password}`);
-    console.log(`Role: ${role}`);
 
     await sql.end();
 

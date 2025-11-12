@@ -299,77 +299,49 @@ async function checkMultiCurrencyCampaigns(): Promise<MultiCurrencyCampaign[]> {
 }
 
 async function main() {
-  console.log('🔍 Starting Currency Validation Check...\n');
 
   try {
     // Get all admin users
-    console.log('📋 Fetching admin users...');
     const admins = await getAdminUsers();
-    console.log(`✅ Found ${admins.length} admin user(s)\n`);
 
     // Get all pending payouts
-    console.log('💰 Fetching pending payouts...');
     const payouts = await getPendingPayouts();
-    console.log(`✅ Found ${payouts.length} pending payout(s)\n`);
 
     // Check currency mismatches
-    console.log('🔎 Checking currency mismatches...');
     const mismatches = await checkCurrencyMismatches(admins, payouts);
     
     if (mismatches.length > 0) {
-      console.log(`⚠️  Found ${mismatches.length} currency mismatch(es):\n`);
       mismatches.forEach(m => {
-        console.log(`  - Admin: ${m.adminEmail} (${m.adminCurrency})`);
-        console.log(`    Payout: ${m.payoutId} (${m.payoutCurrency} ${m.payoutAmount})`);
-        console.log(`    Issue: ${m.issue}\n`);
       });
     } else {
-      console.log('✅ No currency mismatches found\n');
     }
 
     // Check currency conversions
-    console.log('💱 Checking currency conversions...');
     const conversions = await checkCurrencyConversions(payouts);
     
     const nonNGNPayouts = conversions.filter(c => c.payoutCurrency !== 'NGN');
     if (nonNGNPayouts.length > 0) {
-      console.log(`✅ Found ${nonNGNPayouts.length} payout(s) in non-NGN currencies:\n`);
       nonNGNPayouts.forEach(c => {
         console.log(`  - Payout: ${c.payoutId} (${c.payoutCurrency} ${c.payoutAmount})`);
         if (c.hasConversion && c.convertedAmount && c.conversionRate) {
-          console.log(`    ✅ Conversion applied: ₦${c.convertedAmount.toLocaleString()} (rate: ${c.conversionRate.toFixed(4)})`);
         } else {
           console.log(`    ⚠️  No conversion found`);
         }
-        console.log('');
       });
     } else {
-      console.log('✅ All payouts are in NGN (no conversion needed)\n');
     }
 
     // Check multi-currency campaigns
-    console.log('🌍 Checking multi-currency campaigns...');
     const multiCurrencyCampaigns = await checkMultiCurrencyCampaigns();
     
     if (multiCurrencyCampaigns.length > 0) {
-      console.log(`⚠️  Found ${multiCurrencyCampaigns.length} campaign(s) with multiple currencies:\n`);
       multiCurrencyCampaigns.forEach(c => {
-        console.log(`  - Campaign: ${c.campaignTitle} (${c.campaignId})`);
-        console.log(`    Currencies: ${c.currencies.join(', ')}`);
-        console.log(`    Amounts:`);
-        for (const [currency, amount] of Object.entries(c.amounts)) {
-          console.log(`      ${currency}: ${amount.toLocaleString()}`);
-        }
-        console.log(`    Total (NGN): ₦${c.totalInNGN.toLocaleString()}`);
-        console.log(`    Needs Conversion: ${c.needsConversion ? 'Yes' : 'No'}\n`);
       });
     } else {
-      console.log('✅ No multi-currency campaigns found\n');
     }
 
     // Check for API route issues
-    console.log('🔌 Checking API route currency handling...');
-    const apiIssues: string[] = [];
+      const apiIssues: string[] = [];
     
     // Check if stats route handles currency conversion
     const currenciesInPayouts = new Set(payouts.map(p => getCurrencyCode(p.currency)));
@@ -383,25 +355,12 @@ async function main() {
     }
     
     if (apiIssues.length > 0) {
-      console.log('\n');
-      apiIssues.forEach(issue => console.log(issue));
-    } else {
-      console.log('✅ API routes appear to handle currency correctly\n');
+      } else {
     }
 
     // Summary
-    console.log('\n📊 Summary:');
-    console.log(`  - Admin users: ${admins.length}`);
-    console.log(`  - Pending payouts: ${payouts.length}`);
-    console.log(`  - Currency mismatches: ${mismatches.length}`);
-    console.log(`  - Non-NGN payouts: ${nonNGNPayouts.length}`);
-    console.log(`  - Multi-currency campaigns: ${multiCurrencyCampaigns.length}`);
-    console.log(`  - API route issues: ${apiIssues.length}`);
-
     const totalIssues = mismatches.length + (multiCurrencyCampaigns.length > 0 ? 1 : 0) + apiIssues.length;
     if (totalIssues > 0) {
-      console.log('\n⚠️  Issues found that may need attention!');
-      console.log('\n💡 Recommendations:');
       if (mismatches.length > 0) {
         console.log('  - Ensure admins can view payouts in their supported currencies');
       }

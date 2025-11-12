@@ -13,6 +13,7 @@ import {
 } from '@/lib/utils/donation-status';
 import { shouldCloseForGoalReached, closeCampaign } from '@/lib/utils/campaign-closure';
 import { calculateAndDistributeCommissions } from '@/lib/utils/commission-calculation';
+import { toast } from 'sonner';
 
 // Helper function to update campaign currentAmount based on completed donations
 async function updateCampaignAmount(campaignId: string) {
@@ -199,15 +200,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const signature = request.headers.get('x-paystack-signature');
     
-    console.log('🔔 Paystack webhook received:', { 
-      event: body.event, 
-      signature: !!signature,
-      data: body.data ? {
-        reference: body.data.reference,
-        metadata: body.data.metadata
-      } : 'No data'
-    });
-    
     // Verify webhook signature
     const isValid = verifyPaystackWebhook(
       JSON.stringify(body), 
@@ -215,31 +207,25 @@ export async function POST(request: NextRequest) {
     );
 
     if (!isValid && process.env.NODE_ENV === 'production') {
-      console.error('❌ Paystack webhook verification failed');
+      toast.error('Paystack webhook verification failed: ' + signature);
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
-
-    console.log('✅ Paystack webhook verified, processing event:', body.event);
 
     // Handle different event types
     switch (body.event) {
       case 'charge.success':
-        console.log('💰 Processing successful charge:', body.data.reference);
         await handleChargeSuccess(body.data);
         break;
       
       case 'charge.failed':
-        console.log('❌ Processing failed charge:', body.data.reference);
         await handleChargeFailed(body.data);
         break;
       
       case 'charge.pending':
-        console.log('⏳ Processing pending charge:', body.data.reference);
         await handleChargePending(body.data);
         break;
       
       default:
-        console.log('ℹ️ Unhandled event type:', body.event);
     }
 
     return NextResponse.json({ received: true });
@@ -258,8 +244,6 @@ async function handleChargeSuccess(chargeData: any) {
     const donationId = chargeData.metadata?.donationId;
     const reference = chargeData.reference;
     
-    console.log('🔍 Processing successful charge:', { donationId, reference });
-    
     if (!donationId) {
       console.error('❌ No donation ID found in charge metadata');
       return;
@@ -277,14 +261,10 @@ async function handleChargeSuccess(chargeData: any) {
       return;
     }
 
-    console.log('✅ Found donation:', donation[0].campaignId);
-
     // Verify the transaction
     const verification = await verifyPaystackPayment(reference);
     
     if (verification.status && verification.data.status === 'success') {
-      console.log('✅ Transaction verified successfully');
-      
       // Update donation status
       const updateResult = await db
         .update(donations)
@@ -299,11 +279,8 @@ async function handleChargeSuccess(chargeData: any) {
         .where(eq(donations.id, donationId))
         .returning();
 
-      console.log('✅ Donation updated:', updateResult[0]?.id);
-
       // Update campaign currentAmount
       await updateCampaignAmount(donation[0].campaignId);
-      console.log('✅ Campaign amount updated');
 
       // Check if campaign should be closed due to goal reached
       const campaign = await db
@@ -325,18 +302,15 @@ async function handleChargeSuccess(chargeData: any) {
         const goalAmount = parseFloat(campaign[0].goalAmount);
         
         if (shouldCloseForGoalReached(currentAmount, goalAmount)) {
-          console.log('🎯 Campaign goal reached, closing campaign...');
           await closeCampaign(campaign[0].id, 'goal_reached', campaign[0].creatorId);
         }
       }
 
       // Calculate and distribute commissions
       await calculateAndDistributeCommissions(donationId);
-      console.log('✅ Commissions calculated and distributed');
 
       // Create notification for successful donation
       await createSuccessfulDonationNotification(donationId, donation[0].campaignId);
-      console.log('✅ Success notification created');
 
     } else {
       console.error('❌ Transaction verification failed:', verification.message);
@@ -350,8 +324,6 @@ async function handleChargeFailed(chargeData: any) {
   try {
     const donationId = chargeData.metadata?.donationId;
     const reference = chargeData.reference;
-    
-    console.log('❌ Processing failed charge:', { donationId, reference, gatewayResponse: chargeData.gateway_response });
     
     if (!donationId) {
       console.error('❌ No donation ID found in failed charge metadata');
@@ -370,8 +342,6 @@ async function handleChargeFailed(chargeData: any) {
       return;
     }
 
-    console.log('✅ Found donation for failed charge:', donation[0].campaignId);
-
     // Get current donation to check retry attempts
     const currentDonation = await db
       .select({ retryAttempts: donations.retryAttempts })
@@ -381,8 +351,6 @@ async function handleChargeFailed(chargeData: any) {
 
     const retryAttempts = (currentDonation[0]?.retryAttempts || 0) + 1;
     const failureReason = getFailureReason('paystack', 'failed', chargeData.gateway_response);
-    
-    console.log('🔄 Updating donation to failed status:', { retryAttempts, failureReason });
     
     // Update donation status to failed with enhanced tracking
     const updateResult = await db
@@ -401,12 +369,9 @@ async function handleChargeFailed(chargeData: any) {
       .where(eq(donations.id, donationId))
       .returning();
 
-    console.log('✅ Donation updated to failed:', updateResult[0]?.id);
 
     // Create notification for failed donation
     await createFailedDonationNotification(donationId, donation[0].campaignId);
-    console.log('✅ Failed donation notification created');
-
   } catch (error) {
     console.error('💥 Error handling charge failure:', error);
   }

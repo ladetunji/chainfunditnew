@@ -63,7 +63,6 @@ export async function retryFailedPayouts(options: RetryOptions = {}) {
         const retryCount = parseInt(payout.notes?.match(/retries:(\d+)/)?.[1] || '0');
         
         if (retryCount >= maxRetries) {
-          console.log(`Skipping payout ${payout.id} - max retries exceeded (${retryCount})`);
           continue;
         }
 
@@ -82,7 +81,6 @@ export async function retryFailedPayouts(options: RetryOptions = {}) {
 
         if (result.success) {
           results.campaign.succeeded++;
-          console.log(`Successfully retried campaign payout ${payout.id}`);
         } else {
           results.campaign.failed++;
           // Update retry count in notes
@@ -95,7 +93,6 @@ export async function retryFailedPayouts(options: RetryOptions = {}) {
               updatedAt: new Date(),
             })
             .where(eq(campaignPayouts.id, payout.id));
-          console.log(`Failed to retry campaign payout ${payout.id}: ${result.error}`);
         }
       } catch (error) {
         results.campaign.failed++;
@@ -111,7 +108,6 @@ export async function retryFailedPayouts(options: RetryOptions = {}) {
         const retryCount = parseInt(payout.notes?.match(/retries:(\d+)/)?.[1] || '0');
         
         if (retryCount >= maxRetries) {
-          console.log(`Skipping commission payout ${payout.id} - max retries exceeded (${retryCount})`);
           continue;
         }
 
@@ -129,7 +125,6 @@ export async function retryFailedPayouts(options: RetryOptions = {}) {
 
         if (result.success) {
           results.commission.succeeded++;
-          console.log(`Successfully retried commission payout ${payout.id}`);
         } else {
           results.commission.failed++;
           await db
@@ -139,7 +134,6 @@ export async function retryFailedPayouts(options: RetryOptions = {}) {
               status: 'failed',
             })
             .where(eq(commissionPayouts.id, payout.id));
-          console.log(`Failed to retry commission payout ${payout.id}: ${result.error}`);
         }
       } catch (error) {
         results.commission.failed++;

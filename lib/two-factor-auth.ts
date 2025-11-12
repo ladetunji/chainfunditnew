@@ -43,15 +43,12 @@ export async function generateTwoFactorSetup(userEmail: string): Promise<TwoFact
  * Verify a TOTP code against a specific secret (for setup verification)
  */
 export function verifyTOTPCode(secret: string, code: string): boolean {
-  console.log('Verifying TOTP:', { secret: secret.substring(0, 8) + '...', code });
   
   // Generate current token for comparison
   const currentToken = speakeasy.totp({
     secret: secret,
     encoding: 'base32',
   });
-  
-  console.log('Current expected token:', currentToken);
   
   const result = speakeasy.totp.verify({
     secret: secret,
@@ -60,7 +57,6 @@ export function verifyTOTPCode(secret: string, code: string): boolean {
     window: 2, // Allow 2 time steps (60 seconds) tolerance
   });
   
-  console.log('TOTP verification result:', result);
   
   // Also try with a larger window for debugging
   const resultWithLargeWindow = speakeasy.totp.verify({
@@ -70,7 +66,6 @@ export function verifyTOTPCode(secret: string, code: string): boolean {
     window: 10, // Allow 10 time steps (5 minutes) tolerance
   });
   
-  console.log('TOTP verification with large window:', resultWithLargeWindow);
   
   return result;
 }
@@ -131,7 +126,6 @@ export async function enableTwoFactor(
   backupCodes: string[]
 ): Promise<boolean> {
   try {
-    console.log('Enabling 2FA for user:', userEmail);
     
     const result = await db
       .update(users)
@@ -142,8 +136,6 @@ export async function enableTwoFactor(
       })
       .where(eq(users.email, userEmail));
 
-    console.log('Database update result:', result);
-    console.log('2FA enabled successfully for:', userEmail);
     return true;
   } catch (error) {
     console.error('Error enabling 2FA:', error);

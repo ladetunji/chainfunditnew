@@ -25,7 +25,6 @@ import {
 // ============================================
 
 async function exampleScrapeCharities() {
-  console.log('Example 1: Scraping Charities\n');
 
   // Create a custom scraper
   const scraper = new GenericCharityScraper({
@@ -47,10 +46,8 @@ async function exampleScrapeCharities() {
 
   // Scrape and save
   const charities = await scraper.scrape();
-  console.log(`Found ${charities.length} charities`);
   
   await scraper.saveToDatabase(charities);
-  console.log('Saved to database!\n');
 }
 
 // ============================================
@@ -58,7 +55,6 @@ async function exampleScrapeCharities() {
 // ============================================
 
 async function exampleManageCharities() {
-  console.log('Example 2: Managing Charities via API\n');
 
   // Create a new charity
   const createResponse = await fetch('http://localhost:3000/api/charities', {
@@ -82,7 +78,6 @@ async function exampleManageCharities() {
   });
 
   const { charity } = await createResponse.json();
-  console.log('Created charity:', charity.name, charity.id);
 
   // Get all charities with filters
   const listResponse = await fetch(
@@ -97,8 +92,6 @@ async function exampleManageCharities() {
   );
 
   const { charities, pagination } = await listResponse.json();
-  console.log(`Found ${charities.length} education charities`);
-  console.log(`Total: ${pagination.totalCount}\n`);
 
   // Update charity
   const updateResponse = await fetch(`http://localhost:3000/api/charities/${charity.id}`, {
@@ -110,7 +103,6 @@ async function exampleManageCharities() {
     })
   });
 
-  console.log('Updated charity successfully\n');
 }
 
 // ============================================
@@ -118,7 +110,6 @@ async function exampleManageCharities() {
 // ============================================
 
 async function exampleProcessDonations() {
-  console.log('Example 3: Processing Donations\n');
 
   const charityId = 'some-charity-id'; // Replace with actual ID
 
@@ -141,8 +132,6 @@ async function exampleProcessDonations() {
   );
 
   const { donation } = await donationResponse.json();
-  console.log('Donation created:', donation.id);
-  console.log('Amount:', donation.amount, donation.currency);
 
   // Get all donations for a charity
   const donationsResponse = await fetch(
@@ -150,7 +139,6 @@ async function exampleProcessDonations() {
   );
 
   const { donations } = await donationsResponse.json();
-  console.log(`Charity has ${donations.length} donations\n`);
 }
 
 // ============================================
@@ -158,16 +146,13 @@ async function exampleProcessDonations() {
 // ============================================
 
 async function exampleManagePayouts() {
-  console.log('Example 4: Managing Payouts (Programmatic)\n');
 
   const charityId = 'some-charity-id'; // Replace with actual ID
 
   // Check eligible charities
-  const eligible = await getCharitiesEligibleForPayout(100); // min $100
-  console.log(`Found ${eligible.length} charities eligible for payout`);
+  const eligible = await getCharitiesEligibleForPayout(100); // min $100 
 
   eligible.forEach(({ charity, pendingAmount, donationCount }) => {
-    console.log(`- ${charity.name}: $${pendingAmount} (${donationCount} donations)`);
   });
 
   // Create a payout for a specific charity
@@ -177,11 +162,6 @@ async function exampleManagePayouts() {
   });
 
   if (result.success) {
-    console.log('\nPayout created successfully!');
-    console.log(`Payout ID: ${result.payoutId}`);
-    console.log(`Amount: $${result.amount}`);
-    console.log(`Donations: ${result.donationCount}`);
-
     // Process the payout (mark as completed)
     const processResult = await processCharityPayout(
       result.payoutId!,
@@ -189,10 +169,8 @@ async function exampleManagePayouts() {
     );
 
     if (processResult.success) {
-      console.log('Payout processed successfully!\n');
     }
   } else {
-    console.log(`Failed to create payout: ${result.error}\n`);
   }
 }
 
@@ -201,7 +179,6 @@ async function exampleManagePayouts() {
 // ============================================
 
 async function examplePayoutsAPI() {
-  console.log('Example 5: Managing Payouts via API\n');
 
   const charityId = 'some-charity-id';
 
@@ -222,7 +199,6 @@ async function examplePayoutsAPI() {
   );
 
   const { payout } = await createPayoutResponse.json();
-  console.log('Payout created:', payout.reference);
 
   // List all payouts
   const listPayoutsResponse = await fetch(
@@ -233,7 +209,6 @@ async function examplePayoutsAPI() {
   );
 
   const { payouts } = await listPayoutsResponse.json();
-  console.log(`Found ${payouts.length} pending payouts`);
 
   // Update payout status
   const updatePayoutResponse = await fetch(
@@ -247,7 +222,6 @@ async function examplePayoutsAPI() {
     }
   );
 
-  console.log('Payout marked as completed\n');
 }
 
 // ============================================
@@ -255,28 +229,20 @@ async function examplePayoutsAPI() {
 // ============================================
 
 async function exampleBatchPayouts() {
-  console.log('Example 6: Batch Processing Payouts\n');
 
   // Process all eligible charities at once
   const results = await processBatchPayouts(100); // min $100
 
-  console.log(`Processed ${results.length} charities`);
-  console.log('\nResults:');
 
   results.forEach(result => {
-    if (result.success) {
-      console.log(`✓ ${result.charityName}: $${result.amount} (${result.donationCount} donations)`);
+    if (result.success) { 
     } else {
-      console.log(`✗ ${result.charityName}: ${result.error}`);
     }
   });
 
   const successful = results.filter(r => r.success).length;
   const totalAmount = results.reduce((sum, r) => sum + r.amount, 0);
 
-  console.log(`\nSummary:`);
-  console.log(`- Successful: ${successful}/${results.length}`);
-  console.log(`- Total Amount: $${totalAmount}\n`);
 }
 
 // ============================================
@@ -337,7 +303,6 @@ async function runAllExamples() {
     // await examplePayoutsAPI();
     // await exampleBatchPayouts();
 
-    console.log('Examples completed!');
   } catch (error) {
     console.error('Error running examples:', error);
   }

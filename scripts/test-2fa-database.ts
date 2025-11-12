@@ -6,13 +6,11 @@ import { eq } from 'drizzle-orm';
  * Test script to check 2FA database fields
  */
 async function testTwoFactorDatabase() {
-  console.log('🧪 Testing 2FA Database Fields...\n');
 
   try {
     // Test with a sample email (replace with actual admin email)
-    const testEmail = 'aminattobiahmed@gmail.com';
+    const testEmail = 'tolu@chainfundit.org';
     
-    console.log('1️⃣ Checking user 2FA fields...');
     const [user] = await db
       .select({
         id: users.id,
@@ -26,24 +24,10 @@ async function testTwoFactorDatabase() {
       .limit(1);
 
     if (user) {
-      console.log('✅ User found:', {
-        email: user.email,
-        twoFactorEnabled: user.twoFactorEnabled,
-        hasSecret: !!user.twoFactorSecret,
-        hasBackupCodes: !!user.twoFactorBackupCodes,
-      });
     } else {
-      console.log('❌ User not found with email:', testEmail);
     }
 
-    console.log('\n🎉 Database test completed!');
-    console.log('\n📋 Next steps:');
-    console.log('   1. Try the 2FA setup again');
-    console.log('   2. Check the browser console for debug logs');
-    console.log('   3. Check the server console for database logs');
-
   } catch (error) {
-    console.error('❌ Database test failed:', error);
   }
 }
 

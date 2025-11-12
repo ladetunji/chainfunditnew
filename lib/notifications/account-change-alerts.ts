@@ -32,7 +32,6 @@ export async function notifyAdminsOfAccountChangeRequest(requestData: AccountCha
     });
 
     if (adminUsers.length === 0) {
-      console.log('No admin users found in the system');
       return;
     }
 
@@ -63,9 +62,7 @@ export async function notifyAdminsOfAccountChangeRequest(requestData: AccountCha
     }
 
     if (notificationsSent === 0) {
-      console.log('No admins configured for account change request notifications');
     } else {
-      console.log(`✅ Account change request notifications sent to ${notificationsSent} admin(s)`);
     }
   } catch (error) {
     console.error('Error notifying admins of account change request:', error);
@@ -139,7 +136,6 @@ export async function sendAccountChangeConfirmationToUser(requestData: AccountCh
       html,
     });
 
-    console.log(`✅ Confirmation email sent to ${requestData.userEmail}`);
   } catch (error) {
     console.error('Error sending user confirmation email:', error);
     // Don't throw - notification failure shouldn't break the request flow
@@ -275,7 +271,6 @@ async function sendAccountChangeRequestEmailToAdmin(
       html,
     });
 
-    console.log(`✅ Admin notification sent to ${recipientEmail}`);
   } catch (error) {
     console.error('Error sending admin notification email:', error);
     // Don't throw - email failure shouldn't break the request flow
@@ -311,7 +306,6 @@ export async function createAdminNotificationForAccountChange(requestData: Accou
       });
     }
 
-    console.log('✅ In-app notifications created for admins');
   } catch (error) {
     console.error('Error creating admin notification:', error);
   }
@@ -410,7 +404,6 @@ export async function sendAccountChangeApprovalEmail(data: AccountChangeApproval
       html,
     });
 
-    console.log(`✅ Approval email sent to ${data.userEmail}`);
   } catch (error) {
     console.error('Error sending approval email:', error);
     throw error;
@@ -491,7 +484,6 @@ export async function sendAccountChangeRejectionEmail(data: AccountChangeRejecti
       html,
     });
 
-    console.log(`✅ Rejection email sent to ${data.userEmail}`);
   } catch (error) {
     console.error('Error sending rejection email:', error);
     throw error;

@@ -68,11 +68,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('Admin user data:', {
-      email: user.email,
-      twoFactorEnabled: user.twoFactorEnabled,
-    });
-
     return NextResponse.json({
       user: {
         id: user.id,

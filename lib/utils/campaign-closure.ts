@@ -114,8 +114,6 @@ export async function closeCampaign(
       });
     }
 
-    console.log(`✅ Campaign closed: ${campaignId} (${reason})`);
-
     return {
       campaignId,
       reason,
@@ -242,8 +240,6 @@ export async function closeEligibleCampaigns(): Promise<{
         errors.push(result);
       }
     }
-
-    console.log(`📊 Campaign closure summary: ${results.length} closed, ${errors.length} errors`);
 
     return { closed: results, errors };
 

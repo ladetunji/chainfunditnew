@@ -16,9 +16,6 @@ async function createAdminUser() {
   try {
     // Check if DATABASE_URL is set
     if (!process.env.DATABASE_URL) {
-      console.error('❌ DATABASE_URL environment variable is not set');
-      console.error('Please set it in your .env file or run with:');
-      console.error('DATABASE_URL="your-database-url" npx tsx scripts/create-admin-user-with-env.ts');
       process.exit(1);
     }
 
@@ -32,8 +29,6 @@ async function createAdminUser() {
       process.exit(1);
     }
 
-    console.log('🔍 Checking if user exists...');
-
     // Check if user already exists
     const [existingUser] = await db
       .select()
@@ -43,7 +38,6 @@ async function createAdminUser() {
 
     if (existingUser) {
       // Update existing user to admin role
-      console.log('👤 User exists, updating to admin role...');
       const hashedPassword = await bcrypt.hash(password, 12);
       await db
         .update(users)
@@ -54,10 +48,8 @@ async function createAdminUser() {
         })
         .where(eq(users.id, existingUser.id));
 
-      console.log(`✅ Updated existing user ${email} to ${role} role`);
     } else {
       // Create new admin user
-      console.log('👤 Creating new admin user...');
       const hashedPassword = await bcrypt.hash(password, 12);
       const [newUser] = await db
         .insert(users)
@@ -70,17 +62,9 @@ async function createAdminUser() {
         })
         .returning();
 
-      console.log(`✅ Created new ${role} user: ${email}`);
     }
 
-    console.log('\n🎉 Admin user setup complete!');
-    console.log('You can now login at /signin with these credentials');
-    console.log(`Email: ${email}`);
-    console.log(`Password: ${password}`);
-    console.log(`Role: ${role}`);
-
   } catch (error) {
-    console.error('❌ Error creating admin user:', error);
     process.exit(1);
   }
 }

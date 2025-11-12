@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { retryFailedPayouts } from '@/lib/payments/payout-retry';
 import { processAutomatedCharityPayouts } from '@/lib/payments/automated-charity-payouts';
+import { toast } from 'sonner';
 
 export const runtime = 'nodejs';
 
@@ -38,24 +39,22 @@ export async function POST(request: NextRequest) {
         maxRetries: 3,
         retryDelayMinutes: 60,
       });
-      console.log('Retry failed payouts result:', results.retry);
     } catch (error) {
-      console.error('Error retrying failed payouts:', error);
+      toast.error('Error retrying failed payouts: ' + error);
       results.retry = {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error: ' + error,
       };
     }
 
     // 2. Process automated charity payouts
     try {
       results.charityPayouts = await processAutomatedCharityPayouts(100, false); // Don't auto-process, just create
-      console.log('Automated charity payouts result:', results.charityPayouts);
     } catch (error) {
-      console.error('Error processing automated charity payouts:', error);
+      toast.error('Error processing automated charity payouts: ' + error);
       results.charityPayouts = {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error: ' + error,
       };
     }
 
@@ -65,11 +64,11 @@ export async function POST(request: NextRequest) {
       results,
     });
   } catch (error) {
-    console.error('Error in cron payout endpoint:', error);
+    toast.error('Error in cron payout endpoint: ' + error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Unknown error: ' + error,
       },
       { status: 500 }
     );

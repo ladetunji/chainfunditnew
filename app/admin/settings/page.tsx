@@ -61,13 +61,11 @@ export default function AdminSettingsPage() {
       const response = await fetch('/api/admin/auth/me');
       if (response.ok) {
         const data = await response.json();
-        console.log('Fetched user data:', data.user);
         setUser(data.user);
       } else {
         toast.error('Failed to load user data');
       }
     } catch (error) {
-      console.error('Error fetching user:', error);
       toast.error('Failed to load user data');
     } finally {
       setLoading(false);
@@ -75,7 +73,6 @@ export default function AdminSettingsPage() {
   };
 
   const handleTwoFactorSetupComplete = () => {
-    console.log('2FA setup completed, refreshing user data...');
     setShowTwoFactorSetup(false);
     localStorage.removeItem('2fa-setup-in-progress');
     // Refresh user data to get updated 2FA status
@@ -98,7 +95,6 @@ export default function AdminSettingsPage() {
       const data = await response.json();
       setNotificationSettings(data.settings);
     } catch (error) {
-      console.error('Error fetching notification settings:', error);
       toast.error('Failed to load notification settings');
     }
   };
@@ -119,8 +115,7 @@ export default function AdminSettingsPage() {
       }
 
       toast.success('Notification settings saved successfully!');
-    } catch (error) {
-      console.error('Error saving notification settings:', error);
+    } catch (error) { 
       toast.error('Failed to save notification settings');
     } finally {
       setSavingNotifications(false);

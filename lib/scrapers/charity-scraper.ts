@@ -69,7 +69,6 @@ export abstract class CharityDirectoryScraper {
 
     for (const url of urls) {
       try {
-        console.log(`Scraping ${url}...`);
         const html = await this.fetchPage(url);
         const $ = cheerio.load(html);
         const charities = this.parseCharityData($, url);
@@ -146,11 +145,9 @@ export abstract class CharityDirectoryScraper {
             })
             .where(eq(charities.id, existing.id));
           
-          console.log(`Updated charity: ${charityData.name}`);
         } else {
           // Insert new charity
           await db.insert(charities).values(charityRecord);
-          console.log(`Added new charity: ${charityData.name}`);
         }
       } catch (error) {
         console.error(`Error saving charity ${charityData.name}:`, error);
@@ -303,10 +300,8 @@ export class CharityScraperFactory {
 
     for (const scraper of this.scrapers) {
       try {
-        console.log(`Running ${scraper.name} scraper...`);
         const charities = await scraper.scrape();
         allCharities.push(...charities);
-        console.log(`${scraper.name}: Found ${charities.length} charities`);
       } catch (error) {
         console.error(`Error running ${scraper.name} scraper:`, error);
       }
@@ -319,17 +314,12 @@ export class CharityScraperFactory {
     const charities = await this.runAll();
     
     if (charities.length > 0) {
-      console.log(`Total charities found: ${charities.length}`);
-      console.log('Saving to database...');
       
       // Use first scraper's save method (they all use the same database)
       if (this.scrapers.length > 0) {
         await this.scrapers[0].saveToDatabase(charities);
       }
-      
-      console.log('Done!');
     } else {
-      console.log('No charities found');
     }
   }
 }

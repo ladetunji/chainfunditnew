@@ -23,7 +23,6 @@ import {
   ExternalLink,
   Copy,
   Send,
-  Mail,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils/currency";
 import { toast } from "sonner";
@@ -80,9 +79,6 @@ export function PayoutDetailsModal({
   onConfirmPayout,
   isProcessing = false,
 }: PayoutDetailsModalProps) {
-  const [showSuccess, setShowSuccess] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [banks, setBanks] = useState<any[]>([]);
   const [stripeOnboardingUrl, setStripeOnboardingUrl] = useState<string | null>(null);
   const [checkingStripe, setCheckingStripe] = useState(false);
@@ -90,7 +86,7 @@ export function PayoutDetailsModal({
 
   // Fetch banks when modal opens
   useEffect(() => {
-    if (isOpen && !showSuccess) {
+    if (isOpen) {
       const fetchBanks = async () => {
         try {
           const response = await fetch("/api/banks");
@@ -112,7 +108,7 @@ export function PayoutDetailsModal({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, showSuccess, campaign.payoutProvider]);
+  }, [isOpen, campaign.payoutProvider]);
 
   const checkStripeAccountStatus = async () => {
     if (userProfile?.stripeAccountReady) {
@@ -148,9 +144,7 @@ export function PayoutDetailsModal({
   // Reset state when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setShowSuccess(false);
-      setError(null);
-      setIsSubmitting(false);
+    setStripeOnboardingUrl(null);
     }
   }, [isOpen]);
 
@@ -204,94 +198,22 @@ export function PayoutDetailsModal({
     toast.success(`${label} copied`);
   };
 
-  const handleConfirmPayout = async () => {
+  const handleConfirmPayout = () => {
     if (!campaign.payoutProvider) {
-      setError("Payout provider not configured");
+      toast.error("Payout provider not configured");
       return;
     }
 
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      await onConfirmPayout(
-        campaign.id,
-        campaign.totalRaised,
-        campaign.currencyCode,
-        campaign.payoutProvider
-      );
-
-      // Success - show success screen
-      setShowSuccess(true);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to process payout request";
-      setError(errorMessage);
-      toast.error("Payout request failed", {
-        description: errorMessage,
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    onConfirmPayout(
+      campaign.id,
+      campaign.totalRaised,
+      campaign.currencyCode,
+      campaign.payoutProvider
+    );
   };
 
-  // Success screen
-  if (showSuccess) {
-    return (
-      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <div className="flex justify-center mb-4">
-              <CheckCircle className="h-16 w-16 text-green-600" />
-            </div>
-            <DialogTitle className="text-center text-xl">
-              Payout Request Submitted!
-            </DialogTitle>
-            <DialogDescription className="text-center">
-              Your payout request has been processed successfully. A confirmation email has been sent to your registered email address.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 mt-4">
-            <Card className="bg-green-50 border-green-200">
-              <CardContent className="pt-6">
-                <div className="text-center space-y-2">
-                  <p className="text-sm font-medium text-gray-700 mb-2">
-                    What happens next?
-                  </p>
-                  <ul className="text-sm text-gray-600 space-y-1 text-left">
-                    <li>• Check your email for confirmation details</li>
-                    <li>• Your request is being reviewed by our team</li>
-                    <li>• Funds will be transferred within 1-3 business days</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="flex gap-2">
-              <Button
-                onClick={() => {
-                  setShowSuccess(false);
-                  onClose();
-                }}
-                variant="outline"
-                className="flex-1"
-              >
-                Close
-              </Button>
-              <Button
-                onClick={() => {
-                  window.open(`mailto:${userProfile?.email || ""}`, "_blank");
-                }}
-                className="flex-1"
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Open Email
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
+  if (!isOpen) {
+    return null;
   }
 
   // Main modal content
@@ -573,35 +495,19 @@ export function PayoutDetailsModal({
             </CardContent>
           </Card>
 
-          {/* Error Display */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-red-800">
-                  <p className="font-medium">Error</p>
-                  <p>{error}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Action Buttons */}
           <div className="flex gap-3 pt-2">
             <Button
               onClick={onClose}
               variant="outline"
               className="flex-1"
-              disabled={isSubmitting || isProcessing}
             >
               Cancel
             </Button>
             <Button
               onClick={handleConfirmPayout}
-              // move confirmPayout here
               className="flex-1 bg-[#104901] text-white"
               disabled={
-                isSubmitting ||
                 isProcessing ||
                 !campaign.payoutProvider ||
                 userProfile?.accountChangeRequested ||
@@ -610,17 +516,10 @@ export function PayoutDetailsModal({
                 (campaign.payoutProvider === 'stripe' && campaign.currencyCode === 'NGN' && !userProfile?.stripeAccountReady)
               }
             >
-              {isSubmitting || isProcessing ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  Confirm Request
-                </>
-              )}
+              <>
+                <Send className="h-4 w-4 mr-2" />
+                Confirm Request
+              </>
             </Button>
           </div>
 
@@ -666,7 +565,7 @@ export function PayoutDetailsModal({
           )}
 
           {/* International Bank Account Required for Foreign Currencies */}
-          {campaign.payoutProvider === 'stripe' && campaign.currencyCode !== 'NGN' && !userProfile?.internationalAccountVerified && (
+          {/* {campaign.payoutProvider === 'stripe' && campaign.currencyCode !== 'NGN' && !userProfile?.internationalAccountVerified && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
@@ -689,7 +588,7 @@ export function PayoutDetailsModal({
                 </div>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Account Change Request Pending Warning */}
           {userProfile?.accountChangeRequested && (

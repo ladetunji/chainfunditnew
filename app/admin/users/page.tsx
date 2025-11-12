@@ -111,13 +111,9 @@ export default function AdminUsersPage() {
       const response = await fetch(`/api/admin/users?${params.toString()}`);
       const data = await response.json();
       
-      console.log('API Response:', data);
-      console.log('Users data:', data.users);
-      
       setUsers(data.users || []);
       setTotalPages(data.totalPages || 1);
     } catch (error) {
-      console.error('Error fetching users:', error);
       toast.error('Failed to fetch users');
     } finally {
       setLoading(false);
@@ -129,10 +125,8 @@ export default function AdminUsersPage() {
       const response = await fetch('/api/admin/users/stats');
       const data = await response.json();
       
-      console.log('Stats Response:', data);
       setStats(data);
     } catch (error) {
-      console.error('Error fetching user stats:', error);
     }
   };
 
@@ -153,7 +147,6 @@ export default function AdminUsersPage() {
       toast.success(`User ${action} successfully`);
       fetchUsers();
     } catch (error) {
-      console.error('Error updating user:', error);
       toast.error('Failed to update user');
     }
   };
@@ -184,7 +177,6 @@ export default function AdminUsersPage() {
       setSelectedUsers([]);
       fetchUsers();
     } catch (error) {
-      console.error('Error performing bulk action:', error);
       toast.error('Failed to perform bulk action');
     }
   };

@@ -8,7 +8,6 @@ import { eq } from 'drizzle-orm';
  */
 async function updateRejectedCampaigns() {
   try {
-    console.log('🔍 Checking for campaigns with "rejected" status...');
     
     // Find campaigns with rejected status
     const rejectedCampaigns = await db
@@ -17,13 +16,10 @@ async function updateRejectedCampaigns() {
       .where(eq(campaigns.status, 'rejected'));
     
     if (rejectedCampaigns.length === 0) {
-      console.log('✅ No campaigns with "rejected" status found.');
       return;
     }
     
-    console.log(`📋 Found ${rejectedCampaigns.length} campaigns with "rejected" status:`);
     rejectedCampaigns.forEach(campaign => {
-      console.log(`  - ${campaign.title} (ID: ${campaign.id})`);
     });
     
     // Update rejected campaigns to closed status
@@ -37,7 +33,6 @@ async function updateRejectedCampaigns() {
       .where(eq(campaigns.status, 'rejected'))
       .returning();
     
-    console.log(`✅ Updated ${updatedCampaigns.length} campaigns from "rejected" to "closed" status.`);
     
     // Verify the update
     const remainingRejected = await db
@@ -46,9 +41,7 @@ async function updateRejectedCampaigns() {
       .where(eq(campaigns.status, 'rejected'));
     
     if (remainingRejected.length === 0) {
-      console.log('✅ All "rejected" campaigns have been successfully updated to "closed".');
     } else {
-      console.log(`⚠️  Warning: ${remainingRejected.length} campaigns still have "rejected" status.`);
     }
     
   } catch (error) {
@@ -61,7 +54,6 @@ async function updateRejectedCampaigns() {
 if (require.main === module) {
   updateRejectedCampaigns()
     .then(() => {
-      console.log('🎉 Script completed successfully!');
       process.exit(0);
     })
     .catch((error) => {

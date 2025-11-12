@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { closeEligibleCampaigns, getCampaignClosureStats } from '@/lib/utils/campaign-closure';
+import { toast } from 'sonner';
 
 /**
  * POST /api/cron/close-campaigns - Scheduled job to automatically close campaigns
@@ -18,16 +19,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🕐 Starting scheduled campaign closure job...');
-    
     const startTime = Date.now();
     const result = await closeEligibleCampaigns();
     const endTime = Date.now();
     
     const stats = await getCampaignClosureStats();
-    
-    console.log(`✅ Campaign closure job completed in ${endTime - startTime}ms`);
-    console.log(`📊 Results: ${result.closed.length} closed, ${result.errors.length} errors`);
     
     return NextResponse.json({
       success: true,
@@ -47,7 +43,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Campaign closure job failed:', error);
+    toast.error('Campaign closure job failed: ' + error);
     return NextResponse.json(
       { 
         success: false, 
@@ -78,7 +74,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error getting campaign closure job info:', error);
+    toast.error('Error getting campaign closure job info: ' + error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

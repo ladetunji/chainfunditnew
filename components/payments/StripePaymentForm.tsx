@@ -101,7 +101,6 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 
           if (callbackResponse.ok) {
             const callbackResult = await callbackResponse.json();
-            console.log('Donation status updated:', callbackResult);
             setPaymentStatus('success');
             toast.success('Payment successful! Thank you for your donation.');
             onSuccess();

@@ -4,19 +4,15 @@ import { eq } from 'drizzle-orm';
 
 async function seedChainers() {
   try {
-    console.log('🌱 Seeding chainers...');
-
     // First, get some existing users and campaigns
     const existingUsers = await db.select().from(users).limit(5);
     const existingCampaigns = await db.select().from(campaigns).limit(3);
 
     if (existingUsers.length === 0) {
-      console.log('❌ No users found. Please create users first.');
       return;
     }
 
     if (existingCampaigns.length === 0) {
-      console.log('❌ No campaigns found. Please create campaigns first.');
       return;
     }
 
@@ -44,10 +40,7 @@ async function seedChainers() {
     // Insert test chainers
     const insertedChainers = await db.insert(chainers).values(testChainers).returning();
 
-    console.log(`✅ Successfully seeded ${insertedChainers.length} chainers`);
-    console.log('📊 Sample chainer data:');
     insertedChainers.slice(0, 3).forEach((chainer, index) => {
-      console.log(`  ${index + 1}. Referral Code: ${chainer.referralCode}, Total Raised: $${chainer.totalRaised}, Referrals: ${chainer.totalReferrals}`);
     });
 
   } catch (error) {
@@ -57,7 +50,6 @@ async function seedChainers() {
 
 // Run the seeder
 seedChainers().then(() => {
-  console.log('🎉 Chainer seeding completed');
   process.exit(0);
 }).catch((error) => {
   console.error('💥 Seeding failed:', error);

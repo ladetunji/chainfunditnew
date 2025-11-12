@@ -345,7 +345,6 @@ export async function sendPayoutApprovalEmail(data: PayoutEmailData) {
       html: emailHtml,
     });
 
-    console.log("Payout approval email sent:", result);
     return result;
   } catch (error) {
     console.error("Error sending payout approval email:", error);
@@ -683,7 +682,6 @@ export async function sendPayoutConfirmationEmail(data: PayoutEmailData) {
       html: emailHtml,
     });
 
-    console.log("Payout confirmation email sent:", result);
     return result;
   } catch (error) {
     console.error("Error sending payout confirmation email:", error);
@@ -927,7 +925,6 @@ export async function sendPayoutCompletionEmail(
       html: emailHtml,
     });
 
-    console.log("Payout completion email sent:", result);
     return result;
   } catch (error) {
     console.error("Error sending payout completion email:", error);
@@ -1164,7 +1161,6 @@ export async function sendPayoutFailureEmail(data: PayoutFailureEmailData) {
       html: emailHtml,
     });
 
-    console.log("Payout failure email sent:", result);
     return result;
   } catch (error) {
     console.error("Error sending payout failure email:", error);

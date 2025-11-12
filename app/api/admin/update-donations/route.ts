@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { donations } from '@/lib/schema/donations';
 import { campaigns } from '@/lib/schema/campaigns';
 import { eq, sum, and } from 'drizzle-orm';
+import { toast } from 'sonner';
 
 // Helper function to update campaign currentAmount based on completed donations
 async function updateCampaignAmount(campaignId: string) {
@@ -29,9 +30,8 @@ async function updateCampaignAmount(campaignId: string) {
       })
       .where(eq(campaigns.id, campaignId));
 
-    console.log(`Updated campaign ${campaignId} amount to ${totalAmount}`);
   } catch (error) {
-    console.error('Error updating campaign amount:', error);
+    toast.error('Error updating campaign amount: ' + error);
   }
 }
 
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       count: pendingDonations.length,
     });
   } catch (error) {
-    console.error('Error fetching pending donations:', error);
+    toast.error('Error fetching pending donations: ' + error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch pending donations' },
       { status: 500 }
@@ -113,8 +113,6 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(donations.id, donationId));
 
-    console.log(`Updated donation ${donationId} to status: ${status}`);
-
     // If payment was successful, update campaign currentAmount
     if (status === 'completed') {
       await updateCampaignAmount(donationRecord.campaignId);
@@ -128,7 +126,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error updating donation:', error);
+    toast.error('Error updating donation: ' + error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
@@ -178,8 +176,6 @@ export async function PUT(request: NextRequest) {
       })
       .where(whereCondition);
 
-    console.log(`Updated ${pendingDonations.length} donations to status: ${status}`);
-
     // If payments were successful, update campaign amounts
     if (status === 'completed') {
       const campaignIds = [...new Set(pendingDonations.map(d => d.campaignId))];
@@ -196,7 +192,7 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error updating donations:', error);
+    toast.error('Error updating donations: ' + error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

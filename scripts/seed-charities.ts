@@ -478,7 +478,6 @@ const sampleCharities: NewCharity[] = [
 
 async function seedCharities() {
   try {
-    console.log('🌱 Seeding charities...\n');
 
     for (const charity of sampleCharities) {
       try {
@@ -489,13 +488,11 @@ async function seedCharities() {
             updatedAt: new Date(),
           },
         });
-        console.log(`✅ Added/Updated: ${charity.name}`);
       } catch (error) {
         console.error(`❌ Error adding ${charity.name}:`, error);
       }
     }
 
-    console.log(`\n✨ Successfully seeded ${sampleCharities.length} charities!`);
   } catch (error) {
     console.error('Error seeding charities:', error);
     process.exit(1);

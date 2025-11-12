@@ -4,7 +4,6 @@ import { donations, users, campaigns } from '@/lib/schema';
 
 export async function POST() {
   try {
-    console.log('🌱 Starting quick seed...');
     
     // Get existing users and campaigns
     const usersList = await db.select().from(users).limit(5);
@@ -24,7 +23,6 @@ export async function POST() {
       });
     }
     
-    console.log(`✅ Found ${usersList.length} users and ${campaignsList.length} campaigns`);
     
     // Create test donations
     const testDonations = [];
@@ -54,7 +52,6 @@ export async function POST() {
     // Insert test donations
     const insertedDonations = await db.insert(donations).values(testDonations).returning();
     
-    console.log(`✅ Successfully created ${insertedDonations.length} test donations`);
     
     return NextResponse.json({
       success: true,

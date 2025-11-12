@@ -58,13 +58,11 @@ function PaymentSuccessContent() {
       // Fetch donation
       const donationRes = await fetch(`/api/charities/donations/${donationId}`);
       const donationData = await donationRes.json();
-      console.log('Donation data:', donationData);
       setDonation(donationData);
 
       // Fetch charity
       const charityRes = await fetch(`/api/charities/${donationData.charityId}`);
       const charityData = await charityRes.json();
-      console.log('Charity data:', charityData);
       
       // Handle both direct charity object or wrapped in 'charity' key
       const charity = charityData.charity || charityData;

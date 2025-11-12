@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { db, withRetry } from "@/lib/db";
 import {
   campaigns,
   donations,
@@ -8,7 +8,7 @@ import {
   chainers,
   campaignPayouts,
 } from "@/lib/schema";
-import { eq, and, sum, inArray, isNotNull } from "drizzle-orm";
+import { eq, and, inArray, isNotNull } from "drizzle-orm";
 import {
   getPayoutProvider,
   getPayoutConfig,
@@ -19,19 +19,15 @@ import {
   convertToNaira,
   convertFromNaira,
 } from "@/lib/utils/currency-conversion";
+import { notifyPayoutRequest } from "@/lib/notifications/payout-request-alerts";
 
 // Fetch payout dashboard data for user
 export async function GET(request: NextRequest) {
-  console.log("➡️ [GET] Fetching payout dashboard data...");
-
   try {
     const userEmail = await getUserFromRequest(request);
     if (!userEmail) {
-      console.log("🚫 Unauthorized request: no user email found");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    console.log("✅ Authenticated user:", userEmail);
 
     const [user] = await db
       .select({ id: users.id })
@@ -42,7 +38,6 @@ export async function GET(request: NextRequest) {
     if (!user)
       return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    console.log("📊 Fetching user campaigns...");
     const userCampaigns = await db
       .select({
         id: campaigns.id,
@@ -57,7 +52,6 @@ export async function GET(request: NextRequest) {
       .where(eq(campaigns.creatorId, user.id));
 
     if (!userCampaigns.length) {
-      console.log("No campaigns found for user.");
       return NextResponse.json({
         success: true,
         data: { campaigns: [], totalAvailableForPayout: 0 },
@@ -66,7 +60,6 @@ export async function GET(request: NextRequest) {
 
     const campaignIds = userCampaigns.map((c) => c.id);
 
-    console.log("Fetching donations for user's campaigns...");
     const userDonations =
       campaignIds.length > 0
         ? await db
@@ -88,10 +81,6 @@ export async function GET(request: NextRequest) {
               )
             )
         : [];
-
-    console.log(
-      `Found ${userDonations.length} donations across ${userCampaigns.length} campaigns.`
-    );
 
     const campaignsWithPayouts = await Promise.all(
       userCampaigns.map(async (campaign) => {
@@ -174,7 +163,6 @@ export async function GET(request: NextRequest) {
       })
     );
 
-    console.log("Sending campaigns with payout data...");
     return NextResponse.json({
       success: true,
       data: campaignsWithPayouts,
@@ -190,103 +178,171 @@ export async function GET(request: NextRequest) {
 
 // Create a payout request
 export async function POST(request: NextRequest) {
-  console.log("➡️ [POST] Payout request started");
+  const routeStartTime = Date.now();
 
   try {
     // Authenticate user
     const userEmail = await getUserFromRequest(request);
     if (!userEmail)
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    console.log("✅ User authenticated:", userEmail);
 
     // Fetch user details
-    const [user] = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        fullName: users.fullName,
-        accountNumber: users.accountNumber,
-        bankCode: users.bankCode,
-        bankName: users.bankName,
-        accountName: users.accountName,
-        accountVerified: users.accountVerified,
-        stripeAccountId: users.stripeAccountId,
-        stripeAccountReady: users.stripeAccountReady,
-        // International bank account fields
-        internationalBankAccountNumber: users.internationalBankAccountNumber,
-        internationalBankRoutingNumber: users.internationalBankRoutingNumber,
-        internationalBankSwiftBic: users.internationalBankSwiftBic,
-        internationalBankCountry: users.internationalBankCountry,
-        internationalBankName: users.internationalBankName,
-        internationalAccountName: users.internationalAccountName,
-        internationalAccountVerified: users.internationalAccountVerified,
-      })
-      .from(users)
-      .where(eq(users.email, userEmail))
-      .limit(1);
+    const userLookupStart = Date.now();
+    const [user] = await withRetry(() =>
+      db
+        .select({
+          id: users.id,
+          email: users.email,
+          fullName: users.fullName,
+          accountNumber: users.accountNumber,
+          bankCode: users.bankCode,
+          bankName: users.bankName,
+          accountName: users.accountName,
+          accountVerified: users.accountVerified,
+          stripeAccountId: users.stripeAccountId,
+          stripeAccountReady: users.stripeAccountReady,
+          // International bank account fields
+          internationalBankAccountNumber: users.internationalBankAccountNumber,
+          internationalBankRoutingNumber: users.internationalBankRoutingNumber,
+          internationalBankSwiftBic: users.internationalBankSwiftBic,
+          internationalBankCountry: users.internationalBankCountry,
+          internationalBankName: users.internationalBankName,
+          internationalAccountName: users.internationalAccountName,
+          internationalAccountVerified: users.internationalAccountVerified,
+        })
+        .from(users)
+        .where(eq(users.email, userEmail))
+        .limit(1)
+    );
 
     if (!user)
       return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    // Parse request body
-    const body = await request.json();
-    const { campaignId, amount, currency, payoutProvider } = body;
-    if (!campaignId || !amount || !currency || !payoutProvider)
+    // Parse request body safely
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.warn("⚠️ [POST] Failed to parse payout request body:", parseError);
+      return NextResponse.json(
+        { success: false, error: "Invalid request body" },
+        { status: 400 }
+      );
+    }
+
+    const { campaignId, amount: rawAmount, currency, payoutProvider } =
+      body ?? {};
+
+    // Validate required fields
+    if (
+      !campaignId ||
+      rawAmount === undefined ||
+      rawAmount === null ||
+      !currency ||
+      !payoutProvider
+    ) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
+    }
 
-    console.log("📦 Payout request payload:", {
-      campaignId,
-      amount,
-      currency,
-      payoutProvider,
-    });
+    // Parse and validate amount
+    const amount =
+      typeof rawAmount === "string" ? parseFloat(rawAmount) : Number(rawAmount);
+    if (isNaN(amount) || !isFinite(amount) || amount <= 0) {
+      console.error("❌ Invalid amount:", rawAmount);
+      return NextResponse.json(
+        { error: "Invalid amount. Must be a positive number." },
+        { status: 400 }
+      );
+    }
 
     // Validate campaign ownership
-    const [campaign] = await db
-      .select()
-      .from(campaigns)
-      .where(
-        and(eq(campaigns.id, campaignId), eq(campaigns.creatorId, user.id))
-      )
-      .limit(1);
+    const campaignLookupStart = Date.now();
+    const [campaign] = await withRetry(() =>
+      db
+        .select()
+        .from(campaigns)
+        .where(
+          and(eq(campaigns.id, campaignId), eq(campaigns.creatorId, user.id))
+        )
+        .limit(1)
+    );
 
     if (!campaign)
       return NextResponse.json(
         { error: "Campaign not found or unauthorized" },
         { status: 404 }
       );
-    console.log("✅ Campaign verified:", campaignId);
+
+    const donationsForCampaign = await db
+      .select({
+        amount: donations.amount,
+        currency: donations.currency,
+        paymentStatus: donations.paymentStatus,
+      })
+      .from(donations)
+      .where(
+        and(
+          eq(donations.campaignId, campaignId),
+          eq(donations.paymentStatus, "completed")
+        )
+      );
+
+    const currencyCode = getCurrencyCode(currency);
+    let totalRaised = 0;
+    let totalRaisedInNGN = 0;
+
+    donationsForCampaign.forEach((donation) => {
+      const donationAmount = parseFloat(donation.amount || "0");
+      const donationCurrency = getCurrencyCode(donation.currency || "USD");
+      const amountInNGN = convertToNaira(donationAmount, donationCurrency);
+      totalRaisedInNGN += amountInNGN;
+
+      if (donationCurrency === currencyCode) {
+        totalRaised += donationAmount;
+      } else {
+        totalRaised += convertFromNaira(amountInNGN, currencyCode);
+      }
+    });
 
     // Validate account or bank account requirements based on currency
     const isForeignCurrency = currency !== "NGN";
     
     if (payoutProvider === "paystack") {
       // Paystack is for NGN (Nigerian accounts)
-      if (!user.accountVerified)
+      if (!user.accountVerified) {
+        console.error("❌ Bank account not verified for Paystack payout");
         return NextResponse.json(
           { error: "Bank account not verified" },
           { status: 400 }
         );
-      if (!user.accountNumber || !user.bankCode)
+      }
+      if (!user.accountNumber || !user.bankCode) {
+        console.error("❌ Bank details incomplete:", { accountNumber: !!user.accountNumber, bankCode: !!user.bankCode });
         return NextResponse.json(
           { error: "Bank details incomplete" },
           { status: 400 }
         );
+      }
     }
 
     if (payoutProvider === "stripe") {
       // For foreign currencies, validate international bank account details
       if (isForeignCurrency) {
         if (!user.internationalAccountVerified) {
+          console.error("❌ International bank account not verified for Stripe payout");
           return NextResponse.json(
             { error: "International bank account not verified. Please add and verify your bank account details." },
             { status: 400 }
           );
         }
         if (!user.internationalBankAccountNumber || !user.internationalBankCountry) {
+          console.error("❌ International bank account details incomplete:", { 
+            accountNumber: !!user.internationalBankAccountNumber, 
+            country: !!user.internationalBankCountry 
+          });
           return NextResponse.json(
             { error: "International bank account details incomplete" },
             { status: 400 }
@@ -294,51 +350,62 @@ export async function POST(request: NextRequest) {
         }
       } else {
         // For NGN with Stripe (shouldn't happen, but kept for backward compatibility)
-        if (!user.stripeAccountId || !user.stripeAccountReady)
+        if (!user.stripeAccountId || !user.stripeAccountReady) {
+          console.error("❌ Stripe Connect account not linked or incomplete");
           return NextResponse.json(
             { error: "Stripe Connect account not linked or incomplete" },
             { status: 400 }
           );
+        }
       }
     }
 
-    // Check existing payouts
-    // console.log("🔍 Checking existing payouts...");
-    // const existingPayouts = await db
-    //   .select({ id: campaignPayouts.id, status: campaignPayouts.status })
-    //   .from(campaignPayouts)
-    //   .where(
-    //     and(
-    //       eq(campaignPayouts.campaignId, campaignId),
-    //       inArray(campaignPayouts.status, ["pending", "approved", "processing"])
-    //     )
-    //   )
-    //   .limit(1);
+    // check if an active payout already exists for this campaign
+    const existingPayoutLookupStart = Date.now();
+    const existingPayout = await withRetry(() =>
+      db
+        .select({
+          id: campaignPayouts.id,
+          status: campaignPayouts.status,
+          requestedAmount: campaignPayouts.requestedAmount,
+          createdAt: campaignPayouts.createdAt,
+        })
+        .from(campaignPayouts)
+        .where(
+          and(
+            eq(campaignPayouts.campaignId, campaignId),
+            inArray(campaignPayouts.status, ["pending", "approved", "processing"])
+          )
+        )
+        .limit(1)
+    );
+   
+    if (existingPayout.length) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "An active payout already exists for this campaign",
+          existingPayout: existingPayout[0],
+        },
+        { status: 409 }
+      );
+    }
 
-    // if (existingPayouts.length)
-    //   return NextResponse.json(
-    //     { error: "An active payout already exists for this campaign" },
-    //     { status: 409 }
-    //   );
-    // console.log("✅ No active payout found.");
-
-    // Validate amount against donations
-    const [{ total }] = await db
-      .select({ total: sum(donations.amount) })
-      .from(donations)
-      .where(eq(donations.campaignId, campaignId));
-
-    const totalRaised = parseFloat(total || "0");
-    if (totalRaised <= 0)
+    
+    if (totalRaised <= 0) {
+      console.error("❌ No donations available for payout:", { totalRaised, campaignId });
       return NextResponse.json(
         { error: "No donations available for payout" },
         { status: 400 }
       );
-    if (amount > totalRaised)
+    }
+    if (amount > totalRaised) {
+      console.error("❌ Requested amount exceeds available funds:", { requested: amount, totalRaised, campaignId });
       return NextResponse.json(
-        { error: "Requested amount exceeds available funds" },
-        {status: 400 }
+        { error: `Requested amount (${amount}) exceeds available funds (${totalRaised})` },
+        { status: 400 }
       );
+    }
 
     // Calculate payout fees
     const feeRate =
@@ -350,34 +417,32 @@ export async function POST(request: NextRequest) {
     const fixedFee = payoutProvider === "stripe" ? 0.3 : 0;
     const fees = amount * feeRate + fixedFee;
     const netAmount = amount - fees;
-    console.log("💰 Calculated fees:", { feeRate, fixedFee, fees, netAmount });
 
-    // Save payout to DB
-    console.log("📦 Saving payout record...");
-    const [saved] = await db
-      .insert(campaignPayouts)
-      .values({
-        userId: user.id,
-        campaignId,
-        requestedAmount: amount.toString(),
-        grossAmount: amount.toString(),
-        fees: fees.toString(),
-        netAmount: netAmount.toString(),
-        currency: getCurrencyCode(currency),
-        status: "pending",
-        payoutProvider,
-        reference: `CP-${Date.now()}-${campaignId.substring(0, 8)}`,
-        // Store bank details based on currency
-        bankName: isForeignCurrency ? (user.internationalBankName || null) : (user.bankName || null),
-        accountNumber: isForeignCurrency ? (user.internationalBankAccountNumber || null) : (user.accountNumber || null),
-        accountName: isForeignCurrency ? (user.internationalAccountName || null) : (user.accountName || null),
-        bankCode: isForeignCurrency ? null : (user.bankCode || null),
-      })
-      .returning();
+    const insertStart = Date.now();
+    const [saved] = await withRetry(() =>
+      db
+        .insert(campaignPayouts)
+        .values({
+          userId: user.id,
+          campaignId,
+          requestedAmount: amount.toString(),
+          grossAmount: amount.toString(),
+          fees: fees.toString(),
+          netAmount: netAmount.toString(),
+          currency: getCurrencyCode(currency),
+          status: "pending",
+          payoutProvider,
+          reference: `CP-${Date.now()}-${campaignId.substring(0, 8)}`,
+          // Store bank details based on currency
+          bankName: isForeignCurrency ? (user.internationalBankName || null) : (user.bankName || null),
+          accountNumber: isForeignCurrency ? (user.internationalBankAccountNumber || null) : (user.accountNumber || null),
+          accountName: isForeignCurrency ? (user.internationalAccountName || null) : (user.accountName || null),
+          bankCode: isForeignCurrency ? null : (user.bankCode || null),
+        })
+        .returning()
+    );
 
-    console.log("✅ Payout saved:", saved?.id);
-
-    // Return response immediately (do not block on email/notifications)
+    // Prepare response data
     const responseData = {
       success: true,
       data: {
@@ -396,8 +461,33 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    console.log("📤 Sending response to client...");
-    console.log(responseData);
+    // Notify admins about the payout request (fire and forget - don't block response)
+    notifyPayoutRequest({
+      userId: user.id,
+      userEmail: user.email || "",
+      userName: user.fullName || user.email || "Unknown User",
+      campaignId: campaign.id,
+      campaignTitle: campaign.title || "Unknown Campaign",
+      amount: parseFloat(amount.toString()),
+      currency: getCurrencyCode(currency),
+      payoutId: String(saved.id),
+      requestDate: new Date(),
+      bankDetails: {
+        accountName: isForeignCurrency 
+          ? (user.internationalAccountName || "") 
+          : (user.accountName || ""),
+        accountNumber: isForeignCurrency 
+          ? (user.internationalBankAccountNumber || "") 
+          : (user.accountNumber || ""),
+        bankName: isForeignCurrency 
+          ? (user.internationalBankName || "") 
+          : (user.bankName || ""),
+      },
+    }).catch((notificationError) => {
+      console.error("❌ Error sending admin notifications:", notificationError);
+      // Don't fail the request if notifications fail
+    });
+
     return NextResponse.json(responseData, { status: 200 });
   } catch (error) {
     console.error("❌ [POST] Error processing payout:", error);

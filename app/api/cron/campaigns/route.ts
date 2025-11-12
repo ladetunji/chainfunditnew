@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { autoCloseExpiredCampaigns, markExpiredCampaigns } from '@/lib/utils/campaign-validation';
+import { toast } from 'sonner';
 
 /**
  * Cron job endpoint to handle campaign auto-closing and expiration
@@ -21,20 +22,15 @@ export async function POST(request: NextRequest) {
     }
 
     const startTime = Date.now();
-    console.log('Starting campaign auto-close and expiration cron job...');
 
     // Auto-close campaigns that reached goal 4 weeks ago
     const autoClosedCount = await autoCloseExpiredCampaigns();
-    console.log(`Auto-closed ${autoClosedCount} campaigns`);
 
     // Mark expired campaigns
     const expiredCount = await markExpiredCampaigns();
-    console.log(`Marked ${expiredCount} campaigns as expired`);
 
     const endTime = Date.now();
     const duration = endTime - startTime;
-
-    console.log(`Campaign cron job completed in ${duration}ms`);
 
     return NextResponse.json({
       success: true,
@@ -47,11 +43,11 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error in campaign cron job:', error);
+    toast.error('Error in campaign cron job: ' + error);
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Failed to process campaign auto-close',
+        error: 'Failed to process campaign auto-close: ' + error,
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }

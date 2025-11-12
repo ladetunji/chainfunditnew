@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
           donorName: user.fullName || '',
           campaignTitle: campaign.title,
         },
-        `${process.env.NEXT_PUBLIC_APP_URL}/api/payments/paystack/callback`
+        `${process.env.NEXT_PUBLIC_APP_URL}api/payments/paystack/callback`
       );
 
       paymentResult = {

@@ -61,7 +61,6 @@ export async function POST(request: NextRequest) {
         break;
 
       default:
-        console.log(`Unhandled Paystack event type: ${event.event}`);
     }
 
     return NextResponse.json({ received: true });
@@ -113,12 +112,6 @@ async function handleChargeSuccess(data: any) {
       })
       .where(eq(charities.id, donation.charityId));
 
-    console.log('Paystack payment successful:', {
-      donationId: metadata.donationId,
-      amount: donation.amount,
-      reference,
-    });
-
     // Get charity details for notification
     const charity = await db.query.charities.findFirst({
       where: eq(charities.id, donation.charityId),
@@ -166,8 +159,6 @@ async function handleChargeFailed(data: any) {
       })
       .where(eq(charityDonations.id, metadata.donationId));
 
-    console.log('Paystack payment failed:', metadata.donationId);
-
     // TODO: Send failure notification to donor
   } catch (error) {
     console.error('Error handling Paystack charge failure:', error);
@@ -185,16 +176,9 @@ async function handleTransferSuccess(data: any) {
     const payoutId = data.metadata?.payoutId;
     const payoutType = data.metadata?.type; // 'campaign' | 'commission'
 
-    console.log('Paystack transfer successful:', {
-      reference,
-      amount,
-      payoutId,
-      payoutType,
-      recipient: data.recipient?.details?.account_name,
-    });
+ 
 
     if (!payoutId) {
-      console.log('No payout ID in transfer metadata, skipping payout update');
       return;
     }
 
@@ -210,7 +194,6 @@ async function handleTransferSuccess(data: any) {
         })
         .where(eq(campaignPayouts.reference, reference));
 
-      console.log(`Campaign payout ${payoutId} (${reference}) marked as completed`);
     } else if (payoutType === 'commission') {
       // Update commission payout
       await db
@@ -222,7 +205,6 @@ async function handleTransferSuccess(data: any) {
         })
         .where(eq(commissionPayouts.id, payoutId));
 
-      console.log(`Commission payout ${payoutId} (${reference}) marked as completed`);
     }
   } catch (error) {
     console.error('Error handling Paystack transfer success:', error);
@@ -240,15 +222,8 @@ async function handleTransferFailed(data: any) {
     const payoutType = data.metadata?.type;
     const failureReason = data.failure_reason || data.reason || 'Transfer failed';
 
-    console.log('Paystack transfer failed:', {
-      reference,
-      payoutId,
-      payoutType,
-      reason: failureReason,
-    });
 
     if (!payoutId) {
-      console.log('No payout ID in transfer metadata, skipping payout update');
       return;
     }
 
@@ -263,7 +238,6 @@ async function handleTransferFailed(data: any) {
         })
         .where(eq(campaignPayouts.reference, reference));
 
-      console.log(`Campaign payout ${payoutId} (${reference}) marked as failed`);
     } else if (payoutType === 'commission') {
       await db
         .update(commissionPayouts)
@@ -273,7 +247,6 @@ async function handleTransferFailed(data: any) {
         })
         .where(eq(commissionPayouts.id, payoutId));
 
-      console.log(`Commission payout ${payoutId} (${reference}) marked as failed`);
     }
 
     // TODO: Notify admin of failed payout
@@ -292,14 +265,8 @@ async function handleTransferReversed(data: any) {
     const payoutId = data.metadata?.payoutId;
     const payoutType = data.metadata?.type;
 
-    console.log('Paystack transfer reversed:', {
-      reference,
-      payoutId,
-      payoutType,
-    });
 
     if (!payoutId) {
-      console.log('No payout ID in transfer metadata, skipping payout update');
       return;
     }
 
@@ -314,7 +281,6 @@ async function handleTransferReversed(data: any) {
         })
         .where(eq(campaignPayouts.reference, reference));
 
-      console.log(`Campaign payout ${payoutId} (${reference}) marked as failed (reversed)`);
     } else if (payoutType === 'commission') {
       await db
         .update(commissionPayouts)
@@ -324,7 +290,6 @@ async function handleTransferReversed(data: any) {
         })
         .where(eq(commissionPayouts.id, payoutId));
 
-      console.log(`Commission payout ${payoutId} (${reference}) marked as failed (reversed)`);
     }
 
     // TODO: Credit back to charity pending amount if applicable

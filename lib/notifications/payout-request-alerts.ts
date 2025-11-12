@@ -30,26 +30,19 @@ export async function notifyAdminOfPayoutRequest(
   payoutData: PayoutRequestData
 ) {
   try {
-    console.log("📧 Starting admin notification process...");
 
     const adminUsers = await db.query.users.findMany({
       where: or(eq(users.role, "admin"), eq(users.role, "super_admin")),
     });
 
-    console.log(`Found ${adminUsers.length} admin user(s)`);
 
     if (adminUsers.length === 0) {
-      console.log("⚠️ No admin users found in the system");
       return;
     }
 
     const adminConfigs = await db.query.adminSettings.findMany({
       where: eq(adminSettings.notifyOnPayoutRequest, true),
     });
-
-    console.log(
-      `Found ${adminConfigs.length} admin configuration(s) with payout notifications enabled`
-    );
 
     const settingsMap = new Map(
       adminConfigs.map((config) => [config.userId, config])
@@ -62,16 +55,7 @@ export async function notifyAdminOfPayoutRequest(
         const shouldNotify = config ? config.notifyOnPayoutRequest : true;
         const emailEnabled = config ? config.emailNotificationsEnabled : true;
 
-        console.log(`Processing admin ${adminUser.email}:`, {
-          hasConfig: !!config,
-          shouldNotify,
-          emailEnabled,
-        });
-
         if (!shouldNotify || !emailEnabled) {
-          console.log(
-            `⏭️ Skipping ${adminUser.email} - notifications disabled`
-          );
           return null;
         }
 
@@ -79,15 +63,11 @@ export async function notifyAdminOfPayoutRequest(
           config?.notificationEmail || process.env.ADMIN_EMAIL;
 
         if (!recipientEmail) {
-          console.log(`⚠️ No recipient email for admin ${adminUser.email}`);
           return null;
         }
 
-        console.log(`📨 Sending email to ${recipientEmail}...`);
-
         return sendPayoutRequestEmailToAdmin(recipientEmail, payoutData)
           .then(() => {
-            console.log(`✅ Email sent successfully to ${recipientEmail}`);
             return { success: true, email: recipientEmail };
           })
           .catch((emailError) => {
@@ -110,16 +90,7 @@ export async function notifyAdminOfPayoutRequest(
     ).length;
 
     if (notificationsSent === 0) {
-      console.log("⚠️ No admins configured for payout request notifications");
-      console.log("   Check that ADMIN_EMAIL is set in environment variables");
-      console.log(
-        "   Or ensure admin settings have notificationEmail configured"
-      );
-    } else {
-      console.log(
-        `✅ Payout request notifications sent to ${notificationsSent} admin(s)`
-      );
-    }
+    } 
   } catch (error) {
     console.error("❌ Error notifying admin of payout request:", error);
   }
@@ -280,10 +251,6 @@ async function sendPayoutRequestEmailToAdmin(
       html,
     });
 
-    console.log(
-      `✅ Admin payout request notification sent to ${recipientEmail}`,
-      result
-    );
   } catch (error) {
     console.error(
       `❌ Error sending admin payout request notification email to ${recipientEmail}:`,
@@ -311,18 +278,12 @@ export async function createAdminNotificationForPayoutRequest(
   payoutData: PayoutRequestData
 ) {
   try {
-    console.log("📬 Starting in-app notification creation...");
 
     const adminUsers = await db.query.users.findMany({
       where: or(eq(users.role, "admin"), eq(users.role, "super_admin")),
     });
 
-    console.log(
-      `Found ${adminUsers.length} admin user(s) for in-app notifications`
-    );
-
     if (adminUsers.length === 0) {
-      console.log("⚠️ No admin users found - skipping in-app notifications");
       return;
     }
 
@@ -330,16 +291,9 @@ export async function createAdminNotificationForPayoutRequest(
       where: eq(adminSettings.notifyOnPayoutRequest, true),
     });
 
-    console.log(
-      `Found ${adminConfigs.length} admin configuration(s) with payout notifications enabled`
-    );
-
     const shouldNotify = adminConfigs.length > 0 || adminUsers.length > 0;
 
     if (!shouldNotify) {
-      console.log(
-        "⏭️ No admins have payout notifications enabled - skipping in-app notification"
-      );
       return;
     }
 
@@ -377,7 +331,6 @@ export async function createAdminNotificationForPayoutRequest(
       },
     });
 
-    console.log(`✅ In-app notification created for admin dashboard`);
   } catch (error) {
     console.error("❌ Error creating admin notification:", error);
     if (error instanceof Error) {

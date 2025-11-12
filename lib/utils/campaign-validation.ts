@@ -175,7 +175,6 @@ export async function checkAndUpdateGoalReached(campaignId: string): Promise<boo
         })
         .where(eq(campaigns.id, campaignId));
 
-      console.log(`Campaign ${campaignId} reached goal. Will auto-close on ${autoCloseAt.toISOString()}`);
       return true;
     }
 
@@ -238,7 +237,6 @@ export async function autoCloseExpiredCampaigns(): Promise<number> {
           .where(eq(campaigns.id, campaignId));
 
         closedCount++;
-        console.log(`Auto-closed campaign ${campaignId}`);
       } catch (error) {
         console.error(`Error auto-closing campaign ${campaignId}:`, error);
       }
@@ -302,7 +300,6 @@ export async function markExpiredCampaigns(): Promise<number> {
           .where(eq(campaigns.id, campaignId));
 
         expiredCount++;
-        console.log(`Marked campaign ${campaignId} as expired`);
       } catch (error) {
         console.error(`Error marking campaign ${campaignId} as expired:`, error);
       }

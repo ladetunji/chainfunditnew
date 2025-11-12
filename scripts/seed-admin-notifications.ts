@@ -51,13 +51,11 @@ const sampleNotifications = [
 
 async function seedNotifications() {
   try {
-    console.log('Seeding admin notifications...');
     
     for (const notification of sampleNotifications) {
       await db.insert(adminNotifications).values(notification);
     }
     
-    console.log('✅ Admin notifications seeded successfully!');
   } catch (error) {
     console.error('❌ Error seeding notifications:', error);
   }

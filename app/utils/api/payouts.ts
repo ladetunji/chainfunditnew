@@ -213,49 +213,41 @@ export async function fetchCampaignDetails(
 }
 
 // request a payout
+const REQUEST_PAYOUT_TIMEOUT_MS = 30000;
+
 export async function requestPayout(
   params: RequestPayoutParams
 ): Promise<RequestPayoutResponse> {
   const { campaignId, amount, currency, payoutProvider } = params;
 
-  console.log("Starting payout request...", {
-    campaignId,
-    amount,
-    currency,
-    payoutProvider,
-  });
-
   try {
-    console.log("Making API request to save payout");
-
-    const response = await fetch("/api/payouts", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        campaignId,
-        amount,
-        currency,
-        payoutProvider,
-      }),
-    });
-
-    console.log(
-      "API response received:",
-      response.status,
-      response.ok,
-      response.headers.get("content-type")
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(
+      () => abortController.abort(),
+      REQUEST_PAYOUT_TIMEOUT_MS
     );
 
-    // Handle non-OK responses
-    if (!response.ok) {
+    try {
+      const response = await fetch("/api/payouts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          campaignId,
+          amount,
+          currency,
+          payoutProvider,
+        }),
+        signal: abortController.signal,
+      });
+
+      // Handle non-OK responses
+      if (!response.ok) {
       const errorData = await response
         .json()
         .catch(() => ({ error: "Failed to process payout" }));
       
-      console.error("API error:", errorData);
-
       if (response.status === 409 && errorData.existingPayout) {
         return {
           success: false,
@@ -270,24 +262,24 @@ export async function requestPayout(
       };
     }
 
-    // Parse successful response
-    const result = await response.json();
-    console.log("Response parsed:", result);
+      // Parse successful response
+      const result = await response.json();
 
-    if (result.success) {
-      console.log("Payout successful");
+      if (result.success) {
       return {
         success: true,
         data: result.data,
       };
-    } else {
-      console.error("Payout failed:", result.error);
-      return {
-        success: false,
-        error: result.error || "Failed to process payout",
-      };
+      } else {
+        console.error("Payout failed:", result.error);
+        return {
+          success: false,
+          error: result.error || "Failed to process payout",
+        };
+      }
+    } finally {
+      clearTimeout(timeoutId);
     }
-
   } catch (error) {
     console.error("Payout error caught:", error);
     

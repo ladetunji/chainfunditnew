@@ -4,11 +4,10 @@ import { donations } from '@/lib/schema/donations';
 import { notifications } from '@/lib/schema/notifications';
 import { campaigns } from '@/lib/schema/campaigns';
 import { eq, and, lt } from 'drizzle-orm';
+import { toast } from 'sonner';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🧹 Starting automatic cleanup of pending donations...');
-
     // Find pending donations older than 1 hour
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     
@@ -29,8 +28,6 @@ export async function GET(request: NextRequest) {
         lt(donations.createdAt, oneHourAgo)
       ));
 
-    console.log(`📊 Found ${oldPendingDonations.length} old pending donations`);
-
     if (oldPendingDonations.length === 0) {
       return NextResponse.json({ 
         success: true, 
@@ -46,8 +43,6 @@ export async function GET(request: NextRequest) {
       try {
         const hoursOld = Math.floor((Date.now() - donation.createdAt.getTime()) / (1000 * 60 * 60));
         
-        console.log(`🔄 Cleaning up donation ${donation.id.slice(0, 8)}... (${hoursOld}h old)`);
-
         // Update donation status to failed
         await db
           .update(donations)
@@ -86,14 +81,10 @@ export async function GET(request: NextRequest) {
         }
 
         cleanedCount++;
-        console.log(`   ✅ Updated to failed status`);
-
       } catch (error) {
-        console.error(`   ❌ Error updating donation ${donation.id}:`, error);
+        toast.error('Error updating donation: ' + error);
       }
     }
-
-    console.log(`🎉 Cleanup completed! ${cleanedCount} donations cleaned up.`);
 
     return NextResponse.json({ 
       success: true, 
@@ -102,7 +93,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Cleanup failed:', error);
+    toast.error('Cleanup failed: ' + error);
     return NextResponse.json(
       { success: false, error: 'Cleanup failed' },
       { status: 500 }

@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PayoutDetailsModal } from "@/components/payments/payout-details-modal";
+import {
+  PayoutSuccessModal,
+  type PayoutSuccessData,
+} from "@/components/payments/payout-success-modal";
 
 import {
   DollarSign,
@@ -28,48 +32,39 @@ import {
   type PayoutData,
 } from "@/app/utils/api/payouts"
 
-async function requestPayout(
-  params: any
-): Promise<any> {
+const REQUEST_PAYOUT_TIMEOUT_MS = 15000;
+
+async function requestPayout(params: any): Promise<any> {
   const { campaignId, amount, currency, payoutProvider } = params;
-
-  console.log("Starting payout request...", {
-    campaignId,
-    amount,
-    currency,
-    payoutProvider,
-  });
-
+  
   try {
-    console.log("Making API request to save payout");
-
-    const response = await fetch("/api/payouts", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        campaignId,
-        amount,
-        currency,
-        payoutProvider,
-      }),
-    });
-
-    console.log(
-      "API response received:",
-      response.status,
-      response.ok,
-      response.headers.get("content-type")
+    const abortController = new AbortController();
+    const timeoutId = window.setTimeout(
+      () => abortController.abort(),
+      REQUEST_PAYOUT_TIMEOUT_MS
     );
 
+    try {
+      const response = await fetch("/api/payouts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          campaignId,
+          amount,
+          currency,
+          payoutProvider,
+        }),
+        signal: abortController.signal,
+      });
+
     // Handle non-OK responses
-    if (!response.ok) {
+      if (!response.ok) {
       const errorData = await response
         .json()
         .catch(() => ({ error: "Failed to process payout" }));
       
-      console.error("API error:", errorData);
 
       if (response.status === 409 && errorData.existingPayout) {
         return {
@@ -85,26 +80,24 @@ async function requestPayout(
       };
     }
 
-    // Parse successful response
-    const result = await response.json();
-    console.log("Response parsed:", result);
+      // Parse successful response
+      const result = await response.json();
 
-    if (result.success) {
-      console.log("Payout successful");
+      if (result.success) {
       return {
         success: true,
         data: result.data,
       };
-    } else {
-      console.error("Payout failed:", result.error);
-      return {
-        success: false,
-        error: result.error || "Failed to process payout",
-      };
+      } else {
+        return {
+          success: false,
+          error: result.error || "Failed to process payout",
+        };
+      }
+    } finally {
+      clearTimeout(timeoutId);
     }
-
   } catch (error) {
-    console.error("Payout error caught:", error);
     
     // Handle timeout errors
     if (error instanceof Error && error.name === "AbortError") {
@@ -145,6 +138,9 @@ const PayoutsPage = () => {
     useState<CampaignPayout | null>(null);
   const [showPayoutModal, setShowPayoutModal] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [payoutSuccessData, setPayoutSuccessData] =
+    useState<PayoutSuccessData | null>(null);
 
   // Get user's geolocation and currency conversion capabilities
   const { geolocation, loading: geolocationLoading } = useGeolocation();
@@ -180,30 +176,16 @@ const PayoutsPage = () => {
   };
 
   const handlePayoutClick = async (campaign: CampaignPayout) => {
-    console.log(
-      "[handlePayoutClick] Starting payout click for campaign:",
-      campaign.id
-    );
     try {
       const chainerDonations =
         payoutData?.chainerDonations?.filter(
           (donation) => donation.campaignId === campaign.id
         ) || [];
 
-      console.log(
-        "All chainer donations from payout data:",
-        payoutData?.chainerDonations
-      );
-      console.log("Filtered chainer donations for campaign:", chainerDonations);
-      console.log("Campaign ID:", campaign.id);
-
       const campaignDetails = await fetchCampaignDetails(campaign.id);
       const commissionRate = campaignDetails
         ? Number(campaignDetails.chainerCommissionRate)
         : 0;
-
-      console.log("Campaign details:", campaignDetails);
-      console.log("Commission rate from campaign:", commissionRate);
 
       const chainerDonationsTotal = chainerDonations.reduce(
         (sum, d) => sum + parseFloat(d.amount),
@@ -211,21 +193,14 @@ const PayoutsPage = () => {
       );
       const chainerCommissionsTotal = chainerDonations.reduce((sum, d) => {
         const commissionEarned = (d as any).chainerCommissionEarned;
-        console.log("Chainer donation:", d);
-        console.log("Commission earned from data:", commissionEarned);
-        console.log("Commission rate:", commissionRate);
 
         if (commissionEarned && parseFloat(commissionEarned) > 0) {
           return sum + parseFloat(commissionEarned);
         }
         const calculatedCommission =
           parseFloat(d.amount) * (commissionRate / 100);
-        console.log("Calculated commission:", calculatedCommission);
         return sum + calculatedCommission;
       }, 0);
-
-      console.log("Total chainer donations:", chainerDonationsTotal);
-      console.log("Total chainer commissions:", chainerCommissionsTotal);
 
       const enhancedCampaign = {
         ...campaign,
@@ -245,7 +220,6 @@ const PayoutsPage = () => {
       setSelectedCampaign(enhancedCampaign);
       setShowPayoutModal(true);
     } catch (error) {
-      console.error("Error fetching chainer donations:", error);
       setSelectedCampaign(campaign);
       setShowPayoutModal(true);
     }
@@ -257,22 +231,31 @@ const PayoutsPage = () => {
     currency: string,
     payoutProvider: string
   ) => {
-    try {
-      setProcessingPayouts((prev) => new Set(prev).add(campaignId));
+    const campaignTitle = selectedCampaign?.title;
+    const loadingToastId = toast.loading("Submitting payout request...");
 
+    setProcessingPayouts((prev) => new Set(prev).add(campaignId));
+    setShowPayoutModal(false);
+    setSelectedCampaign(null);
+
+    try {
       const result = await requestPayout({
         campaignId,
         amount,
         currency,
         payoutProvider,
       });
-      console.log(result);
+
       if (result.success && result.data) {
-        console.log("Payout successful, showing toast and refreshing data...");
         toast.success(result.data.message);
+        setPayoutSuccessData({
+          ...result.data,
+          campaignTitle,
+        });
+        setShowSuccessModal(true);
         setTimeout(() => {
           loadPayoutData().catch((err) =>
-            console.error("Error refreshing payout data:", err)
+            toast.error("Failed to refresh payout data: " + err)
           );
         }, 500);
       } else {
@@ -291,15 +274,18 @@ const PayoutsPage = () => {
             `- Requested: ${new Date(existing.createdAt).toLocaleDateString()}`;
         }
 
-        throw new Error(errorMessage);
+        setShowSuccessModal(false);
+        setPayoutSuccessData(null);
+        toast.error(errorMessage);
       }
     } catch (err) {
-      console.error("Payout error caught:", err);
       const errorMessage =
         err instanceof Error ? err.message : "Failed to process payout";
-      throw new Error(errorMessage);
+      setShowSuccessModal(false);
+      setPayoutSuccessData(null);
+      toast.error(errorMessage);
     } finally {
-      console.log("Cleaning up processing state...");
+      toast.dismiss(loadingToastId);
       setProcessingPayouts((prev) => {
         const newSet = new Set(prev);
         newSet.delete(campaignId);
@@ -352,7 +338,6 @@ const PayoutsPage = () => {
             setFormattedAmount(formatCurrency(result.amount, result.currency));
           }
         } catch (error) {
-          console.error("Currency conversion error:", error);
           setFormattedAmount(formatCurrency(validAmount, currency));
         } finally {
           setIsLoading(false);
@@ -765,7 +750,9 @@ const PayoutsPage = () => {
                         )}
                       </div>
 
-                      {campaign.payoutSupported && campaign.totalRaised > 0 && (
+                      {campaign.payoutSupported &&
+                        campaign.totalRaised > 0 &&
+                        campaign.availableForPayout && (
                         <div className="flex items-center gap-3 my-2">
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             {getProviderIcon(campaign.payoutProvider!)}
@@ -792,6 +779,18 @@ const PayoutsPage = () => {
                           </Button>
                         </div>
                       )}
+
+                      {campaign.payoutSupported &&
+                        campaign.totalRaised > 0 &&
+                        !campaign.availableForPayout && (
+                          <div className="flex items-center gap-2 text-gray-500 my-2">
+                            <Clock className="h-5 w-5" />
+                            <span className="text-sm">
+                              Payout request in progress. You’ll be notified
+                              once it’s processed.
+                            </span>
+                          </div>
+                        )}
 
                       {campaign.payoutSupported &&
                         campaign.totalRaised === 0 && (
@@ -850,6 +849,14 @@ const PayoutsPage = () => {
             isProcessing={processingPayouts.has(selectedCampaign.id)}
           />
         )}
+      <PayoutSuccessModal
+        isOpen={showSuccessModal}
+        data={payoutSuccessData}
+        onClose={() => {
+          setShowSuccessModal(false);
+          setTimeout(() => setPayoutSuccessData(null), 200);
+        }}
+      />
       </div>
     </div>
   );

@@ -961,7 +961,6 @@ const Payments = (props: Props) => {
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
                   <strong>Important:</strong> Please ensure all bank account details are correct. 
-                  These details will be used to process payouts in foreign currencies via Stripe.
                 </AlertDescription>
               </Alert>
 

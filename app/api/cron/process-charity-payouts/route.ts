@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processBatchPayouts } from '@/lib/payments/charity-payouts';
+import { toast } from 'sonner';
 
 /**
  * GET /api/cron/process-charity-payouts
@@ -28,8 +29,6 @@ export async function GET(request: NextRequest) {
     // Minimum payout amount (default: $100)
     const minAmount = parseFloat(process.env.MIN_CHARITY_PAYOUT_AMOUNT || '100');
 
-    console.log(`Starting automated charity payout processing (min amount: $${minAmount})...`);
-
     // Process batch payouts
     const results = await processBatchPayouts(minAmount);
 
@@ -50,17 +49,15 @@ export async function GET(request: NextRequest) {
       })),
     };
 
-    console.log('Automated charity payout processing completed:', summary);
-
     return NextResponse.json({
       message: 'Charity payouts processed successfully',
       summary,
     });
   } catch (error) {
-    console.error('Error processing charity payouts:', error);
+    toast.error('Error processing charity payouts: ' + error);
     return NextResponse.json(
       { 
-        error: 'Failed to process charity payouts',
+        error: 'Failed to process charity payouts: ' + error,
         details: error instanceof Error ? error.message : 'Unknown error'
       },
       { status: 500 }

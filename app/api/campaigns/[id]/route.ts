@@ -4,6 +4,7 @@ import { campaigns, users, donations } from '@/lib/schema';
 import { eq, and, count, sum, or } from 'drizzle-orm';
 import { parse } from 'cookie';
 import { verifyUserJWT } from '@/lib/auth';
+import { toast } from 'sonner';
 
 // Helper function to validate UUID format
 function isValidUUID(uuid: string): boolean {
@@ -154,7 +155,7 @@ export async function GET(
       data: campaignWithStats,
     });
   } catch (error) {
-    console.error('Error fetching campaign:', error);
+    toast.error('Error fetching campaign: ' + error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch campaign' },
       { status: 500 }
@@ -196,8 +197,6 @@ export async function PUT(
 
     const userId = user[0].id;
     const body = await request.json();
-    console.log('PUT request body received:', body);
-    console.log('Cover image URL in request:', body.coverImageUrl);
 
     // Check if campaign exists
     const campaign = await db.select().from(campaigns).where(whereCondition).limit(1);
@@ -251,7 +250,7 @@ export async function PUT(
       data: updatedCampaign[0],
     });
   } catch (error) {
-    console.error('Error updating campaign:', error);
+    toast.error('Error updating campaign: ' + error);
     return NextResponse.json(
       { success: false, error: 'Failed to update campaign' },
       { status: 500 }
@@ -297,7 +296,7 @@ export async function DELETE(
       data: deletedCampaign[0],
     });
   } catch (error) {
-    console.error('Error deleting campaign:', error);
+    toast.error('Error deleting campaign: ' + error);
     return NextResponse.json(
       { success: false, error: 'Failed to delete campaign' },
       { status: 500 }

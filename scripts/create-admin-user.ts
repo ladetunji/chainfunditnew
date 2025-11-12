@@ -39,7 +39,6 @@ async function createAdminUser() {
         })
         .where(eq(users.id, existingUser.id));
 
-      console.log(`✅ Updated existing user ${email} to ${role} role`);
     } else {
       // Create new admin user
       const hashedPassword = await bcrypt.hash(password, 12);
@@ -54,14 +53,7 @@ async function createAdminUser() {
         })
         .returning();
 
-      console.log(`✅ Created new ${role} user: ${email}`);
     }
-
-    console.log('\n🎉 Admin user setup complete!');
-    console.log('You can now login at /signin with these credentials');
-    console.log(`Email: ${email}`);
-    console.log(`Password: ${password}`);
-    console.log(`Role: ${role}`);
 
   } catch (error) {
     console.error('❌ Error creating admin user:', error);

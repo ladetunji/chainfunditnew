@@ -14,23 +14,18 @@ const db = drizzle(sql);
 
 async function seedDonations() {
   try {
-    console.log('🌱 Starting donation seeding...');
     
     // Check if we have users and campaigns
     const usersList = await db.select().from(users).limit(5);
     const campaignsList = await db.select().from(campaigns).limit(3);
     
     if (usersList.length === 0) {
-      console.log('❌ No users found. Please create users first.');
       return;
     }
     
     if (campaignsList.length === 0) {
-      console.log('❌ No campaigns found. Please create campaigns first.');
       return;
     }
-    
-    console.log(`✅ Found ${usersList.length} users and ${campaignsList.length} campaigns`);
     
     // Create test donations
     const testDonations = [];
@@ -62,7 +57,6 @@ async function seedDonations() {
     
 
     insertedDonations.slice(0, 3).forEach((donation, index) => {
-      console.log(`  ${index + 1}. ${donation.currency} ${donation.amount} - ${donation.paymentStatus}`);
     });
     
   } catch (error) {
