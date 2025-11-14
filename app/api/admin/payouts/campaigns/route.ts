@@ -65,6 +65,7 @@ export async function GET(request: NextRequest) {
         userName: users.fullName,
         userEmail: users.email,
         campaignTitle: campaigns.title,
+        campaignSlug: campaigns.slug,
       })
       .from(campaignPayouts)
       .leftJoin(users, eq(campaignPayouts.userId, users.id))

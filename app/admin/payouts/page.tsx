@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Card,
   CardContent,
@@ -173,6 +173,8 @@ export default function PayoutsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [campaignCreatorSearchTerm, setCampaignCreatorSearchTerm] =
     useState("");
+  const [debouncedCampaignCreatorSearchTerm, setDebouncedCampaignCreatorSearchTerm] =
+    useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [campaignCreatorStatusFilter, setCampaignCreatorStatusFilter] =
     useState("all");
@@ -187,6 +189,20 @@ export default function PayoutsPage() {
   const { locationInfo } = useGeolocationCurrency();
   const currency = locationInfo?.currency?.code || "USD";
 
+  // Debounce campaign creator search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedCampaignCreatorSearchTerm(campaignCreatorSearchTerm);
+    }, 500); // 500ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [campaignCreatorSearchTerm]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCampaignCreatorCurrentPage(1);
+  }, [debouncedCampaignCreatorSearchTerm, campaignCreatorStatusFilter]);
+
   useEffect(() => {
     fetchPayouts();
     fetchCampaignCreatorPayouts();
@@ -197,7 +213,7 @@ export default function PayoutsPage() {
     currentPage,
     campaignCreatorCurrentPage,
     searchTerm,
-    campaignCreatorSearchTerm,
+    debouncedCampaignCreatorSearchTerm,
     statusFilter,
     campaignCreatorStatusFilter,
     charityStatusFilter,
@@ -277,7 +293,7 @@ export default function PayoutsPage() {
       const params = new URLSearchParams({
         page: campaignCreatorCurrentPage.toString(),
         limit: "20",
-        search: campaignCreatorSearchTerm,
+        search: debouncedCampaignCreatorSearchTerm,
         status: campaignCreatorStatusFilter,
       });
 

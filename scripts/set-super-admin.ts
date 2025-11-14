@@ -5,7 +5,6 @@ import { eq } from 'drizzle-orm';
 /**
  * Script to set a user as super admin
  * Usage: npx tsx scripts/set-super-admin.ts <email>
- * Example: npx tsx scripts/set-super-admin.ts tolu@chainfundit.org
  */
 
 async function setSuperAdmin() {
@@ -14,7 +13,6 @@ async function setSuperAdmin() {
 
     if (!email) {
       console.error('Usage: npx tsx scripts/set-super-admin.ts <email>');
-      console.error('Example: npx tsx scripts/set-super-admin.ts tolu@chainfundit.org');
       process.exit(1);
     }
 

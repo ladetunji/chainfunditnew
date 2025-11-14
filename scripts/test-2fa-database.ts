@@ -9,7 +9,7 @@ async function testTwoFactorDatabase() {
 
   try {
     // Test with a sample email (replace with actual admin email)
-    const testEmail = 'tolu@chainfundit.org';
+    const testEmail = 'admin@chainfundit.com';
     
     const [user] = await db
       .select({

@@ -8,15 +8,8 @@ async function testTwoFactorAuth() {
 
   try {
     // Test 1: Generate 2FA setup
-    const setup = await generateTwoFactorSetup('tolu@chainfundit.org');
-
+    const setup = await generateTwoFactorSetup('admin@chainfundit.com');
   } catch (error) {
+    console.error('Error generating 2FA setup:', error);
   }
 }
-
-// Only run if this file is executed directly
-if (require.main === module) {
-  testTwoFactorAuth();
-}
-
-export { testTwoFactorAuth };
