@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { User } from "lucide-react";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { Avatar, AvatarFallback, AvatarImage } from "./avatar"
 
 interface UserAvatarProps {
   size?: number;
@@ -33,27 +34,23 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   // If user has an avatar, display it
   if (profile?.avatar) {
     return (
-      <Image
-        src={profile.avatar}
-        alt={profile.fullName || "User"}
-        width={size}
-        height={size}
-        className={`rounded-full object-cover ${className}`}
-        style={{ width: size, height: size }}
-      />
+      <Avatar>
+        <AvatarImage src={profile.avatar} />
+        <AvatarFallback>
+          {profile?.fullName?.charAt(0)}
+        </AvatarFallback>
+      </Avatar>
     );
   }
 
   // Fallback to default avatar image
   return (
-    <Image
-      src={fallbackSrc}
-      alt="User"
-      width={size}
-      height={size}
-      className={`rounded-full object-cover ${className}`}
-      style={{ width: size, height: size }}
-    />
+    <Avatar>
+      <AvatarImage src={fallbackSrc} />
+      <AvatarFallback>
+        {fallbackSrc?.charAt(0)}
+      </AvatarFallback>
+    </Avatar>
   );
 };
 

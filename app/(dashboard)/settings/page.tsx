@@ -4,8 +4,9 @@ import React, { useState } from "react";
 import Account from "./account";
 import Preferences from "./preferences";
 import Payments from "./payments";
+import Security from "./security";
 
-const tabs = ["Account", "Preferences", "Payments"];
+const tabs = ["Account", "Security", "Preferences", "Payments"];
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState("Account");
@@ -28,6 +29,7 @@ const SettingsPage = () => {
       </ul>
       <div className="mt-6">
         {activeTab === "Account" && <Account />}
+        {activeTab === "Security" && <Security />}
         {activeTab === "Preferences" && <Preferences />}
         {activeTab === "Payments" && <Payments />}
       </div>

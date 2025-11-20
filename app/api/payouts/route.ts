@@ -21,6 +21,9 @@ import {
 } from "@/lib/utils/currency-conversion";
 import { notifyPayoutRequest } from "@/lib/notifications/payout-request-alerts";
 
+const normalizeAmount = (value: number) =>
+  Number.isFinite(value) ? Number(value.toFixed(2)) : 0;
+
 // Fetch payout dashboard data for user
 export async function GET(request: NextRequest) {
   try {
@@ -110,6 +113,61 @@ export async function GET(request: NextRequest) {
           }
         });
 
+        const completedPayouts = await db
+          .select({
+            grossAmount: campaignPayouts.grossAmount,
+            currency: campaignPayouts.currency,
+          })
+          .from(campaignPayouts)
+          .where(
+            and(
+              eq(campaignPayouts.campaignId, campaign.id),
+              eq(campaignPayouts.status, "completed")
+            )
+          );
+
+        let totalPaidOut = 0;
+        let totalPaidOutInNGN = 0;
+
+        completedPayouts.forEach((payout) => {
+          const payoutAmount = parseFloat(payout.grossAmount || "0");
+          if (!Number.isFinite(payoutAmount) || payoutAmount <= 0) {
+            return;
+          }
+
+          const payoutCurrency = getCurrencyCode(payout.currency || "USD");
+          const payoutAmountInNGN = convertToNaira(
+            payoutAmount,
+            payoutCurrency
+          );
+          totalPaidOutInNGN += payoutAmountInNGN;
+
+          if (payoutCurrency === currencyCode) {
+            totalPaidOut += payoutAmount;
+          } else {
+            totalPaidOut += convertFromNaira(
+              payoutAmountInNGN,
+              currencyCode
+            );
+          }
+        });
+
+        totalRaised = normalizeAmount(totalRaised);
+        totalRaisedInNGN = normalizeAmount(totalRaisedInNGN);
+        totalPaidOut = normalizeAmount(totalPaidOut);
+        totalPaidOutInNGN = normalizeAmount(totalPaidOutInNGN);
+
+        const availableAmountRaw = totalRaised - totalPaidOut;
+        const availableAmountInNGNRaw =
+          totalRaisedInNGN - totalPaidOutInNGN;
+
+        const availableAmount =
+          availableAmountRaw > 0 ? normalizeAmount(availableAmountRaw) : 0;
+        const availableAmountInNGN =
+          availableAmountInNGNRaw > 0
+            ? normalizeAmount(availableAmountInNGNRaw)
+            : 0;
+
         const payoutSupported = isPayoutSupported(currencyCode);
         const payoutProvider = payoutSupported
           ? getPayoutProvider(currencyCode)
@@ -152,12 +210,16 @@ export async function GET(request: NextRequest) {
           targetAmount,
           totalRaised,
           totalRaisedInNGN,
+          totalPaidOut,
+          totalPaidOutInNGN,
+          availableAmount,
+          availableAmountInNGN,
           goalProgress,
           payoutSupported,
           payoutProvider,
           payoutConfig,
           availableForPayout:
-            payoutSupported && totalRaised > 0 && !activePayout,
+            payoutSupported && availableAmount > 0 && !activePayout,
           activePayout,
         };
       })
@@ -251,12 +313,13 @@ export async function POST(request: NextRequest) {
     const amount =
       typeof rawAmount === "string" ? parseFloat(rawAmount) : Number(rawAmount);
     if (isNaN(amount) || !isFinite(amount) || amount <= 0) {
-      console.error("❌ Invalid amount:", rawAmount);
+      console.error("Invalid amount:", rawAmount);
       return NextResponse.json(
         { error: "Invalid amount. Must be a positive number." },
         { status: 400 }
       );
     }
+    const requestedAmount = normalizeAmount(amount);
 
     // Validate campaign ownership
     const campaignLookupStart = Date.now();
@@ -307,20 +370,67 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    const completedPayouts = await db
+      .select({
+        grossAmount: campaignPayouts.grossAmount,
+        currency: campaignPayouts.currency,
+      })
+      .from(campaignPayouts)
+      .where(
+        and(
+          eq(campaignPayouts.campaignId, campaignId),
+          eq(campaignPayouts.status, "completed")
+        )
+      );
+
+    let totalPaidOut = 0;
+    let totalPaidOutInNGN = 0;
+
+    completedPayouts.forEach((payout) => {
+      const payoutAmount = parseFloat(payout.grossAmount || "0");
+      if (!Number.isFinite(payoutAmount) || payoutAmount <= 0) {
+        return;
+      }
+
+      const payoutCurrency = getCurrencyCode(payout.currency || "USD");
+      const payoutAmountInNGN = convertToNaira(payoutAmount, payoutCurrency);
+      totalPaidOutInNGN += payoutAmountInNGN;
+
+      if (payoutCurrency === currencyCode) {
+        totalPaidOut += payoutAmount;
+      } else {
+        totalPaidOut += convertFromNaira(payoutAmountInNGN, currencyCode);
+      }
+    });
+
+    totalRaised = normalizeAmount(totalRaised);
+    totalRaisedInNGN = normalizeAmount(totalRaisedInNGN);
+    totalPaidOut = normalizeAmount(totalPaidOut);
+    totalPaidOutInNGN = normalizeAmount(totalPaidOutInNGN);
+
+    const availableAmountRaw = totalRaised - totalPaidOut;
+    const availableAmountInNGNRaw = totalRaisedInNGN - totalPaidOutInNGN;
+    const availableAmount =
+      availableAmountRaw > 0 ? normalizeAmount(availableAmountRaw) : 0;
+    const availableAmountInNGN =
+      availableAmountInNGNRaw > 0
+        ? normalizeAmount(availableAmountInNGNRaw)
+        : 0;
+
     // Validate account or bank account requirements based on currency
     const isForeignCurrency = currency !== "NGN";
     
     if (payoutProvider === "paystack") {
       // Paystack is for NGN (Nigerian accounts)
       if (!user.accountVerified) {
-        console.error("❌ Bank account not verified for Paystack payout");
+        console.error("Bank account not verified for Paystack payout");
         return NextResponse.json(
           { error: "Bank account not verified" },
           { status: 400 }
         );
       }
       if (!user.accountNumber || !user.bankCode) {
-        console.error("❌ Bank details incomplete:", { accountNumber: !!user.accountNumber, bankCode: !!user.bankCode });
+        console.error("Bank details incomplete:", { accountNumber: !!user.accountNumber, bankCode: !!user.bankCode });
         return NextResponse.json(
           { error: "Bank details incomplete" },
           { status: 400 }
@@ -332,14 +442,14 @@ export async function POST(request: NextRequest) {
       // For foreign currencies, validate international bank account details
       if (isForeignCurrency) {
         if (!user.internationalAccountVerified) {
-          console.error("❌ International bank account not verified for Stripe payout");
+          console.error("International bank account not verified for Stripe payout");
           return NextResponse.json(
             { error: "International bank account not verified. Please add and verify your bank account details." },
             { status: 400 }
           );
         }
         if (!user.internationalBankAccountNumber || !user.internationalBankCountry) {
-          console.error("❌ International bank account details incomplete:", { 
+          console.error("International bank account details incomplete:", { 
             accountNumber: !!user.internationalBankAccountNumber, 
             country: !!user.internationalBankCountry 
           });
@@ -351,7 +461,7 @@ export async function POST(request: NextRequest) {
       } else {
         // For NGN with Stripe (shouldn't happen, but kept for backward compatibility)
         if (!user.stripeAccountId || !user.stripeAccountReady) {
-          console.error("❌ Stripe Connect account not linked or incomplete");
+          console.error("Stripe Connect account not linked or incomplete");
           return NextResponse.json(
             { error: "Stripe Connect account not linked or incomplete" },
             { status: 400 }
@@ -391,18 +501,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    
-    if (totalRaised <= 0) {
-      console.error("❌ No donations available for payout:", { totalRaised, campaignId });
+    if (availableAmount <= 0) {
+      console.error("No funds available for payout:", {
+        totalRaised,
+        totalPaidOut,
+        campaignId,
+      });
       return NextResponse.json(
-        { error: "No donations available for payout" },
+        { error: "No funds available for payout" },
         { status: 400 }
       );
     }
-    if (amount > totalRaised) {
-      console.error("❌ Requested amount exceeds available funds:", { requested: amount, totalRaised, campaignId });
+    if (requestedAmount > availableAmount) {
+      console.error("Requested amount exceeds available funds:", {
+        requested: requestedAmount,
+        availableAmount,
+        totalRaised,
+        totalPaidOut,
+        campaignId,
+      });
       return NextResponse.json(
-        { error: `Requested amount (${amount}) exceeds available funds (${totalRaised})` },
+        {
+          error: `Requested amount (${requestedAmount}) exceeds available funds (${availableAmount})`,
+        },
         { status: 400 }
       );
     }
@@ -415,8 +536,9 @@ export async function POST(request: NextRequest) {
         ? 0.015
         : 0.02;
     const fixedFee = payoutProvider === "stripe" ? 0.3 : 0;
-    const fees = amount * feeRate + fixedFee;
-    const netAmount = amount - fees;
+    const fees = normalizeAmount(requestedAmount * feeRate + fixedFee);
+    const netAmountRaw = requestedAmount - fees;
+    const netAmount = netAmountRaw > 0 ? normalizeAmount(netAmountRaw) : 0;
 
     const insertStart = Date.now();
     const [saved] = await withRetry(() =>
@@ -425,8 +547,8 @@ export async function POST(request: NextRequest) {
         .values({
           userId: user.id,
           campaignId,
-          requestedAmount: amount.toString(),
-          grossAmount: amount.toString(),
+          requestedAmount: requestedAmount.toString(),
+          grossAmount: requestedAmount.toString(),
           fees: fees.toString(),
           netAmount: netAmount.toString(),
           currency: getCurrencyCode(currency),
@@ -447,7 +569,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         payoutId: String(saved.id),
-        amount,
+        amount: requestedAmount,
         currency,
         provider: payoutProvider,
         status: "pending",
@@ -457,7 +579,7 @@ export async function POST(request: NextRequest) {
           payoutProvider === "stripe"
             ? "2-7 business days"
             : "1-3 business days",
-        message: `Payout of ${currency} ${amount} initiated via ${payoutProvider}`,
+        message: `Payout of ${currency} ${requestedAmount} initiated via ${payoutProvider}`,
       },
     };
 
@@ -468,7 +590,7 @@ export async function POST(request: NextRequest) {
       userName: user.fullName || user.email || "Unknown User",
       campaignId: campaign.id,
       campaignTitle: campaign.title || "Unknown Campaign",
-      amount: parseFloat(amount.toString()),
+      amount: requestedAmount,
       currency: getCurrencyCode(currency),
       payoutId: String(saved.id),
       requestDate: new Date(),
@@ -484,13 +606,13 @@ export async function POST(request: NextRequest) {
           : (user.bankName || ""),
       },
     }).catch((notificationError) => {
-      console.error("❌ Error sending admin notifications:", notificationError);
+      console.error("Error sending admin notifications:", notificationError);
       // Don't fail the request if notifications fail
     });
 
     return NextResponse.json(responseData, { status: 200 });
   } catch (error) {
-    console.error("❌ [POST] Error processing payout:", error);
+    console.error("[POST] Error processing payout:", error);
     
     return NextResponse.json(
       { error: "Failed to process payout" },

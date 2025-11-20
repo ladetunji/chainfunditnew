@@ -36,6 +36,10 @@ interface PayoutDetailsModalProps {
     currencyCode: string;
     totalRaised: number;
     totalRaisedInNGN: number;
+    totalPaidOut: number;
+    totalPaidOutInNGN: number;
+    availableAmount: number;
+    availableAmountInNGN: number;
     payoutProvider: string | null;
     payoutConfig: any;
     chainerCommissionsTotal?: number;
@@ -150,8 +154,9 @@ export function PayoutDetailsModal({
 
   // Calculate fees - simple, no loops
   const calculateFees = () => {
-    const baseAmount = campaign.totalRaised;
-    const chainerCommissions = campaign.chainerCommissionsTotal || 0;
+    const baseAmount = Math.max(campaign.availableAmount || 0, 0);
+    const rawChainerCommissions = campaign.chainerCommissionsTotal || 0;
+    const chainerCommissions = Math.min(rawChainerCommissions, baseAmount);
     const chainfunditFeePercentage = 0.05; // 5%
     const chainfunditFee = baseAmount * chainfunditFeePercentage;
     
@@ -169,7 +174,7 @@ export function PayoutDetailsModal({
     
     const netChainfunditFee = chainfunditFee - providerFee;
     const totalFees = netChainfunditFee + fixedFee;
-    const netAmount = baseAmount - totalFees - chainerCommissions;
+    const netAmount = Math.max(baseAmount - totalFees - chainerCommissions, 0);
 
     return {
       baseAmount,
@@ -203,10 +208,14 @@ export function PayoutDetailsModal({
       toast.error("Payout provider not configured");
       return;
     }
+    if ((campaign.availableAmount || 0) <= 0) {
+      toast.error("No funds available for payout");
+      return;
+    }
 
     onConfirmPayout(
       campaign.id,
-      campaign.totalRaised,
+      campaign.availableAmount,
       campaign.currencyCode,
       campaign.payoutProvider
     );
@@ -247,6 +256,24 @@ export function PayoutDetailsModal({
                 <span className="text-gray-600">Total Raised:</span>
                 <span className="font-semibold">
                   {formatCurrency(campaign.totalRaised, campaign.currencyCode)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Available for Payout:</span>
+                <span className="font-semibold text-green-600">
+                  {formatCurrency(
+                    campaign.availableAmount || 0,
+                    campaign.currencyCode
+                  )}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Already Paid Out:</span>
+                <span className="font-medium text-gray-700">
+                  {formatCurrency(
+                    campaign.totalPaidOut || 0,
+                    campaign.currencyCode
+                  )}
                 </span>
               </div>
               <div className="flex justify-between">

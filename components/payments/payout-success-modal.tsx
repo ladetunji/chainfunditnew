@@ -41,7 +41,11 @@ export function PayoutSuccessModal({
     : undefined;
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open && isOpen) {
+        onClose();
+      }
+    }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <div className="flex justify-center mb-4">

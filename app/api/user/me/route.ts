@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
         hasSeenWelcomeModal: users.hasSeenWelcomeModal,
         createdAt: users.createdAt,
         updatedAt: users.updatedAt,
+        twoFactorEnabled: users.twoFactorEnabled,
       })
       .from(users)
       .where(eq(users.email, userPayload.email))
@@ -69,6 +70,7 @@ export async function GET(request: NextRequest) {
         hasSeenWelcomeModal: user.hasSeenWelcomeModal,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
+        twoFactorEnabled: user.twoFactorEnabled,
       },
     });
   } catch (error) {

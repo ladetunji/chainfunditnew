@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import CardDetailsDrawer from "@/components/homepage/CardDetailsDrawer";
+import { useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/select";
 import { NotificationsList } from "@/components/homepage/notifications-list";
 import BenefitsCarousel from "./BenefitsCarousel";
-import { usePublicCampaigns } from "@/hooks/use-public-campaigns";
-import { formatCurrency } from "@/lib/utils/currency";
+import { useCharities } from "@/hooks/use-charities";
+import { ShieldCheck } from "lucide-react";
+import { Button } from "../ui/button";
+import Link from "next/link";
 type Props = {};
 
 const Main = (props: Props) => {
@@ -23,32 +25,21 @@ const Main = (props: Props) => {
     "/images/secure.png", // Image 3: secure payments
   ];
 
+  const router = useRouter();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [openCard, setOpenCard] = useState<number | null>(null);
-  const [selectedFilter, setSelectedFilter] =
-    useState<string>("live campaigns");
+  const [selectedFilter, setSelectedFilter] = useState<string>("all");
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Fetch public campaigns
   const {
-    campaigns,
-    loading: campaignsLoading,
-    error: campaignsError,
-    updateFilters,
-  } = usePublicCampaigns();
-
-  const handlePreviousCard = () => {
-    if (openCard !== null && openCard > 0) {
-      setOpenCard(openCard - 1);
-    }
-  };
-
-  const handleNextCard = () => {
-    if (openCard !== null && openCard < campaigns.length - 1) {
-      setOpenCard(openCard + 1);
-    }
-  };
+    charities,
+    loading: charitiesLoading,
+    error: charitiesError,
+  } = useCharities({
+    verified: true,
+    active: true,
+    limit: 12,
+  });
 
   const toggleVideoPlayPause = () => {
     if (videoRef.current) {
@@ -61,62 +52,58 @@ const Main = (props: Props) => {
     }
   };
 
-  // Filter campaigns based on selected filter
-  const filteredCampaigns = campaigns.filter((campaign) => {
-    const progressPercentage = campaign.stats.progressPercentage;
+  // Filter charities based on selected filter
+  const filteredCharities = charities.filter((charity) => {
+    const category = charity.category?.toLowerCase() ?? "";
 
     switch (selectedFilter) {
-      case "live campaigns":
-        return campaign.status === "active";
-      case "need momentum":
+      case "health":
         return (
-          campaign.status === "active" &&
-          progressPercentage >= 0 &&
-          progressPercentage <= 10
+          category.includes("health") ||
+          category.includes("medical")
         );
-      case "close to target":
-        return campaign.status === "active" && progressPercentage >= 90;
+      case "education":
+        return (
+          category.includes("education") ||
+          category.includes("youth") ||
+          category.includes("children")
+        );
+      case "environment":
+        return (
+          category.includes("environment") ||
+          category.includes("climate") ||
+          category.includes("wildlife")
+        );
       default:
         return true;
     }
   });
 
-  // If no campaigns match the specific filter, fall back to showing active campaigns
-  const displayCampaigns =
-    filteredCampaigns.length > 0
-      ? filteredCampaigns.slice(0, 3)
-      : campaigns
-          .filter((campaign) => campaign.status === "active")
-          .slice(0, 3);
+  const displayCharities = filteredCharities.slice(0, 3);
 
-  // Transform campaigns data to match the expected format
-  const cardDetails = displayCampaigns.map((campaign) => {
+  // Transform charity data to match the expected format
+  const cardDetails = displayCharities.map((charity) => {
+    const focusAreas =
+      charity.focusAreas && charity.focusAreas.length > 0
+        ? charity.focusAreas.slice(0, 3).join(", ")
+        : null;
+
     return {
-      id: campaign.id,
-      slug: campaign.slug,
-      title: campaign.title,
-      description: campaign.description,
-      raised: `${formatCurrency(
-        campaign.currentAmount,
-        campaign.currency
-      )} raised`,
-      image: campaign.coverImageUrl || "/images/card-img1.png",
-      extra: `Goal: ${formatCurrency(
-        campaign.goalAmount,
-        campaign.currency
-      )}. ${campaign.stats.totalDonations} donations so far!`,
-      date: new Date(campaign.createdAt).toLocaleDateString(),
-      timeLeft: campaign.status === "active" ? "Active" : "Completed",
-      avatar: campaign.creatorAvatar || "/images/avatar-7.png",
-      creator: campaign.creatorName || "Anonymous",
-      createdFor: campaign.fundraisingFor || "Charity",
-      percentage: `${campaign.stats.progressPercentage}%`,
-      total: `${formatCurrency(campaign.goalAmount, campaign.currency)} total`,
-      donors: campaign.stats.uniqueDonors,
-      // New fields for dashboard-style cards
-      amountRaised: campaign.currentAmount,
-      goal: campaign.goalAmount,
-      currency: campaign.currency,
+      id: charity.id,
+      slug: charity.slug,
+      title: charity.name,
+      description:
+        charity.description ||
+        charity.mission ||
+        "Learn more about this charity's impact.",
+      image:
+        charity.coverImage ||
+        charity.logo ||
+        "/images/card-img1.png",
+      category: charity.category || "Community",
+      country: charity.country || "International",
+      focusAreas,
+      isVerified: charity.isVerified,
     };
   });
 
@@ -132,40 +119,40 @@ const Main = (props: Props) => {
     <div className="my-6">
       {/* benefits */}
       <BenefitsCarousel />
-      {/* campaign cards */}
+      {/* charity cards */}
       <div className="p-4 md:p-12 w-full h-fit flex flex-col gap-5 my-5 bg-whitesmoke">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 md:gap-0">
           <section className="flex flex-col gap-2 md:gap-3">
             <p className="font-source font-semibold text-2xl md:text-3xl text-black">
-              Discover inspiring fundraisers close to you
+              Discover inspiring charities to support
             </p>
             <span className="font-source font-normal text-base text-black">
-              Support campaigns you like, or create one for yourself
+              Support verified causes from the Virtual Giving Mall
             </span>
           </section>
 
           <Select value={selectedFilter} onValueChange={setSelectedFilter}>
             <SelectTrigger className="w-full md:w-[250px] h-12 md:h-14 px-4 md:px-6 font-source font-normal text-base text-black border-2 border-[#0F4201] rounded-none">
-              <SelectValue placeholder="Happening worldwide" />
+              <SelectValue placeholder="All charities" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem
-                value="live campaigns"
-                className="capitalize cursor-pointer"
-              >
-                Live campaigns anywhere (Worldwide)
+              <SelectItem value="all" className="capitalize cursor-pointer">
+                All verified charities
+              </SelectItem>
+              <SelectItem value="health" className="capitalize cursor-pointer">
+                Health & medical initiatives
               </SelectItem>
               <SelectItem
-                value="need momentum"
+                value="education"
                 className="capitalize cursor-pointer"
               >
-                Need momentum (Campaigns between 0-10%)
+                Education & youth programmes
               </SelectItem>
               <SelectItem
-                value="close to target"
+                value="environment"
                 className="capitalize cursor-pointer"
               >
-                Close to target (Campaigns above 90%)
+                Environment & climate action
               </SelectItem>
             </SelectContent>
           </Select>
@@ -173,17 +160,17 @@ const Main = (props: Props) => {
 
         <div className="flex flex-col md:flex-row gap-3 w-full">
           {/* Loading State */}
-          {campaignsLoading && (
+          {charitiesLoading && (
             <div className="flex items-center justify-center w-full py-16">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#104901] mb-4"></div>
               <p className="text-[#104901] text-xl ml-4">
-                Loading campaigns...
+                Loading charities...
               </p>
             </div>
           )}
 
           {/* Error State */}
-          {campaignsError && !campaignsLoading && (
+          {charitiesError && !charitiesLoading && (
             <div className="flex flex-col items-center justify-center w-full py-16">
               <div className="text-red-500 mb-4">
                 <svg
@@ -199,14 +186,16 @@ const Main = (props: Props) => {
                 </svg>
               </div>
               <h3 className="font-bold text-2xl text-red-600 mb-3">
-                Error Loading Campaigns
+                Error Loading Charities
               </h3>
-              <p className="text-red-500 text-center mb-4">{campaignsError}</p>
+              <p className="text-red-500 text-center mb-4">{charitiesError}</p>
             </div>
           )}
 
-          {/* No Campaigns State */}
-          {!campaignsLoading && !campaignsError && cardDetails.length === 0 && (
+          {/* No Charities State */}
+          {!charitiesLoading &&
+            !charitiesError &&
+            cardDetails.length === 0 && (
             <div className="flex flex-col items-center justify-center w-full py-16">
               <div className="text-[#104901] mb-4">
                 <svg
@@ -222,100 +211,95 @@ const Main = (props: Props) => {
                 </svg>
               </div>
               <h3 className="font-bold text-2xl text-[#104901] mb-3">
-                No Campaigns Available
+                No Charities Available
               </h3>
               <p className="text-[#104901] text-center">
-                Check back later for inspiring campaigns!
+                Check back later for inspiring charities!
               </p>
             </div>
           )}
 
-          {/* Campaign Cards */}
-          {!campaignsLoading && !campaignsError && cardDetails.length > 0 && (
+          {/* Charity Cards */}
+          {!charitiesLoading &&
+            !charitiesError &&
+            cardDetails.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-8">
-              {cardDetails.map((card, idx) => (
+              {cardDetails.map((card) => (
                 <div
                   key={card.id}
                   className="group relative overflow-hidden rounded-2xl hover:shadow-2xl transition-all duration-500 cursor-pointer"
-                  onClick={() => setOpenCard(idx)}
+                  onClick={() =>
+                    router.push(`/virtual-giving-mall/${card.slug}`)
+                  }
                 >
                   <div className="relative h-[500px] bg-whitesmoke backdrop-blur-sm rounded-2xl overflow-hidden">
-                    <div className="relative h-[200px] bg-gradient-to-br from-gray-100 to-gray-200">
+                    <div className="relative w-full flex items-center justify-center h-[200px] bg-gradient-to-br from-gray-100 to-gray-200">
                       <Image
                         src={card.image}
                         alt={card.title}
-                        fill
+                        height={200}
+                        width={200}
                         className="object-cover group-hover:scale-110 transition-transform duration-500"
                       />
+                      {card.isVerified && (
+                        <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-[#104901] shadow-sm">
+                          <ShieldCheck className="h-3 w-3" />
+                          Verified
+                        </span>
+                      )}
                     </div>
-                    <div className="p-6 h-full">
-                      <h3 className="font-bold text-[#104901] mb-3 text-lg">
-                        {card.title.slice(0, 20)}...
+                    <div className="p-6 h-full bg-[#F5F5F5]">
+                      <h3 className="font-bold text-[#104901] mb-3 text-xl">
+                        {card.title.length > 40
+                          ? `${card.title.slice(0, 40)}...`
+                          : card.title}
                       </h3>
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                        {card.description.slice(0, 80)}...
+                      <p className="text-gray-600 text-base mb-4 line-clamp-2">
+                        {card.description}
                       </p>
                       <div className="space-y-3">
                         <div className="flex justify-between text-sm">
                           <span className="text-[#104901] opacity-80">
-                            Raised
+                            Category
                           </span>
-                          <span className="font-semibold">
-                            {formatCurrency(
-                              card.amountRaised || 0,
-                              card.currency || "USD"
-                            )}
+                          <span className="font-semibold text-right">
+                            {card.category}
                           </span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-[#104901] opacity-80">
-                            Goal
+                            Location
                           </span>
-                          <span className="font-semibold">
-                            {formatCurrency(
-                              card.goal || 0,
-                              card.currency || "USD"
-                            )}
+                          <span className="font-semibold text-right">
+                            {card.country}
                           </span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                          <div
-                            className="bg-gradient-to-r from-[#104901] to-green-500 h-3 rounded-full transition-all duration-500"
-                            style={{ width: card.percentage }}
-                          ></div>
-                        </div>
+                        {card.focusAreas && (
+                          <div className="text-sm text-gray-500">
+                            Focus: {card.focusAreas}
+                          </div>
+                        )}
                         <div className="flex justify-between text-xs text-gray-500">
-                          <span>{card.percentage} complete</span>
-                          <span>{card.donors} donors</span>
+                          <span>
+                            {card.isVerified
+                              ? "Verified charity"
+                              : "Verification in progress"}
+                          </span>
                         </div>
+                          <div className="flex justify-center items-center">
+                            <Button variant="outline" className="text-[#104901] font-semibold">
+                              <Link href={`/virtual-giving-mall/${card.slug}`}>
+                                View details
+                              </Link>
+                            </Button>
+                          </div>
                       </div>
-                      {/* <Button
-                        variant="outline"
-                        className="w-full mt-6 text-[#104901] border-[#104901] hover:bg-[#104901] hover:text-white rounded-xl py-3 transition-all duration-300"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setOpenCard(idx);
-                        }}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View Campaign
-                      </Button> */}
                     </div>
                   </div>
                 </div>
               ))}
             </div>
           )}
-
-          <CardDetailsDrawer
-            open={openCard !== null}
-            onOpenChange={(open) => !open && setOpenCard(null)}
-            card={openCard !== null ? cardDetails[openCard] : null}
-            currentIndex={openCard !== null ? openCard : 0}
-            totalCards={cardDetails.length}
-            onPrevious={handlePreviousCard}
-            onNext={handleNextCard}
-          />
         </div>
       </div>
       {/* features*/}

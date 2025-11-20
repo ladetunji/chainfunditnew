@@ -1,6 +1,6 @@
 "use client";
 
-import { Share, PiggyBank, LogOut } from "lucide-react";
+import { Share, PackageOpen, LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React from "react";
@@ -13,7 +13,7 @@ type Props = {};
 const links = [
   {
     href: "/dashboard/campaigns",
-    icon: <PiggyBank size={24} />,
+    icon: <PackageOpen size={24} />,
     label: "Campaigns",
   },
   {
@@ -81,13 +81,13 @@ const MobileSidebar = (props: Props) => {
         ))}
         
         {/* Logout Button for Mobile */}
-        <button
+        {/* <button
           onClick={handleLogout}
           className="flex gap-3 p-4 text-left text-[#8E8C95] hover:bg-[#FFFEF8] hover:text-[#104901] transition-colors"
         >
           <LogOut size={24} className="text-black" />
           <span className="text-xs font-medium text-center">Logout</span>
-        </button>
+        </button> */}
       </div>
     </div>
   );

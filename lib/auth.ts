@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { twoFactor } from "better-auth/plugins";
 import { db } from "@/lib/db";
 import { users, accounts, sessions, verificationTokens, refreshTokens } from "@/lib/schema";
 import { eq, and, gt, isNull } from "drizzle-orm";
@@ -117,6 +118,30 @@ export function verifyRefreshToken(token: string): { sub: string; email: string;
     const payload = jwt.verify(token, secret) as any;
     if (payload.type !== 'refresh') return null;
     return { sub: payload.sub, email: payload.email, jti: payload.jti };
+  } catch {
+    return null;
+  }
+}
+
+export function generateTwoFactorChallengeToken(user: { id: string; email: string }) {
+  const secret = process.env.JWT_SECRET || "dev_secret";
+  return jwt.sign(
+    {
+      sub: user.id,
+      email: user.email,
+      type: 'twofactor',
+    },
+    secret,
+    { expiresIn: '5m' }
+  );
+}
+
+export function verifyTwoFactorChallengeToken(token: string): { sub: string; email: string } | null {
+  const secret = process.env.JWT_SECRET || "dev_secret";
+  try {
+    const payload = jwt.verify(token, secret) as any;
+    if (payload.type !== 'twofactor') return null;
+    return { sub: payload.sub, email: payload.email };
   } catch {
     return null;
   }
@@ -273,9 +298,15 @@ setInterval(() => {
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || "your-secret-key-change-in-production",
+  appName: "ChainFundIt",
   database: drizzleAdapter(db, {
     provider: "pg", // PostgreSQL
   }),
+  plugins: [
+    twoFactor({
+      issuer: "ChainFundIt",
+    }),
+  ],
   providers: [
     {
       type: "email-otp",

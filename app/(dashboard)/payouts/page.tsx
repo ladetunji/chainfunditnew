@@ -19,6 +19,7 @@ import {
   AlertCircle,
   ExternalLink,
   Info,
+  Send,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils/currency";
 import { toast } from "sonner";
@@ -213,8 +214,10 @@ const PayoutsPage = () => {
         chainerCommissionRate: commissionRate,
         chainerCommissionsTotal,
         chainerCommissionsInNGN:
-          chainerCommissionsTotal *
-          (campaign.totalRaisedInNGN / campaign.totalRaised),
+          campaign.totalRaised > 0
+            ? chainerCommissionsTotal *
+              (campaign.totalRaisedInNGN / campaign.totalRaised)
+            : 0,
       };
 
       setSelectedCampaign(enhancedCampaign);
@@ -352,6 +355,45 @@ const PayoutsPage = () => {
     }
 
     return <span>{formattedAmount}</span>;
+  };
+
+  const renderActivePayoutNotice = (campaign: CampaignPayout) => {
+    if (!campaign.activePayout) {
+      return null;
+    }
+
+    const { status } = campaign.activePayout;
+
+    if (status === "approved") {
+      return (
+        <div className="flex items-center gap-2 text-green-600 my-2">
+          <CheckCircle className="h-5 w-5" />
+          <span className="text-sm font-medium">
+            Payout approved! Your funds are on the way.
+          </span>
+        </div>
+      );
+    }
+
+    if (status === "processing") {
+      return (
+        <div className="flex items-center gap-2 text-green-600 my-2">
+          <Send className="h-5 w-5" />
+          <span className="text-sm">
+            Payout is being processed. We&apos;ll notify you once it lands.
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-2 text-gray-500 my-2">
+        <Clock className="h-5 w-5" />
+        <span className="text-sm">
+          Payout request submitted. Awaiting approval.
+        </span>
+      </div>
+    );
   };
 
   const getProviderIcon = (provider: string) => {
@@ -741,18 +783,22 @@ const PayoutsPage = () => {
                             <span className="text-sm font-medium">
                               Payout Available:{" "}
                               <CurrencyDisplay
-                                amount={campaign.totalRaised}
+                                amount={campaign.availableAmount || 0}
                                 currency={campaign.currencyCode}
                               />{" "}
-                              (₦{campaign.totalRaisedInNGN.toLocaleString()})
+                              (₦
+                              {(
+                                campaign.availableAmountInNGN ?? 0
+                              ).toLocaleString()}
+                              )
                             </span>
                           </div>
                         )}
                       </div>
 
                       {campaign.payoutSupported &&
-                        campaign.totalRaised > 0 &&
-                        campaign.availableForPayout && (
+                        campaign.availableForPayout &&
+                        (campaign.availableAmount || 0) > 0 && (
                         <div className="flex items-center gap-3 my-2">
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             {getProviderIcon(campaign.payoutProvider!)}
@@ -781,13 +827,17 @@ const PayoutsPage = () => {
                       )}
 
                       {campaign.payoutSupported &&
-                        campaign.totalRaised > 0 &&
-                        !campaign.availableForPayout && (
+                        !campaign.availableForPayout &&
+                        renderActivePayoutNotice(campaign)}
+
+                      {campaign.payoutSupported &&
+                        (campaign.availableAmount || 0) <= 0 &&
+                        campaign.totalRaised > 0 && (
                           <div className="flex items-center gap-2 text-gray-500 my-2">
-                            <Clock className="h-5 w-5" />
+                            <AlertCircle className="h-5 w-5" />
                             <span className="text-sm">
-                              Payout request in progress. You’ll be notified
-                              once it’s processed.
+                              All available funds have been paid out. New
+                              donations will unlock your next payout.
                             </span>
                           </div>
                         )}

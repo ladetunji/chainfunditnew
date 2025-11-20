@@ -16,10 +16,10 @@ const layout = ({ children }: { children: React.ReactNode }) => {
       <SessionTimeoutProvider config={{ timeoutMinutes: 120, warningMinutes: 15 }}>
         <div className="bg-whitesmoke max-w-[1440px] min-h-screen mx-auto">
           <Navbar />
-          {/* Mobile sidebar - positioned right under navbar */}
+          {/* Mobile sidebar */}
           <MobileSidebar />
           <div className="w-full px-2 md:px-14 py-4 md:py-10 bg-[#f7f6f5] bg-[url('/images/logo-bg.svg')] bg-[length:60%] md:bg-[length:30%] min-h-screen bg-no-repeat bg-left-bottom flex flex-row gap-4 md:gap-5">
-            {/* Desktop sidebar - hidden on mobile */}
+            {/* Desktop sidebar */}
             <div className="hidden md:block w-full md:w-1/5 mb-4 md:mb-0">
               <Sidebar />
             </div>

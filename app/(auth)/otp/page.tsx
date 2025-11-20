@@ -247,11 +247,8 @@ function OtpPageInner() {
       
       // Redirect logic based on mode, loginType, and user role
       if (mode === "signup" && loginType === "email") {
-        if (redirect && isSafeRedirect(redirect)) {
-          router.replace(redirect);
-        } else {
-          router.push(`/phone?email=${encodeURIComponent(identifier ?? "")}&mode=signup`);
-        }
+        // Redirect to TOTP setup after email verification
+        router.push(`/setup-totp?email=${encodeURIComponent(identifier ?? "")}`);
       } else {
         // Role-based redirect for login
         if (userRole === 'admin' || userRole === 'super_admin') {

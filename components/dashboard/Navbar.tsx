@@ -4,7 +4,24 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ChevronsUpDown, LogOut, Settings } from "lucide-react";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
 import UserAvatar from "@/components/ui/user-avatar";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import SessionStatusIndicator from "./SessionStatusIndicator";
 import { NotificationAlert } from "./NotificationAlert";
 
@@ -12,6 +29,44 @@ type Props = {};
 
 const Navbar = (props: Props) => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
+  const { profile } = useUserProfile();
+
+  const handleLogout = async () => {
+    if (isLoggingOut) return;
+
+    try {
+      setIsLoggingOut(true);
+      const response = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        toast.success("Logged out successfully");
+        router.push("/signin");
+      } else {
+        toast.error("Failed to logout");
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Failed to logout");
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const userName = profile?.fullName || "Your Account";
+  const userEmail = profile?.email || "user@chainfundit.com";
+  const avatarSrc = profile?.avatar || "/images/user.png";
+  const avatarInitial =
+    profile?.fullName?.charAt(0)?.toUpperCase() ||
+    userEmail?.charAt(0)?.toUpperCase() ||
+    "U";
+
   return (
     <nav className="px-2 md:px-10 py-3 md:py-5 flex flex-col md:flex-row justify-between items-center font-source border-b border-[#C0BFC4] w-full">
       <div className="flex w-full md:w-auto justify-between items-center">
@@ -66,9 +121,61 @@ const Navbar = (props: Props) => {
           </Link>
         </Button>
         <NotificationAlert />
-        <Link href="/settings">
-          <UserAvatar size={32} className="w-8 h-8" />
-        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-3 border border-gray-100 rounded bg-transparent px-3 py-2 transition hover:bg-[#F8F8F8] focus:outline-none"
+            >
+              <UserAvatar size={32} className="w-8 h-8" />
+              <div className="flex flex-col text-left">
+                <span className="text-sm font-semibold text-[#104901]">
+                  {userName}
+                </span>
+                <span className="text-xs text-[#6B7280]">{userEmail}</span>
+              </div>
+              <ChevronsUpDown className="h-4 w-4 text-[#6B7280]" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-64 rounded-2xl border border-[#E8E8E8] p-3"
+          >
+            <DropdownMenuLabel className="flex items-center gap-3 p-0">
+              <Avatar className="h-9 w-9 border border-[#E8E8E8]">
+                <AvatarImage src={avatarSrc} alt={userName} />
+                <AvatarFallback className="text-sm font-semibold text-[#104901]">
+                  {avatarInitial}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-[#104901]">
+                  {userName}
+                </span>
+                <span className="text-xs text-[#6B7280]">{userEmail}</span>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator className="my-2" />
+            <DropdownMenuItem asChild>
+              <Link
+                href="/settings"
+                className="flex items-center gap-2 text-sm text-[#1F2937] cursor-pointer"
+              >
+                <Settings className="h-4 w-4 text-[#6B7280]" />
+                Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="my-2" />
+            <DropdownMenuItem
+              onSelect={handleLogout}
+              disabled={isLoggingOut}
+              className="text-red-600 focus:text-red-600 cursor-pointer"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              {isLoggingOut ? "Logging out..." : "Log out"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </section>
       {/* Mobile menu */}
       {menuOpen && (

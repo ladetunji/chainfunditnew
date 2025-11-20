@@ -9,6 +9,10 @@ export interface CampaignPayout {
   currentAmount: number;
   totalRaised: number;
   totalRaisedInNGN: number;
+  totalPaidOut: number;
+  totalPaidOutInNGN: number;
+  availableAmount: number;
+  availableAmountInNGN: number;
   status: string;
   createdAt: string;
   payoutSupported: boolean;
@@ -17,6 +21,12 @@ export interface CampaignPayout {
   goalProgress: number;
   hasReached50Percent: boolean;
   availableForPayout: boolean;
+  activePayout?: {
+    id: string;
+    status: string;
+    requestedAmount: string;
+    createdAt: string;
+  } | null;
   donationsByStatus?: Array<{
     status: string;
     total: string;
@@ -126,13 +136,15 @@ export async function fetchPayoutData(): Promise<{
       );
       const totalAvailableForPayout = campaigns.reduce(
         (sum: number, c: CampaignPayout) => {
-          return sum + (c.availableForPayout ? c.totalRaised : 0);
+          const available = c.availableAmount || 0;
+          return sum + (c.availableForPayout ? available : 0);
         },
         0
       );
       const totalAvailableForPayoutInNGN = campaigns.reduce(
         (sum: number, c: CampaignPayout) => {
-          return sum + (c.availableForPayout ? c.totalRaisedInNGN || 0 : 0);
+          const availableNGN = c.availableAmountInNGN || 0;
+          return sum + (c.availableForPayout ? availableNGN : 0);
         },
         0
       );
@@ -157,7 +169,8 @@ export async function fetchPayoutData(): Promise<{
       });
 
       const campaignsWithPayouts = campaigns.filter(
-        (c: CampaignPayout) => c.availableForPayout && c.totalRaised > 0
+        (c: CampaignPayout) =>
+          c.availableForPayout && (c.availableAmount || 0) > 0
       ).length;
 
       const transformedData: PayoutData = {

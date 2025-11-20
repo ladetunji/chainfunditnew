@@ -45,13 +45,13 @@ export function SessionExpiredModal({ isOpen, onClose }: SessionExpiredModalProp
           <Button 
             variant="outline" 
             onClick={onClose}
-            className="px-4 py-2"
+            className="px-4 py-2 cursor-pointer"
           >
             Cancel
           </Button>
           <Button 
             onClick={handleLoginRedirect}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white"
+            className="px-4 py-2 cursor-pointer"
           >
             Log In
           </Button>
