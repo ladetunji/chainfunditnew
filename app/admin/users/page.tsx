@@ -13,19 +13,31 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
+import { 
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   Users, 
   Search, 
   Download, 
   Eye,
-  Edit,
   Ban,
   CheckCircle,
   XCircle,
@@ -79,6 +91,8 @@ export default function AdminUsersPage() {
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const router = useRouter();
   const { locationInfo } = useGeolocationCurrency();
   const currency = locationInfo?.currency?.code;
@@ -257,12 +271,14 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleViewUser = (userId: string) => {
-    router.push(`/admin/dashboard/users/${userId}`);
+  const handleViewUser = (user: User) => {
+    setSelectedUser(user);
+    setIsUserModalOpen(true);
   };
 
-  const handleEditUser = (userId: string) => {
-    router.push(`/admin/dashboard/users/${userId}/edit`);
+  const closeUserModal = () => {
+    setIsUserModalOpen(false);
+    setSelectedUser(null);
   };
 
   if (loading && users.length === 0) {
@@ -277,8 +293,9 @@ export default function AdminUsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <TooltipProvider delayDuration={150}>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -533,7 +550,7 @@ export default function AdminUsersPage() {
                           </div>
                           <div className="flex items-center">
                             <Users className="h-3 w-3 mr-1 text-purple-600" />
-                            {user.stats?.totalChains || 0} chainers
+                            {user.stats?.totalChains || 0} ambassadors
                           </div>
                         </div>
                       </TableCell>
@@ -544,31 +561,43 @@ export default function AdminUsersPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleUserAction(user.id, 'view')}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleUserAction(user.id, 'edit')}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleUserAction(user.id, user.accountLocked ? 'activate' : 'suspend')}
-                          >
-                            {user.accountLocked ? (
-                              <Ban className="h-4 w-4 text-red-600" />
-                            ) : (
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                            )}
-                          </Button>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                aria-label="View user"
+                                onClick={() => handleViewUser(user)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">View details</TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                aria-label={user.accountLocked ? 'Activate user' : 'Suspend user'}
+                                onClick={() =>
+                                  handleUserAction(
+                                    user.id,
+                                    user.accountLocked ? 'activate' : 'suspend'
+                                  )
+                                }
+                              >
+                                {user.accountLocked ? (
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <Ban className="h-4 w-4 text-red-600" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              {user.accountLocked ? 'Activate user' : 'Suspend user'}
+                            </TooltipContent>
+                          </Tooltip>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -608,5 +637,83 @@ export default function AdminUsersPage() {
         </Card>
       </div>
     </div>
+
+    <Dialog
+      open={isUserModalOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          closeUserModal();
+        }
+      }}
+    >
+      {selectedUser && (
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <span>{selectedUser.fullName}</span>
+              {getRoleBadge(selectedUser.role)}
+            </DialogTitle>
+            <DialogDescription>{selectedUser.email}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-lg border p-3">
+                <p className="text-xs uppercase text-gray-500">Status</p>
+                <div className="mt-1 flex items-center gap-2">
+                  {getStatusBadge(selectedUser.accountLocked ? 'suspended' : 'active')}
+                  {selectedUser.isVerified && (
+                    <span className="text-xs text-blue-600 flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      Verified
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs uppercase text-gray-500">Joined</p>
+                <p className="mt-1 text-sm text-gray-900">{formatDate(selectedUser.createdAt)}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-lg border p-3">
+                <p className="text-xs uppercase text-gray-500">Phone</p>
+                <p className="mt-1 text-sm text-gray-900">
+                  {selectedUser.phone || 'Not provided'}
+                </p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs uppercase text-gray-500">Country</p>
+                <p className="mt-1 text-sm text-gray-900">
+                  {selectedUser.countryCode || 'Not specified'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="rounded-lg border p-3">
+                <p className="text-xs uppercase text-gray-500">Total Donated</p>
+                <p className="mt-1 text-base font-semibold">
+                  {formatCurrency(selectedUser.stats?.totalDonated || 0)}
+                </p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs uppercase text-gray-500">Campaigns</p>
+                <p className="mt-1 text-base font-semibold">
+                  {selectedUser.stats?.totalCampaigns || 0}
+                </p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs uppercase text-gray-500">Chainers</p>
+                <p className="mt-1 text-base font-semibold">
+                  {selectedUser.stats?.totalChains || 0}
+                </p>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      )}
+    </Dialog>
+    </TooltipProvider>
   );
 }

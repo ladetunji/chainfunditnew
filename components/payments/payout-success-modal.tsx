@@ -7,6 +7,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, Clock, DollarSign } from "lucide-react";
@@ -40,12 +41,19 @@ export function PayoutSuccessModal({
     ? data.provider.charAt(0).toUpperCase() + data.provider.slice(1)
     : undefined;
 
+  if (!isOpen) {
+    return null;
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => {
-      if (!open && isOpen) {
-        onClose();
-      }
-    }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="max-w-md">
         <DialogHeader>
           <div className="flex justify-center mb-4">
@@ -110,13 +118,11 @@ export function PayoutSuccessModal({
         )}
 
         <div className="mt-6 flex justify-center">
-          <Button
-            type="button"
-            onClick={onClose}
-            className="bg-[#104901] text-white px-8"
-          >
-            Done
-          </Button>
+          <DialogClose asChild>
+            <Button type="button" className="bg-[#104901] text-white px-8">
+              Done
+            </Button>
+          </DialogClose>
         </div>
       </DialogContent>
     </Dialog>

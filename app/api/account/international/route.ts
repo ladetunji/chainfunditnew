@@ -2,34 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
-import { verifyAccessToken } from '@/lib/auth';
-
-async function getUserFromRequest(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
-    return null;
-  }
-
-  try {
-    const token = authHeader.substring(7);
-    const userPayload = verifyAccessToken(token);
-    if (!userPayload) return null;
-
-    return userPayload.email;
-  } catch {
-    return null;
-  }
-}
+import { requireUserAuth } from '@/lib/user-auth';
 
 // GET /api/account/international - Get international bank account details
 export async function GET(request: NextRequest) {
   try {
-    const email = await getUserFromRequest(request);
-    if (!email) {
-      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
-    }
+    const user = await requireUserAuth(request);
 
-    const [user] = await db
+    const [userRecord] = await db
       .select({
         internationalBankAccountNumber: users.internationalBankAccountNumber,
         internationalBankRoutingNumber: users.internationalBankRoutingNumber,
@@ -41,16 +21,16 @@ export async function GET(request: NextRequest) {
         internationalAccountVerificationDate: users.internationalAccountVerificationDate,
       })
       .from(users)
-      .where(eq(users.email, email))
+      .where(eq(users.id, user.id))
       .limit(1);
 
-    if (!user) {
+    if (!userRecord) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
 
     return NextResponse.json({
       success: true,
-      data: user,
+      data: userRecord,
     });
   } catch (error) {
     console.error('Error fetching international bank account:', error);
@@ -64,10 +44,7 @@ export async function GET(request: NextRequest) {
 // POST /api/account/international - Add/update international bank account details
 export async function POST(request: NextRequest) {
   try {
-    const email = await getUserFromRequest(request);
-    if (!email) {
-      return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
-    }
+    const user = await requireUserAuth(request);
 
     const body = await request.json();
     const {
@@ -102,12 +79,6 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Sort code is required for UK accounts' },
         { status: 400 }
       );
-    }
-
-    // Get user
-    const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
-    if (!user) {
-      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
 
     // Update international bank account details

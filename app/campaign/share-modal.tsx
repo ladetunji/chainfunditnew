@@ -132,16 +132,16 @@ const ShareModal: React.FC<ShareModalProps> = ({ open, onOpenChange, campaign })
                 Share campaign
               </h3>
               <div className="flex space-x-5">
-                <Button onClick={() => handleShare("facebook")}>
+                <Button variant="ghost" onClick={() => handleShare("facebook")}>
                   <Facebook strokeWidth={1.5} color="#104901" size={32} />
                 </Button>
-                <Button onClick={() => handleShare("instagram")}>
+                <Button variant="ghost" onClick={() => handleShare("instagram")}>
                   <Instagram strokeWidth={1.5} color="#104901" size={32} />
                 </Button>
-                    <Button onClick={() => handleShare("twitter")}>
+                    <Button variant="ghost" onClick={() => handleShare("twitter")}>
                   <Twitter strokeWidth={1.5} color="#104901" size={32} />
                 </Button>
-                <Button onClick={() => handleShare("linkedin")}>
+                <Button variant="ghost" onClick={() => handleShare("linkedin")}>
                   <Linkedin strokeWidth={1.5} color="#104901" size={32} />
                 </Button>
               </div>

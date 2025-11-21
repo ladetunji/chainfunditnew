@@ -7,7 +7,6 @@ import { R2Image } from "@/components/ui/r2-image";
 import { EmojiFallbackImage } from "@/components/ui/emoji-fallback-image";
 import { needsEmojiFallback } from "@/lib/utils/campaign-emojis";
 import {
-  Bitcoin,
   CheckCircle,
   Users,
   LinkIcon,
@@ -30,7 +29,8 @@ import ClientToaster from "@/components/ui/client-toaster";
 import { formatCurrency, getCurrencySymbol } from "@/lib/utils/currency";
 import { ExternalToast, toast } from "sonner";
 
-// Utility function to extract YouTube video ID and generate thumbnail URL
+const autoRefreshInterval = 30000; 
+
 const getYouTubeThumbnail = (url: string): string | null => {
   const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
   const match = url.match(regex);
@@ -63,6 +63,7 @@ interface CampaignData {
   currency: string;
   minimumDonation: string;
   chainerCommissionRate: number;
+  isChained: boolean;
   currentAmount: number;
   status: string;
   isActive: boolean;
@@ -328,6 +329,30 @@ const Main = ({ campaignId }: MainProps) => {
     if (campaignId) {
       fetchCampaign();
     }
+  }, [campaignId, fetchCampaign]);
+
+  React.useEffect(() => {
+    if (!campaignId) {
+      return;
+    }
+
+    const maybeRefreshCampaign = () => {
+      if (document.visibilityState === "visible") {
+        fetchCampaign();
+      }
+    };
+
+    const intervalId = window.setInterval(
+      maybeRefreshCampaign,
+      autoRefreshInterval
+    );
+
+    document.addEventListener("visibilitychange", maybeRefreshCampaign);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", maybeRefreshCampaign);
+    };
   }, [campaignId, fetchCampaign]);
 
   // Show loading state
@@ -970,7 +995,8 @@ const Main = ({ campaignId }: MainProps) => {
 
                 <Button
                   className="h-12"
-                  onClick={() => setChainModalOpen(true)}
+                  disabled={!campaignData.isChained}
+                  onClick={() => campaignData.isChained && setChainModalOpen(true)}
                 >
                   Chain Campaign <LinkIcon />
                 </Button>

@@ -45,14 +45,19 @@ import {
   Shield,
   Play,
   Pause,
+  Ban,
 } from "lucide-react";
 import { BsFillStopFill } from "react-icons/bs";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useGeolocationCurrency } from "@/hooks/use-geolocation-currency";
-import Image from "next/image";
 import { R2Image } from "@/components/ui/r2-image";
-import Link from "next/link";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Campaign {
   id: string;
@@ -249,6 +254,24 @@ export default function AdminCampaignsPage() {
     router.push(`/campaign/${campaign.slug}`);
   };
 
+  const handleBanCampaign = async (campaign: Campaign) => {
+    try {
+      const response = await fetch(`/api/admin/campaigns/${campaign.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "ban" }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to ban campaign");
+      }
+      toast.success("Campaign banned successfully");
+      fetchCampaigns();
+    } catch (error) {
+      console.error("Error banning campaign:", error);
+      toast.error("Failed to ban campaign");
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const variants = {
       active: "default",
@@ -322,405 +345,415 @@ export default function AdminCampaignsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Campaign Management
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Moderate campaigns and review content
-              </p>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExportCampaigns}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export Campaigns
-              </Button>
-              <Button
-                size="sm"
-                className="bg-[#104901] text-white"
-                onClick={() => router.push("/admin/dashboard/analytics")}
-              >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Analytics
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Statistics Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Campaigns
-                </CardTitle>
-                <BarChart3 className="h-4 w-4 text-gray-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {(stats.totalCampaigns).toLocaleString()}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {stats.activeCampaigns} active
+    <TooltipProvider delayDuration={150}>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Campaign Management
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  Moderate campaigns and review content
                 </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Raised
-                </CardTitle>
-                <DollarSign className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-green-600">
-                  {formatCurrency(stats.totalRaised, currency)}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  From {stats.totalDonations} donations
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Success Rate
-                </CardTitle>
-                <TrendingUp className="h-4 w-4 text-blue-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-blue-600">
-                  {stats.successRate}%
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Campaigns reaching goal
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Pending Review
-                </CardTitle>
-                <AlertTriangle className="h-4 w-4 text-yellow-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">
-                  {stats.pendingReview}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {stats.reportedCampaigns} reported
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Filters and Search */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search campaigns by title, creator, or description..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
               </div>
-              <div className="flex gap-4">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="paused">Paused</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="closed">Closed</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={categoryFilter}
-                  onValueChange={setCategoryFilter}
+              <div className="flex items-center space-x-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportCampaigns}
                 >
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="medical">Medical</SelectItem>
-                    <SelectItem value="education">Education</SelectItem>
-                    <SelectItem value="emergency">Emergency</SelectItem>
-                    <SelectItem value="charity">Charity</SelectItem>
-                    <SelectItem value="personal">Personal</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button variant="outline" size="sm">
-                  <Filter className="h-4 w-4 mr-2" />
-                  More Filters
+                  <Download className="h-4 w-4 mr-2" />
+                  Export Campaigns
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-[#104901] text-white"
+                  onClick={() => router.push("/admin/dashboard/analytics")}
+                >
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Analytics
                 </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Bulk Actions */}
-        {selectedCampaigns.length > 0 && (
-          <Card className="mb-6 bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-blue-900">
-                  {selectedCampaigns.length} campaign(s) selected
-                </span>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleBulkAction("pause")}
+          {/* Statistics Cards */}
+          {stats && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Campaigns
+                  </CardTitle>
+                  <BarChart3 className="h-4 w-4 text-gray-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {stats.totalCampaigns.toLocaleString()}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {stats.activeCampaigns} active
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Total Raised
+                  </CardTitle>
+                  <DollarSign className="h-4 w-4 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">
+                    {formatCurrency(stats.totalRaised, currency)}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    From {stats.totalDonations} donations
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Success Rate
+                  </CardTitle>
+                  <TrendingUp className="h-4 w-4 text-blue-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {stats.successRate}%
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Campaigns reaching goal
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    Pending Review
+                  </CardTitle>
+                  <AlertTriangle className="h-4 w-4 text-yellow-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {stats.pendingReview}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {stats.reportedCampaigns} reported
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Filters and Search */}
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search campaigns by title, creator, or description..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="paused">Paused</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={categoryFilter}
+                    onValueChange={setCategoryFilter}
                   >
-                    <Pause className="h-4 w-4 mr-2" />
-                    Pause
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setSelectedCampaigns([])}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Clear
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="medical">Medical</SelectItem>
+                      <SelectItem value="education">Education</SelectItem>
+                      <SelectItem value="emergency">Emergency</SelectItem>
+                      <SelectItem value="charity">Charity</SelectItem>
+                      <SelectItem value="personal">Personal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button variant="outline" size="sm">
+                    <Filter className="h-4 w-4 mr-2" />
+                    More Filters
                   </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* Campaigns Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Campaigns ({campaigns.length})</CardTitle>
-            <CardDescription>
-              Review and moderate campaign content
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-12">
-                      <input
-                        type="checkbox"
-                        className="rounded border-gray-300"
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedCampaigns(campaigns.map((c) => c.id));
-                          } else {
-                            setSelectedCampaigns([]);
-                          }
-                        }}
-                      />
-                    </TableHead>
-                    <TableHead>Campaign</TableHead>
-                    <TableHead>Creator</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Progress</TableHead>
-                    <TableHead>Stats</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="w-12">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {campaigns.map((campaign) => (
-                    <TableRow key={campaign.id}>
-                      <TableCell>
+          {/* Bulk Actions */}
+          {selectedCampaigns.length > 0 && (
+            <Card className="mb-6 bg-blue-50 border-blue-200">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-blue-900">
+                    {selectedCampaigns.length} campaign(s) selected
+                  </span>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleBulkAction("pause")}
+                    >
+                      <Pause className="h-4 w-4 mr-2" />
+                      Pause
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setSelectedCampaigns([])}
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Campaigns Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Campaigns ({campaigns.length})</CardTitle>
+              <CardDescription>
+                Review and moderate campaign content
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-12">
                         <input
                           type="checkbox"
                           className="rounded border-gray-300"
-                          checked={selectedCampaigns.includes(campaign.id)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedCampaigns([
-                                ...selectedCampaigns,
-                                campaign.id,
-                              ]);
+                              setSelectedCampaigns(campaigns.map((c) => c.id));
                             } else {
-                              setSelectedCampaigns(
-                                selectedCampaigns.filter(
-                                  (id) => id !== campaign.id
-                                )
-                              );
+                              setSelectedCampaigns([]);
                             }
                           }}
                         />
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          {campaign.coverImageUrl || campaign.imageUrl ? (
-                            <R2Image
-                              src={
-                                campaign.coverImageUrl ||
-                                campaign.imageUrl ||
-                                ""
+                      </TableHead>
+                      <TableHead>Campaign</TableHead>
+                      <TableHead>Creator</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Progress</TableHead>
+                      <TableHead>Stats</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead className="w-12">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {campaigns.map((campaign) => (
+                      <TableRow key={campaign.id}>
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            className="rounded border-gray-300"
+                            checked={selectedCampaigns.includes(campaign.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedCampaigns([
+                                  ...selectedCampaigns,
+                                  campaign.id,
+                                ]);
+                              } else {
+                                setSelectedCampaigns(
+                                  selectedCampaigns.filter(
+                                    (id) => id !== campaign.id
+                                  )
+                                );
                               }
-                              alt={campaign.title}
-                              className="h-12 w-12 rounded-lg object-cover"
-                              width={48}
-                              height={48}
-                            />
-                          ) : (
-                            <div className="h-12 w-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                              <BarChart3 className="h-6 w-6 text-gray-400" />
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            {campaign.coverImageUrl || campaign.imageUrl ? (
+                              <R2Image
+                                src={
+                                  campaign.coverImageUrl ||
+                                  campaign.imageUrl ||
+                                  ""
+                                }
+                                alt={campaign.title}
+                                className="h-12 w-12 rounded-lg object-cover"
+                                width={48}
+                                height={48}
+                              />
+                            ) : (
+                              <div className="h-12 w-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                                <BarChart3 className="h-6 w-6 text-gray-400" />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-gray-900 truncate">
+                                {campaign.title.slice(0, 30)}...
+                              </div>
+                              <div className="text-sm text-gray-500 truncate">
+                                {campaign.description.slice(0, 30)}...
+                              </div>
                             </div>
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-gray-900 truncate">
-                              {campaign.title.slice(0, 30)}...
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div>
+                            <div className="font-medium text-gray-900">
+                              {campaign.creatorName}
                             </div>
-                            <div className="text-sm text-gray-500 truncate">
-                              {campaign.description.slice(0, 30)}...
+                            <div className="text-sm text-gray-500">
+                              ID: {campaign.creatorId.slice(0, 8)}
                             </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {campaign.creatorName}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            {getStatusIcon(campaign.status)}
+                            {getStatusBadge(campaign.status)}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            ID: {campaign.creatorId.slice(0, 8)}
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          {getStatusIcon(campaign.status)}
-                          {getStatusBadge(campaign.status)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-between text-sm">
-                            <span>
-                              {formatCurrency(
-                                campaign.currentAmount,
-                                campaign.currency
-                              )}
-                            </span>
-                            <span className="text-gray-500">
-                              {getProgressPercentage(
-                                campaign.currentAmount,
-                                campaign.goalAmount
-                              )}
-                              %
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-purple-600 h-2 rounded-full"
-                              style={{
-                                width: `${getProgressPercentage(
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between text-sm">
+                              <span>
+                                {formatCurrency(
+                                  campaign.currentAmount,
+                                  campaign.currency
+                                )}
+                              </span>
+                              <span className="text-gray-500">
+                                {getProgressPercentage(
                                   campaign.currentAmount,
                                   campaign.goalAmount
-                                )}%`,
-                              }}
-                            />
+                                )}
+                                %
+                              </span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-purple-600 h-2 rounded-full"
+                                style={{
+                                  width: `${getProgressPercentage(
+                                    campaign.currentAmount,
+                                    campaign.goalAmount
+                                  )}%`,
+                                }}
+                              />
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Goal:{" "}
+                              {formatCurrency(
+                                campaign.goalAmount,
+                                campaign.currency
+                              )}
+                            </div>
                           </div>
-                          <div className="text-xs text-gray-500">
-                            Goal:{" "}
-                            {formatCurrency(
-                              campaign.goalAmount,
-                              campaign.currency
-                            )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm space-y-1">
+                            <div className="flex items-center">
+                              <DollarSign className="h-3 w-3 mr-1 text-green-600" />
+                              {campaign.donationCount} donations
+                            </div>
+                            <div className="flex items-center">
+                              <Users className="h-3 w-3 mr-1 text-blue-600" />
+                              {campaign.chainerCount} ambassadors
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm space-y-1">
-                          <div className="flex items-center">
-                            <DollarSign className="h-3 w-3 mr-1 text-green-600" />
-                            {campaign.donationCount} donations
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-gray-600">
+                            {formatDate(campaign.createdAt)}
                           </div>
-                          <div className="flex items-center">
-                            <Users className="h-3 w-3 mr-1 text-blue-600" />
-                            {campaign.chainerCount} chainers
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2 items-center space-x-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() =>
+                                handleCampaignAction(campaign, "view")
+                              }
+                              title="View campaign"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleBanCampaign(campaign)}
+                              title="Ban campaign"
+                            >
+                              <Ban className="h-4 w-4 text-red-600" />
+                            </Button>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm text-gray-600">
-                          {formatDate(campaign.createdAt)}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() =>
-                              handleCampaignAction(campaign, "view")
-                            }
-                            title="View campaign"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
-            {/* Pagination */}
-            <div className="flex items-center justify-between mt-6">
-              <div className="text-sm text-gray-700">
-                Showing {campaigns.length} campaigns
+              {/* Pagination */}
+              <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-gray-700">
+                  Showing {campaigns.length} campaigns
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(currentPage - 1)}
-                >
-                  Previous
-                </Button>
-                <span className="text-sm text-gray-600">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(currentPage + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
