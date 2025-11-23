@@ -29,6 +29,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import {
+  normalizeActionUrl,
+  isInternalActionUrl,
+  shouldOpenInNewTab,
+} from '@/lib/notifications/url-utils';
 
 interface Notification {
   id: string;
@@ -416,103 +421,120 @@ export default function AdminNotificationsPage() {
             </div>
 
             {/* Notifications */}
-            {filteredNotifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`p-6 border-l-4 ${getPriorityColor(notification.priority)} ${
-                  notification.status === 'unread' ? 'bg-white' : 'bg-gray-50'
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <input
-                    type="checkbox"
-                    checked={selectedNotifications.includes(notification.id)}
-                    onChange={() => handleSelectNotification(notification.id)}
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300 mt-1"
-                  />
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        {getNotificationIcon(notification.type, notification.priority)}
-                        <div>
-                          <h3 className="text-lg font-medium text-gray-900">
-                            {notification.title}
-                          </h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge className={getPriorityBadgeColor(notification.priority)}>
-                              {notification.priority}
-                            </Badge>
-                            <Badge variant="outline">
-                              {notification.type}
-                            </Badge>
-                            {notification.status === 'unread' && (
-                              <Badge className="bg-blue-100 text-blue-800">
-                                Unread
+            {filteredNotifications.map((notification) => {
+              const actionUrl = normalizeActionUrl(notification.actionUrl);
+              const actionLabel = notification.actionLabel?.trim() || 'View Details';
+              const linkClasses = 'text-blue-600 hover:text-blue-800 text-sm font-medium';
+              const actionLink = actionUrl
+                ? isInternalActionUrl(actionUrl)
+                  ? (
+                    <Link href={actionUrl} className={linkClasses}>
+                      {actionLabel} →
+                    </Link>
+                  )
+                  : (
+                    <a
+                      href={actionUrl}
+                      className={linkClasses}
+                      target={shouldOpenInNewTab(actionUrl) ? '_blank' : undefined}
+                      rel={shouldOpenInNewTab(actionUrl) ? 'noopener noreferrer' : undefined}
+                    >
+                      {actionLabel} →
+                    </a>
+                  )
+                : null;
+
+              return (
+                <div
+                  key={notification.id}
+                  className={`p-6 border-l-4 ${getPriorityColor(notification.priority)} ${
+                    notification.status === 'unread' ? 'bg-white' : 'bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-start gap-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedNotifications.includes(notification.id)}
+                      onChange={() => handleSelectNotification(notification.id)}
+                      className="h-4 w-4 text-blue-600 rounded border-gray-300 mt-1"
+                    />
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          {getNotificationIcon(notification.type, notification.priority)}
+                          <div>
+                            <h3 className="text-lg font-medium text-gray-900">
+                              {notification.title}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge className={getPriorityBadgeColor(notification.priority)}>
+                                {notification.priority}
                               </Badge>
+                              <Badge variant="outline">
+                                {notification.type}
+                              </Badge>
+                              {notification.status === 'unread' && (
+                                <Badge className="bg-blue-100 text-blue-800">
+                                  Unread
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-500">
+                            {formatTimeAgo(notification.createdAt)}
+                          </span>
+                          <div className="flex gap-1">
+                            {notification.status === 'unread' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleNotificationAction(notification.id, 'mark_read')}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
                             )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleNotificationAction(notification.id, 'archive')}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Archive className="h-4 w-4" />
+                            </Button>
                           </div>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500">
-                          {formatTimeAgo(notification.createdAt)}
-                        </span>
-                        <div className="flex gap-1">
-                          {notification.status === 'unread' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleNotificationAction(notification.id, 'mark_read')}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleNotificationAction(notification.id, 'archive')}
-                            className="h-8 w-8 p-0"
-                          >
-                            <Archive className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <p className="text-gray-700 mt-3 leading-relaxed">
-                      {notification.message}
-                    </p>
-                    
-                    <div className="flex items-center justify-between mt-4">
-                      <div className="flex items-center gap-4 text-sm text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          Created: {formatDate(notification.createdAt)}
-                        </span>
-                        {notification.readAt && (
-                          <span className="flex items-center gap-1">
-                            <Eye className="h-4 w-4" />
-                            Read: {formatDate(notification.readAt)}
-                          </span>
-                        )}
-                      </div>
+                      <p className="text-gray-700 mt-3 leading-relaxed">
+                        {notification.message}
+                      </p>
                       
-                      {notification.actionUrl && (
-                        <Link
-                          href={notification.actionUrl}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                        >
-                          {notification.actionLabel || 'View Details'} →
-                        </Link>
-                      )}
+                      <div className="flex items-center justify-between mt-4">
+                        <div className="flex items-center gap-4 text-sm text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            Created: {formatDate(notification.createdAt)}
+                          </span>
+                          {notification.readAt && (
+                            <span className="flex items-center gap-1">
+                              <Eye className="h-4 w-4" />
+                              Read: {formatDate(notification.readAt)}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {actionLink}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

@@ -7,6 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import {
+  normalizeActionUrl,
+  isInternalActionUrl,
+  shouldOpenInNewTab,
+} from '@/lib/notifications/url-utils';
 
 interface Notification {
   id: string;
@@ -253,17 +258,45 @@ export default function NotificationPanel() {
                               </Button>
                             </div>
                           </div>
-                          {notification.actionUrl && (
-                            <div className="mt-2">
-                              <Link
-                                href={notification.actionUrl}
-                                className="text-xs text-blue-600 hover:text-blue-800"
-                                onClick={() => setIsOpen(false)}
-                              >
-                                {notification.actionLabel || 'View Details'} →
-                              </Link>
-                            </div>
-                          )}
+                          {(() => {
+                            const actionUrl = normalizeActionUrl(notification.actionUrl);
+                            if (!actionUrl) {
+                              return null;
+                            }
+
+                            const actionLabel =
+                              notification.actionLabel?.trim() || 'View Details';
+                            const linkClasses = 'text-xs text-blue-600 hover:text-blue-800';
+
+                            if (isInternalActionUrl(actionUrl)) {
+                              return (
+                                <div className="mt-2">
+                                  <Link
+                                    href={actionUrl}
+                                    className={linkClasses}
+                                    onClick={() => setIsOpen(false)}
+                                  >
+                                    {actionLabel} →
+                                  </Link>
+                                </div>
+                              );
+                            }
+
+                            const openInNewTab = shouldOpenInNewTab(actionUrl);
+                            return (
+                              <div className="mt-2">
+                                <a
+                                  href={actionUrl}
+                                  className={linkClasses}
+                                  target={openInNewTab ? '_blank' : undefined}
+                                  rel={openInNewTab ? 'noopener noreferrer' : undefined}
+                                  onClick={() => setIsOpen(false)}
+                                >
+                                  {actionLabel} →
+                                </a>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>

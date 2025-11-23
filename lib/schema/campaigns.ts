@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, text, decimal, integer, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, text, decimal, integer, boolean, jsonb } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const campaigns = pgTable('campaigns', {
@@ -24,6 +24,13 @@ export const campaigns = pgTable('campaigns', {
   status: varchar('status', { length: 20 }).default('active').notNull(), // active, paused, goal_reached, closed, expired
   visibility: varchar('visibility', { length: 20 }).default('public').notNull(), // public, private
   isActive: boolean('is_active').default(true).notNull(),
+  complianceStatus: varchar('compliance_status', { length: 30 }).default('pending_screening').notNull(), // pending_screening, in_review, approved, blocked
+  complianceSummary: text('compliance_summary'),
+  complianceFlags: jsonb('compliance_flags'),
+  riskScore: decimal('risk_score', { precision: 5, scale: 2 }).default('0').notNull(),
+  reviewRequired: boolean('review_required').default(false).notNull(),
+  lastScreenedAt: timestamp('last_screened_at'),
+  blockedAt: timestamp('blocked_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   closedAt: timestamp('closed_at'),

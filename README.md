@@ -198,6 +198,18 @@ If you're migrating from the old structure:
 - ✅ Authentication flow
 - ✅ Basic dashboard structure
 
+## ⚙️ Environment Variables
+
+Alongside existing payment and auth secrets, the compliance and payout workflow now expects:
+
+- `PERSONA_API_KEY` – Persona API token for payout-time KYC
+- `PERSONA_ENVIRONMENT_ID` – Persona environment identifier
+- `PERSONA_TEMPLATE_ID` – Persona inquiry template id
+- `PERSONA_WEBHOOK_SECRET` – Shared secret used to validate incoming Persona webhooks
+- `CRON_SECRET` – Shared bearer token protecting compliance worker routes
+- `OPENAI_API_KEY` – Enables automated moderation during campaign screening
+
+Set these in `.env.local` before running migrations.
 ### Phase 2: Campaign Management (Planned)
 - Campaign creation and management
 - Campaign listing and search

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { campaigns, users, donations } from '@/lib/schema';
-import { eq, and, count, sum, desc, asc } from 'drizzle-orm';
+import { eq, and, count, sum, desc } from 'drizzle-orm';
 import { parse } from 'cookie';
 import { verifyUserJWT } from '@/lib/auth';
 import { generateSlug, generateUniqueSlug } from '@/lib/utils/slug';
+import { runSyncScreeningForCampaign, initializeScreeningForCampaign } from '@/lib/compliance/screening-service';
 
 async function getUserFromRequest(request: NextRequest) {
   const cookie = request.headers.get('cookie') || '';
@@ -21,13 +22,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const reason = searchParams.get('reason');
+    const complianceStatus = searchParams.get('complianceStatus');
+    const includePending = searchParams.get('includePending') === 'true';
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = parseInt(searchParams.get('offset') || '0');
     const creatorId = searchParams.get('creatorId');
 
 
     // Build query with filters
-    let conditions = [];
+    const conditions: any[] = [];
     if (status) {
       conditions.push(eq(campaigns.status, status));
     }
@@ -36,6 +39,11 @@ export async function GET(request: NextRequest) {
     }
     if (creatorId) {
       conditions.push(eq(campaigns.creatorId, creatorId));
+    }
+    if (complianceStatus) {
+      conditions.push(eq(campaigns.complianceStatus, complianceStatus));
+    } else if (!includePending) {
+      conditions.push(eq(campaigns.complianceStatus, 'approved'));
     }
     
     // Get campaigns with creator details and donation stats
@@ -62,6 +70,12 @@ export async function GET(request: NextRequest) {
         status: campaigns.status,
         visibility: campaigns.visibility,
         isActive: campaigns.isActive,
+        complianceStatus: campaigns.complianceStatus,
+        complianceSummary: campaigns.complianceSummary,
+        complianceFlags: campaigns.complianceFlags,
+        riskScore: campaigns.riskScore,
+        reviewRequired: campaigns.reviewRequired,
+        lastScreenedAt: campaigns.lastScreenedAt,
         createdAt: campaigns.createdAt,
         updatedAt: campaigns.updatedAt,
         closedAt: campaigns.closedAt,
@@ -99,6 +113,10 @@ export async function GET(request: NextRequest) {
           progressPercentage: Math.min(100, Math.round((Number(campaign.currentAmount) / Number(campaign.goalAmount)) * 100)),
         };
 
+        const complianceFlags = Array.isArray(campaign.complianceFlags)
+          ? (campaign.complianceFlags as string[])
+          : [];
+
         return {
           ...campaign,
           goalAmount: Number(campaign.goalAmount),
@@ -107,6 +125,7 @@ export async function GET(request: NextRequest) {
           chainerCommissionRate: Number(campaign.chainerCommissionRate),
           galleryImages: campaign.galleryImages ? JSON.parse(campaign.galleryImages) : [],
           documents: campaign.documents ? JSON.parse(campaign.documents) : [],
+          complianceFlags,
           stats,
         };
       })
@@ -242,6 +261,27 @@ export async function POST(request: NextRequest) {
       ? generateUniqueSlug(baseSlug, existingSlugs.map(c => c.slug))
       : baseSlug;
 
+    const syncResult = await runSyncScreeningForCampaign({
+      title,
+      description,
+      reason,
+      fundraisingFor,
+      goalAmount: goalAmountNum,
+      currency,
+      creatorEmail: user[0].email,
+    });
+
+    const initialComplianceStatus =
+      syncResult.decision === 'block'
+        ? 'blocked'
+        : syncResult.decision === 'review'
+        ? 'in_review'
+        : 'pending_screening';
+
+    const complianceSummary = syncResult.summary;
+    const complianceFlags = syncResult.flags;
+    const complianceRiskScore = syncResult.riskScore.toFixed(2);
+
     // Create campaign
     const newCampaign = await db.insert(campaigns).values({
       creatorId: userId,
@@ -265,7 +305,18 @@ export async function POST(request: NextRequest) {
       status: 'active',
       visibility: visibility || 'public',
       isActive: true,
+      complianceStatus: initialComplianceStatus,
+      complianceSummary,
+      complianceFlags,
+      riskScore: complianceRiskScore,
+      reviewRequired: initialComplianceStatus === 'in_review',
+      lastScreenedAt: initialComplianceStatus === 'pending_screening' ? null : new Date(),
+      blockedAt: initialComplianceStatus === 'blocked' ? new Date() : null,
     }).returning();
+
+    if (initialComplianceStatus !== 'blocked') {
+      await initializeScreeningForCampaign(newCampaign[0].id, syncResult);
+    }
 
     return NextResponse.json({
       success: true,

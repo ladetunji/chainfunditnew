@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, text, boolean, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, timestamp, text, boolean, index, decimal, jsonb } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const users = pgTable('users', {
@@ -31,6 +31,13 @@ export const users = pgTable('users', {
   accountChangeRequested: boolean('account_change_requested').default(false),
   accountChangeReason: text('account_change_reason'),
   role: varchar('role', { length: 20 }).default('user'),
+  kycStatus: varchar('kyc_status', { length: 30 }).default('not_started').notNull(),
+  kycProvider: varchar('kyc_provider', { length: 50 }),
+  kycReference: varchar('kyc_reference', { length: 255 }),
+  kycExternalId: varchar('kyc_external_id', { length: 255 }),
+  kycRiskScore: decimal('kyc_risk_score', { precision: 5, scale: 2 }),
+  kycLastCheckedAt: timestamp('kyc_last_checked_at'),
+  kycPayload: jsonb('kyc_payload'),
   // 2FA fields
   twoFactorEnabled: boolean('two_factor_enabled').default(false),
   twoFactorSecret: text('two_factor_secret'),

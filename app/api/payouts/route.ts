@@ -20,6 +20,7 @@ import {
   convertFromNaira,
 } from "@/lib/utils/currency-conversion";
 import { notifyPayoutRequest } from "@/lib/notifications/payout-request-alerts";
+// import { ensurePayoutKyc } from "@/lib/kyc/service";
 
 const normalizeAmount = (value: number) =>
   Number.isFinite(value) ? Number(value.toFixed(2)) : 0;
@@ -271,6 +272,8 @@ export async function POST(request: NextRequest) {
           internationalBankName: users.internationalBankName,
           internationalAccountName: users.internationalAccountName,
           internationalAccountVerified: users.internationalAccountVerified,
+          kycStatus: users.kycStatus,
+          kycLastCheckedAt: users.kycLastCheckedAt,
         })
         .from(users)
         .where(eq(users.email, userEmail))
@@ -279,6 +282,26 @@ export async function POST(request: NextRequest) {
 
     if (!user)
       return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    // TODO: Re-enable payout-time KYC once Persona env vars are available.
+    // const kycGate = await ensurePayoutKyc({
+    //   id: user.id,
+    //   fullName: user.fullName,
+    //   email: user.email,
+    //   kycStatus: user.kycStatus,
+    //   kycLastCheckedAt: user.kycLastCheckedAt,
+    // });
+    //
+    // if (kycGate.status !== "cleared") {
+    //   return NextResponse.json(
+    //     {
+    //       success: false,
+    //       error: "KYC_VERIFICATION_REQUIRED",
+    //       kyc: kycGate,
+    //     },
+    //     { status: 403 }
+    //   );
+    // }
 
     // Parse request body safely
     let body: any;

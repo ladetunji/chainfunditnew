@@ -29,7 +29,7 @@ import ClientToaster from "@/components/ui/client-toaster";
 import { formatCurrency, getCurrencySymbol } from "@/lib/utils/currency";
 import { ExternalToast, toast } from "sonner";
 
-const autoRefreshInterval = 30000; 
+const autoRefreshInterval = 120000; // 2 minutes
 
 const getYouTubeThumbnail = (url: string): string | null => {
   const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
@@ -1014,33 +1014,6 @@ const Main = ({ campaignId }: MainProps) => {
             ) : donations.length > 0 ? (
               <ul className="my-5 py-3 px-2 bg-white space-y-3 border border-[#C0BFC4] rounded-2xl">
                 {donations.slice(0, 3).map((donation) => {
-                  // Get status styling
-                  const getStatusStyle = (status: string) => {
-                    switch (status) {
-                      case "completed":
-                        return "bg-green-100 text-green-700 border-green-200";
-                      case "pending":
-                        return "bg-yellow-100 text-yellow-700 border-yellow-200";
-                      case "failed":
-                        return "bg-red-100 text-red-700 border-red-200";
-                      default:
-                        return "bg-gray-100 text-gray-700 border-gray-200";
-                    }
-                  };
-
-                  const getStatusText = (status: string) => {
-                    switch (status) {
-                      case "completed":
-                        return "✓ Completed";
-                      case "pending":
-                        return "⏳ Pending";
-                      case "failed":
-                        return "✗ Failed";
-                      default:
-                        return status;
-                    }
-                  };
-
                   return (
                     <li key={donation.id} className="flex gap-3 items-center">
                       {donation.donorAvatar && !donation.isAnonymous ? (
@@ -1064,13 +1037,6 @@ const Main = ({ campaignId }: MainProps) => {
                           <p className="font-normal text-xl text-[#5F8555]">
                             {donation.donorName}
                           </p>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusStyle(
-                              donation.paymentStatus
-                            )}`}
-                          >
-                            {getStatusText(donation.paymentStatus)}
-                          </span>
                         </div>
                         <p className="font-medium text-xl text-black">
                           {formatCurrency(parseFloat(donation.amount), donation.currency)} •{" "}

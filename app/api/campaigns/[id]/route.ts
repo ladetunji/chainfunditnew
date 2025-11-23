@@ -71,6 +71,12 @@ export async function GET(
         status: campaigns.status,
         visibility: campaigns.visibility,
         isActive: campaigns.isActive,
+        complianceStatus: campaigns.complianceStatus,
+        complianceSummary: campaigns.complianceSummary,
+        complianceFlags: campaigns.complianceFlags,
+        riskScore: campaigns.riskScore,
+        reviewRequired: campaigns.reviewRequired,
+        lastScreenedAt: campaigns.lastScreenedAt,
         createdAt: campaigns.createdAt,
         updatedAt: campaigns.updatedAt,
         closedAt: campaigns.closedAt,
@@ -116,6 +122,18 @@ export async function GET(
     }
 
     const campaign = campaignData[0];
+    const isOwner = userId === campaign.creatorId;
+
+    if (!isOwner && campaign.complianceStatus !== 'approved') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Campaign is awaiting compliance review',
+          complianceStatus: campaign.complianceStatus,
+        },
+        { status: 403 }
+      );
+    }
 
     // Get donation statistics
     const donationStats = await db
@@ -138,6 +156,10 @@ export async function GET(
     };
 
     // Parse JSON fields
+    const complianceFlags = Array.isArray(campaign.complianceFlags)
+      ? (campaign.complianceFlags as string[])
+      : [];
+
     const campaignWithStats = {
       ...campaign,
       goalAmount: Number(campaign.goalAmount),
@@ -148,6 +170,7 @@ export async function GET(
       documents: campaign.documents ? JSON.parse(campaign.documents) : [],
       stats,
       canEdit: userId === campaign.creatorId, // Add flag for edit permission
+      complianceFlags,
     };
 
     return NextResponse.json({
