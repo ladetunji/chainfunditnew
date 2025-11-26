@@ -48,7 +48,6 @@ const campaignReasons = [
 
 const campaignStatuses = ["active", "closed", "trending"];
 
-// Component to handle async currency conversion
 function CampaignCardWithConversion({ 
   campaign, 
   viewMode, 
@@ -148,7 +147,7 @@ export default function AllCampaignsPage() {
             "Campaigns loading timeout - taking longer than expected"
           );
         }
-      }, 10000); // 10 seconds timeout
+      }, 10000);
 
       return () => clearTimeout(timer);
     } else {
@@ -160,8 +159,16 @@ export default function AllCampaignsPage() {
     try {
       let filtered = [...campaigns];
 
-      if (geolocation) {
-        filtered = filtered.filter((campaign) => shouldShowCampaign(campaign.currency));
+      if (geolocation && !locationLoading) {
+        const beforeFilter = filtered.length;
+        const filteredByGeo = filtered.filter((campaign) => {
+          const currency = campaign?.currency || '';
+          return shouldShowCampaign(currency);
+        });
+        
+        if (filteredByGeo.length > 0 || beforeFilter === 0) {
+          filtered = filteredByGeo;
+        }
       }
 
       if (debouncedSearchQuery.trim()) {
@@ -180,7 +187,6 @@ export default function AllCampaignsPage() {
         });
       }
 
-      // Handle trending filter on client side since it's computed
       if (selectedStatus === "trending") {
         filtered = filtered.filter(
           (campaign) =>
@@ -188,7 +194,6 @@ export default function AllCampaignsPage() {
             (campaign.stats?.totalDonations || 0) > 10
         );
       }
-      // Other status filters are handled by the API
 
       switch (sortBy) {
         case "newest":
@@ -481,9 +486,14 @@ export default function AllCampaignsPage() {
             <h3 className="text-xl font-semibold text-gray-600 mb-2">
               No campaigns found
             </h3>
-            <p className="text-gray-500">
-              Try adjusting your search criteria or filters
+            <p className="text-gray-500 mb-2">
+              {campaigns.length > 0 
+                ? `${campaigns.length} campaign(s) were filtered out. Try adjusting your search criteria or filters.`
+                : 'Try adjusting your search criteria or filters'}
             </p>
+            {error && (
+              <p className="text-red-500 text-sm mt-2">Error: {error}</p>
+            )}
           </div>
         ) : (
           <>

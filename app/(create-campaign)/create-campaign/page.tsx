@@ -41,6 +41,7 @@ import {
   Twitter,
   Linkedin,
   ExternalLink,
+  HelpCircle,
 } from "lucide-react";
 import {
   Select,
@@ -127,6 +128,7 @@ export default function CreateCampaignPage() {
   const { uploadFile } = useFileUpload();
   const [showAiModal, setShowAiModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showChainInfoModal, setShowChainInfoModal] = useState(false);
   const [createdCampaign, setCreatedCampaign] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("S");
   const [isLoading, setIsLoading] = useState(false);
@@ -603,8 +605,13 @@ export default function CreateCampaignPage() {
                         } Your goal`
                       : "Your goal"
                   }
-                  value={formData.goal}
-                  onChange={(e) => handleFieldChange("goal", +e.target.value)}
+                  value={formData.goal === 0 ? "" : formData.goal}
+                  onChange={(e) =>
+                    handleFieldChange(
+                      "goal",
+                      e.target.value === "" ? 0 : +e.target.value
+                    )
+                  }
                   className="w-full bg-transparent font-medium text-lg md:text-3xl text-[#5F8555] placeholder:text-[#5F8555] outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
                 <p className="font-normal text-xs md:text-base text-[#5F8555]">
@@ -634,9 +641,19 @@ export default function CreateCampaignPage() {
               </div>
             </section>
             <section className="space-y-2">
-              <p className="font-semibold text-[28px] text-[#104901]">
-                Do you want your campaign to be chained?
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-[28px] text-[#104901]">
+                  Do you want your campaign to be chained?
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowChainInfoModal(true)}
+                  className="w-6 h-6 rounded-full text-[#5F8555] flex items-center justify-center transition-colors"
+                  aria-label="Learn more about chained campaigns"
+                >
+                  <HelpCircle size={16} />
+                </button>
+              </div>
               <section className="flex gap-2 items-center">
                 <Switch
                   checked={formData.isChained}
@@ -659,11 +676,6 @@ export default function CreateCampaignPage() {
                   No, I don&apos;t want my campaign to be chained
                 </p>
               </section>
-              <p className="font-medium text-xs text-[#5F8555] my-2">
-                Note: Ambassadors will receive a percentage of the proceeds from
-                the campaign. Ambassador commission rate must be between 0 and
-                10% of campaign proceeds and must be a valid percentage.
-              </p>
             </section>
 
             {formData.isChained && (
@@ -961,6 +973,39 @@ export default function CreateCampaignPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Chain Info Modal */}
+        {showChainInfoModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div className="bg-[#E5ECDE] rounded-xl p-6 w-[600px] max-w-full shadow-lg space-y-4">
+              <div className="flex justify-between items-start">
+                <div className="flex gap-2 items-start">
+                  <HelpCircle size={32} color="#5F8555" />
+                  <section>
+                    <h2 className="text-[#5F8555] text-3xl font-medium">
+                      About Chained Campaigns
+                    </h2>
+                  </section>
+                </div>
+                <button
+                  className="text-[#5F8555] text-xl"
+                  onClick={() => setShowChainInfoModal(false)}
+                >
+                  <XCircle />
+                </button>
+              </div>
+              <div className="space-y-3">
+                <p className="text-[#5F8555] text-base leading-relaxed">
+                  Having your campaign chained means you can allow others, who may
+                  be interested in earning a commission to help promote your
+                  campaign, potentially increasing donations. The ambassador
+                  commission rate must be a valid percentage between 0% and 10% of
+                  campaign proceeds.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 

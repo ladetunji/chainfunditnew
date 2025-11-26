@@ -14,5 +14,5 @@ export default function ClientToaster() {
     return null;
   }
 
-  return <Toaster />;
+  return <Toaster position="top-right" />;
 }

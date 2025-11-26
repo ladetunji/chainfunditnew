@@ -15,11 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import UserAvatar from "@/components/ui/user-avatar";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import SessionStatusIndicator from "./SessionStatusIndicator";
@@ -99,7 +95,7 @@ const Navbar = (props: Props) => {
           <Link href="/campaigns">Campaigns</Link>
         </li>
         <li>
-          <Link href="#">About</Link>
+          <Link href="/about">About</Link>
         </li>
         <li>
           <Link href="/virtual-giving-mall">Virtual Giving Mall</Link>
@@ -107,7 +103,7 @@ const Navbar = (props: Props) => {
         <li>
           <Link href="/faq" className="">
             FAQs
-          </Link>
+          </Link> 
         </li>
       </ul>
       <section className="hidden md:flex gap-5 items-center">
@@ -192,7 +188,7 @@ const Navbar = (props: Props) => {
               </Link>
             </li>
             <li>
-              <Link href="#" onClick={() => setMenuOpen(false)}>
+              <Link href="/about" onClick={() => setMenuOpen(false)}>
                 About
               </Link>
             </li>
@@ -214,8 +210,11 @@ const Navbar = (props: Props) => {
             <Button className="w-full">Create Campaign</Button>
             <div className="flex gap-3 items-center justify-center">
               <NotificationAlert />
-              <Link href="/settings">
+              {/* <Link href="/settings">
                 <UserAvatar size={32} className="w-8 h-8" />
+              </Link> */}
+              <Link href="/logout" onClick={handleLogout}>
+                <LogOut className="h-6 w-6 text-red-600" />
               </Link>
             </div>
           </div>

@@ -40,6 +40,11 @@ const Navbar = (props: Props) => {
         </button>
         {/* Desktop nav */}
         <ul className="hidden md:flex justify-between gap-6 font-semibold text-base text-black">
+          {user && !loading && (
+            <li>
+              <Link href="/dashboard">My Dashboard</Link>
+            </li>
+          )}
           <li>
             <Link href="/campaigns">Campaigns</Link>
           </li>
@@ -71,6 +76,11 @@ const Navbar = (props: Props) => {
       {menuOpen && (
         <div className="md:hidden mt-4 flex flex-col gap-4 animate-fade-in">
           <ul className="flex flex-col gap-2 font-semibold text-base text-black">
+            {user && !loading && (
+              <li>
+                <Link href="/dashboard" onClick={() => setMenuOpen(false)}>My Dashboard</Link>
+              </li>
+            )}
             <li>
               <Link href="/campaigns" onClick={() => setMenuOpen(false)}>Campaigns</Link>
             </li>

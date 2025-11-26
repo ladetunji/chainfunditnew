@@ -2,6 +2,7 @@ import { Facebook, Instagram, Linkedin, Twitter } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
+import { BsTiktok } from "react-icons/bs";
 
 type Props = {};
 
@@ -45,16 +46,27 @@ const Footer = (props: Props) => {
             </p>
           </section>
           <Link
-            href="mailto:hello@chainfundit.com"
+            href="mailto:campaigns@chainfundit.com"
             className="font-normal text-base md:text-xl text-white"
           >
-            hello@chainfundit.com
+            campaigns@chainfundit.com
           </Link>
           <section className="flex gap-2 items-center flex-wrap">
-            <Facebook size={20} className="md:w-6 md:h-6" color="white" />
-            <Instagram size={20} className="md:w-6 md:h-6" color="white" />
-            <Twitter size={20} className="md:w-6 md:h-6" color="white" />
-            <Linkedin size={20} className="md:w-6 md:h-6" color="white" />
+            <Link href="https://www.facebook.com/share/1YrZpf7FbC/?mibextid=wwXIfr" target="_blank">
+              <Facebook size={20} className="md:w-6 md:h-6" color="white" />
+            </Link>
+            <Link href="https://www.instagram.com/chainfundit" target="_blank">
+              <Instagram size={20} className="md:w-6 md:h-6" color="white" />
+            </Link>
+            <Link href="https://x.com/chainfundit?s=11" target="_blank">
+              <Twitter size={20} className="md:w-6 md:h-6" color="white" />
+            </Link>
+            <Link href="https://www.linkedin.com/company/chainfundit11/" target="_blank">
+              <Linkedin size={20} className="md:w-6 md:h-6" color="white" />
+            </Link>
+            <Link href="https://www.tiktok.com/@chainfundit?_r=1&_t=ZS-91f2JUhl7um" target="_blank">
+              <BsTiktok size={20} className="md:w-6 md:h-6" color="white" />
+            </Link>
             <span className="font-normal text-base md:text-xl text-white">
               @chainfundit
             </span>
@@ -85,7 +97,9 @@ const Footer = (props: Props) => {
               <li>
                 <Link href="/faq">How ChainFundIt works</Link>
               </li>
-              <li>Join the Chain Reaction</li>
+              <li>
+                <Link href="/create-campaign">Join the Chain Reaction</Link>
+              </li>
               <li>Careers</li>
               <li>Success stories</li>
               <li>Pricing</li>

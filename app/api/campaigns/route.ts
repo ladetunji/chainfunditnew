@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { campaigns, users, donations } from '@/lib/schema';
-import { eq, and, count, sum, desc } from 'drizzle-orm';
+import { eq, and, or, inArray, count, sum, desc } from 'drizzle-orm';
 import { parse } from 'cookie';
 import { verifyUserJWT } from '@/lib/auth';
 import { generateSlug, generateUniqueSlug } from '@/lib/utils/slug';
@@ -40,10 +40,16 @@ export async function GET(request: NextRequest) {
     if (creatorId) {
       conditions.push(eq(campaigns.creatorId, creatorId));
     }
+    // Compliance status filter - removed for now, can be added back later
     if (complianceStatus) {
       conditions.push(eq(campaigns.complianceStatus, complianceStatus));
-    } else if (!includePending) {
-      conditions.push(eq(campaigns.complianceStatus, 'approved'));
+    }
+    // Removed default compliance filter - showing all campaigns regardless of compliance status
+    
+    // For public campaigns page, only show public campaigns (not private ones)
+    // Unless creatorId is specified (user viewing their own campaigns)
+    if (!creatorId) {
+      conditions.push(eq(campaigns.visibility, 'public'));
     }
     
     // Get campaigns with creator details and donation stats

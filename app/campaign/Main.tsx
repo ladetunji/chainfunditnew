@@ -224,9 +224,12 @@ const Main = ({ campaignId }: MainProps) => {
   }, [campaignId]);
 
   // Fetch campaign updates
-  const fetchUpdates = React.useCallback(async () => {
+  const fetchUpdates = React.useCallback(async (options?: { silent?: boolean }) => {
+    const isSilent = options?.silent ?? false;
     try {
-      setLoadingUpdates(true);
+      if (!isSilent) {
+        setLoadingUpdates(true);
+      }
       const response = await fetch(`/api/campaigns/${campaignId}/updates`);
 
       if (response.ok) {
@@ -236,94 +239,141 @@ const Main = ({ campaignId }: MainProps) => {
         }
       }
     } catch (error) {
-      toast.error("Error fetching updates:", error as ExternalToast | undefined);
+      if (!isSilent) {
+        toast.error("Error fetching updates:", error as ExternalToast | undefined);
+      } else {
+        console.error("Error fetching updates:", error);
+      }
     } finally {
-      setLoadingUpdates(false);
+      if (!isSilent) {
+        setLoadingUpdates(false);
+      }
     }
   }, [campaignId]);
 
   // Fetch campaign comments
-  const fetchComments = React.useCallback(async () => {
-    try {
-      setLoadingComments(true);
-      const response = await fetch(`/api/campaigns/${campaignId}/comments`);
+  const fetchComments = React.useCallback(
+    async (options?: { silent?: boolean }) => {
+      const isSilent = options?.silent ?? false;
+      try {
+        if (!isSilent) {
+          setLoadingComments(true);
+        }
+        const response = await fetch(`/api/campaigns/${campaignId}/comments`);
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setComments(result.data);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            setComments(result.data);
+          }
+        }
+      } catch (error) {
+        if (!isSilent) {
+          toast.error("Error fetching comments:", error as ExternalToast | undefined);
+        } else {
+          console.error("Error fetching comments:", error);
+        }
+      } finally {
+        if (!isSilent) {
+          setLoadingComments(false);
         }
       }
-    } catch (error) {
-      toast.error("Error fetching comments:", error as ExternalToast | undefined);
-    } finally {
-      setLoadingComments(false);
-    }
-  }, [campaignId]);
+    },
+    [campaignId]
+  );
 
   // Fetch campaign chain count
-  const fetchChainCount = React.useCallback(async () => {
-    try {
-      setLoadingChains(true);
-      const response = await fetch(`/api/campaigns/${campaignId}/chains`);
+  const fetchChainCount = React.useCallback(
+    async (options?: { silent?: boolean }) => {
+      const isSilent = options?.silent ?? false;
+      try {
+        if (!isSilent) {
+          setLoadingChains(true);
+        }
+        const response = await fetch(`/api/campaigns/${campaignId}/chains`);
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          setChainCount(result.data.chainCount);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setChainCount(result.data.chainCount);
+          }
+        }
+      } catch (error) {
+        if (!isSilent) {
+          toast.error('Error fetching chain count:', error as ExternalToast | undefined);
+        } else {
+          console.error('Error fetching chain count:', error);
+        }
+      } finally {
+        if (!isSilent) {
+          setLoadingChains(false);
         }
       }
-    } catch (error) {
-      toast.error('Error fetching chain count:', error as ExternalToast | undefined);
-    } finally {
-      setLoadingChains(false);
-    }
-  }, [campaignId]);
+    },
+    [campaignId]
+  );
 
   // Fetch campaign data and updates
-  const fetchCampaign = React.useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Always fetch from API to get canEdit property and latest data
-      const response = await fetch(`/api/campaigns/${campaignId}?t=${Date.now()}`);
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("Campaign not found");
+  const fetchCampaign = React.useCallback(
+    async (options?: { silent?: boolean }) => {
+      const isSilent = options?.silent ?? false;
+      try {
+        if (!isSilent) {
+          setLoading(true);
+          setError(null);
         }
-        throw new Error(`Failed to fetch campaign: ${response.status}`);
+
+        // Always fetch from API to get canEdit property and latest data
+        const response = await fetch(`/api/campaigns/${campaignId}?t=${Date.now()}`);
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Campaign not found");
+          }
+          throw new Error(`Failed to fetch campaign: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.error || "Failed to fetch campaign");
+        }
+
+        let campaignData = result.data;
+
+        // Ensure creator information has fallback values
+        if (!campaignData.creatorName) {
+          campaignData = {
+            ...campaignData,
+            creatorName: "Unknown Creator",
+            fundraisingFor: campaignData.fundraisingFor || "Unknown Cause",
+          };
+        }
+
+        setCampaign(campaignData);
+        setError(null);
+
+        // Fetch campaign updates, comments, and chain count
+        await Promise.all([
+          fetchUpdates({ silent: isSilent }),
+          fetchComments({ silent: isSilent }),
+          fetchChainCount({ silent: isSilent }),
+        ]);
+      } catch (error) {
+        if (!isSilent) {
+          setError(error instanceof Error ? error.message : "Failed to fetch campaign");
+          toast.error("Error fetching campaign:", error as ExternalToast | undefined);
+        } else {
+          console.error("Error refreshing campaign:", error);
+        }
+      } finally {
+        if (!isSilent) {
+          setLoading(false);
+        }
       }
-
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || "Failed to fetch campaign");
-      }
-
-      let campaignData = result.data;
-
-      // Ensure creator information has fallback values
-      if (!campaignData.creatorName) {
-        campaignData = {
-          ...campaignData,
-          creatorName: "Unknown Creator",
-          fundraisingFor: campaignData.fundraisingFor || "Unknown Cause",
-        };
-      }
-
-      setCampaign(campaignData);
-
-      // Fetch campaign updates, comments, and chain count
-      await Promise.all([fetchUpdates(), fetchComments(), fetchChainCount()]);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to fetch campaign");
-      toast.error("Error fetching campaign:", error as ExternalToast | undefined);
-    } finally {
-      setLoading(false);
-    }
-  }, [campaignId, fetchUpdates, fetchComments, fetchChainCount]);
+    },
+    [campaignId, fetchUpdates, fetchComments, fetchChainCount]
+  );
 
   React.useEffect(() => {
     if (campaignId) {
@@ -338,7 +388,7 @@ const Main = ({ campaignId }: MainProps) => {
 
     const maybeRefreshCampaign = () => {
       if (document.visibilityState === "visible") {
-        fetchCampaign();
+        fetchCampaign({ silent: true });
       }
     };
 

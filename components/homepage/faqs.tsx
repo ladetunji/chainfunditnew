@@ -1,3 +1,6 @@
+
+'use client'
+
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import React from "react";
@@ -14,7 +17,7 @@ const FAQs = (props: Props) => {
           Get answers to your most pressing questions about fundraising on
           Chainfundit.
         </span>
-        <Button className="w-full h-14 md:h-24 flex justify-between items-center font-semibold text-lg md:text-2xl">Contact us <ArrowRight /></Button>
+        <Button onClick={() => window.location.href = "/faq"} className="w-full h-14 md:h-24 flex justify-between items-center font-semibold text-lg md:text-2xl">View More <ArrowRight /></Button>
       </section>
 
       <section className="w-full md:w-2/3">

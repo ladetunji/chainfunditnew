@@ -181,7 +181,7 @@ export function LoginForm({
             >
               {isPhone ? "Phone Number" : "Email"}
             </Label>
-            <Button
+            {/* <Button
               type="button"
               variant="ghost"
               size="lg"
@@ -191,7 +191,7 @@ export function LoginForm({
             >
               <Smartphone className="w-5 h-5" />
               {isPhone ? "Use Email Instead" : "Use Phone Instead"}
-            </Button>
+            </Button> */}
           </div>
 
           {isPhone ? (

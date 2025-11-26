@@ -24,67 +24,6 @@ import {
 import Link from "next/link";
 import Footer from "@/components/layout/Footer";
 
-// const teamMembers = [
-//   {
-//     id: 1,
-//     name: "Tolu Aturamu",
-//     role: "CEO",
-//     bio: (
-//       <div>
-//         <ul className="list-disc list-inside">
-//           <li>⁠ ⁠Fixed Income & FX Treasury Operations</li>
-//           <li>⁠ ⁠Operations</li>
-//           <li>⁠ ⁠Sales & Marketing</li>
-//           <li>⁠ ⁠Law</li>
-//         </ul>
-//       </div>
-//     ),
-//   },
-//   {
-//     id: 2,
-//     name: "Ladetunji Osibanjo",
-//     role: "CTO",
-//     bio: (
-//       <div>
-//         <ul className="list-disc list-inside">
-//           <li>⁠ ⁠ ⁠HTML, CSS, JavaScript</li>
-//           <li>⁠ ⁠WordPress</li>
-//           <li>⁠ ⁠Frontend Design</li>
-//           <li>⁠⁠Graphics Design & Motion Graphics</li>
-//         </ul>
-//       </div>
-//     ),
-//   },
-//   {
-//     id: 3,
-//     name: "Emily Tong",
-//     role: "COO",
-//     bio: (
-//       <div>
-//         <ul className="list-disc list-inside">
-//           <li>⁠ ⁠Accounting & Finance</li>
-//           <li>⁠Compliance</li>
-//         </ul>
-//       </div>
-//     ),
-//   },
-//   {
-//     id: 4,
-//     name: "Ade Atunramu",
-//     role: "Executive Director",
-//     bio: (
-//       <div>
-//         <ul className="list-disc list-inside">
-//           <li>⁠  ⁠Capital Raising</li>
-//           <li>⁠  ⁠Investment Banking</li>
-//           <li>⁠  ⁠Operations</li>
-//           <li>⁠Sales & Marketing</li>
-//         </ul>
-//       </div>
-//     ),
-//   },
-// ];
-
 const stats = [
   { label: "Campaigns Funded", value: "50+", icon: Target },
   { label: "Successful Donotions", value: "521+", icon: Users },
@@ -183,7 +122,7 @@ export default function AboutPage() {
       <div className="container mx-auto px-4 py-16">
         <div className="mb-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
+            <div className="text-left">
               <h2 className="text-4xl font-bold text-gray-900 mb-6">
                 Our Story
               </h2>

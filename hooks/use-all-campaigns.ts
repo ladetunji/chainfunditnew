@@ -62,6 +62,11 @@ export function useAllCampaigns() {
       }
 
       abortControllerRef.current = new AbortController();
+      const timeoutId = setTimeout(() => {
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+      }, 15000); // 15 second timeout
 
       try {
         setLoading(true);
@@ -77,38 +82,116 @@ export function useAllCampaigns() {
           reset ? "0" : filters.offset?.toString() || "0"
         );
 
+        console.log('Fetching campaigns with params:', params.toString());
+
         const response = await fetch(`/api/campaigns?${params.toString()}`, {
           signal: abortControllerRef.current.signal,
         });
 
+        clearTimeout(timeoutId);
+
+        console.log('Fetch response status:', response.status, response.ok);
+
         if (!response.ok) {
-          throw new Error(`Failed to fetch campaigns: ${response.status}`);
+          const errorText = await response.text().catch(() => 'Unknown error');
+          console.error('API error response:', errorText);
+          throw new Error(`Failed to fetch campaigns: ${response.status} - ${errorText}`);
+        }
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const text = await response.text();
+          console.error('Non-JSON response:', text);
+          throw new Error("API returned non-JSON response");
         }
 
         const data = await response.json();
+        
+        // Log the raw response structure
+        console.log('=== RAW API RESPONSE ===');
+        console.log('Full response object:', data);
+        console.log('data.data value:', data.data);
+        console.log('data.data type:', typeof data.data);
+        console.log('data.data isArray:', Array.isArray(data.data));
+        console.log('data.data length:', Array.isArray(data.data) ? data.data.length : 'N/A');
+        if (Array.isArray(data.data) && data.data.length > 0) {
+          console.log('First campaign:', data.data[0]);
+        }
+        console.log('=== END API RESPONSE ===');
 
-        if (!isMountedRef.current) return;
+        if (!isMountedRef.current) {
+          console.warn('Component unmounted before processing response');
+          return;
+        }
 
         // Fix: API returns data.data, not data.campaigns
-        const campaignsData = data.data || [];
+        // Handle different possible response structures
+        let campaignsData: any[] = [];
+        
+        if (Array.isArray(data.data)) {
+          campaignsData = data.data;
+        } else if (Array.isArray(data.campaigns)) {
+          campaignsData = data.campaigns;
+          console.warn('API returned data.campaigns instead of data.data');
+        } else if (Array.isArray(data)) {
+          campaignsData = data;
+          console.warn('API returned array directly, not wrapped in object');
+        } else if (data.data && typeof data.data === 'object') {
+          console.error('API returned non-array data.data:', data.data);
+        }
+        
+        console.log('Extracted campaigns data:', {
+          campaignsDataLength: campaignsData.length,
+          isArray: Array.isArray(campaignsData),
+          sample: campaignsData[0] || 'no campaigns',
+          firstCampaign: campaignsData[0]
+        });
+        
+        if (campaignsData.length === 0) {
+          console.warn('No campaigns extracted from API response. Full response:', data);
+        }
+
+        // Double-check component is still mounted before state update
+        if (!isMountedRef.current) {
+          console.warn('Component unmounted before state update');
+          return;
+        }
 
         if (reset) {
+          console.log('Setting campaigns (reset):', campaignsData.length);
           setCampaigns(campaignsData);
           setFilters((prev) => ({ ...prev, offset: 0 }));
         } else {
-          setCampaigns((prev) => [...prev, ...campaignsData]);
+          console.log('Appending campaigns:', campaignsData.length);
+          setCampaigns((prev) => {
+            const updated = [...prev, ...campaignsData];
+            console.log('Updated campaigns count:', updated.length, 'prev:', prev.length, 'new:', campaignsData.length);
+            return updated;
+          });
         }
 
         // Check if there are more campaigns
         setHasMore(campaignsData.length === (filters.limit || 20));
+        
+        console.log('State update complete - campaignsData.length:', campaignsData.length, 'hasMore:', campaignsData.length === (filters.limit || 20));
       } catch (err: any) {
-        if (err.name === "AbortError") return;
+        clearTimeout(timeoutId);
+        
+        if (err.name === "AbortError") {
+          console.warn("Campaign fetch aborted (timeout or cancellation)");
+          if (isMountedRef.current) {
+            setError("Request timed out. Please try again.");
+            setLoading(false);
+          }
+          return;
+        }
 
         if (!isMountedRef.current) return;
 
         console.error("Error fetching campaigns:", err);
         setError(err.message || "Failed to fetch campaigns");
       } finally {
+        clearTimeout(timeoutId);
         if (isMountedRef.current) {
           setLoading(false);
         }
@@ -157,6 +240,11 @@ export function useAllCampaigns() {
         }
 
         abortControllerRef.current = new AbortController();
+        const timeoutId = setTimeout(() => {
+          if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+          }
+        }, 15000); // 15 second timeout
 
         try {
           setLoading(true);
@@ -175,29 +263,53 @@ export function useAllCampaigns() {
             signal: abortControllerRef.current.signal,
           });
 
+          clearTimeout(timeoutId);
+
           if (!response.ok) {
             throw new Error(`Failed to fetch campaigns: ${response.status}`);
+          }
+
+          const contentType = response.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+            throw new Error("API returned non-JSON response");
           }
 
           const data = await response.json();
 
           if (!isMountedRef.current) return;
 
+          // Debug: Log API response
+          console.log('API Response (filter refetch):', {
+            success: data.success,
+            hasData: !!data.data,
+            dataLength: Array.isArray(data.data) ? data.data.length : 'not an array',
+          });
+
           // Fix: API returns data.data, not data.campaigns
-          const campaignsData = data.data || [];
+          const campaignsData = Array.isArray(data.data) ? data.data : [];
           setCampaigns(campaignsData);
           setFilters((prev) => ({ ...prev, offset: 0 }));
 
           // Check if there are more campaigns
           setHasMore(campaignsData.length === (filters.limit || 20));
         } catch (err: any) {
-          if (err.name === "AbortError") return;
+          clearTimeout(timeoutId);
+          
+          if (err.name === "AbortError") {
+            console.warn("Campaign refetch aborted");
+            if (isMountedRef.current) {
+              setError("Request timed out. Please try again.");
+              setLoading(false);
+            }
+            return;
+          }
 
           if (!isMountedRef.current) return;
 
           console.error("Error fetching campaigns:", err);
           setError(err.message || "Failed to fetch campaigns");
         } finally {
+          clearTimeout(timeoutId);
           if (isMountedRef.current) {
             setLoading(false);
           }
@@ -219,6 +331,11 @@ export function useAllCampaigns() {
         }
 
         abortControllerRef.current = new AbortController();
+        const timeoutId = setTimeout(() => {
+          if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+          }
+        }, 15000); // 15 second timeout
 
         try {
           setLoading(true);
@@ -236,22 +353,49 @@ export function useAllCampaigns() {
           const response = await fetch(url, {
             signal: abortControllerRef.current.signal,
           });
+          
+          clearTimeout(timeoutId);
+          
           if (!response.ok) {
             throw new Error(`Failed to fetch campaigns: ${response.status}`);
           }
+          
+          const contentType = response.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+            throw new Error("API returned non-JSON response");
+          }
+          
           const data = await response.json();
           if (!isMountedRef.current) return;
-          const campaignsData = data.data || [];
+          
+          // Debug: Log API response
+          console.log('API Response (load more):', {
+            success: data.success,
+            hasData: !!data.data,
+            dataLength: Array.isArray(data.data) ? data.data.length : 'not an array',
+          });
+          
+          const campaignsData = Array.isArray(data.data) ? data.data : [];
           setCampaigns((prev) => [...prev, ...campaignsData]);
           setHasMore(campaignsData.length === (filters.limit || 20));
         } catch (err: any) {
-          if (err.name === "AbortError") return;
+          clearTimeout(timeoutId);
+          
+          if (err.name === "AbortError") {
+            console.warn("Load more aborted");
+            if (isMountedRef.current) {
+              setError("Request timed out. Please try again.");
+              setLoading(false);
+            }
+            return;
+          }
 
           if (!isMountedRef.current) return;
 
           console.error("Error fetching more campaigns:", err);
           setError(err.message || "Failed to fetch more campaigns");
         } finally {
+          clearTimeout(timeoutId);
           if (isMountedRef.current) {
             setLoading(false);
           }

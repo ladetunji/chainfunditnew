@@ -17,7 +17,7 @@ export function EmojiFallbackImage({
   className = '', 
   style = {},
   width = 400,
-  height = 300,
+  height = 200,
   fill = false
 }: EmojiFallbackImageProps) {
   const emoji = getCampaignEmoji(category);
