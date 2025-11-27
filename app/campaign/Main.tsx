@@ -353,6 +353,18 @@ const Main = ({ campaignId }: MainProps) => {
         setCampaign(campaignData);
         setError(null);
 
+        // Track campaign view
+        if (typeof window !== "undefined" && !isSilent) {
+          const { trackCampaign } = await import("@/lib/analytics");
+          trackCampaign("campaign_viewed", {
+            campaign_id: campaignData.id,
+            campaign_title: campaignData.title,
+            campaign_slug: campaignData.slug,
+            campaign_goal: parseFloat(campaignData.goalAmount || "0"),
+            campaign_currency: campaignData.currency,
+          });
+        }
+
         // Fetch campaign updates, comments, and chain count
         await Promise.all([
           fetchUpdates({ silent: isSilent }),

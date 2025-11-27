@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { OAuthButtons } from "./oauth-buttons";
+import { track } from "@/lib/analytics";
 
 export function SignupForm({
   className,
@@ -70,6 +71,13 @@ export function SignupForm({
       }
 
       toast.success("Verification code sent! Check your email.");
+      
+      // Track OTP sent event
+      track("otp_sent", {
+        user_email: email.trim(),
+        category: "authentication",
+        label: "signup",
+      });
       
       // Use router.push for better performance instead of window.location
       let otpUrl = `/otp?email=${encodeURIComponent(email.trim())}&mode=signup`;

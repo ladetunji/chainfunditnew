@@ -8,6 +8,7 @@ import { CheckCircle, Download, Share2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
+import { track } from '@/lib/analytics';
 
 interface Donation {
   id: string;
@@ -67,6 +68,19 @@ function PaymentSuccessContent() {
       // Handle both direct charity object or wrapped in 'charity' key
       const charity = charityData.charity || charityData;
       setCharity(charity);
+      
+      // Track charity donation completion
+      if (donationData && charity) {
+        track("charity_donation_completed", {
+          donation_id: donationId,
+          charity_id: charity.id,
+          charity_name: charity.name,
+          charity_slug: charity.slug,
+          donation_amount: parseFloat(donationData.amount || "0"),
+          donation_currency: donationData.currency,
+          is_anonymous: donationData.isAnonymous,
+        });
+      }
     } catch (error) {
       console.error('Error fetching donation details:', error);
       toast.error('Could not load donation details');

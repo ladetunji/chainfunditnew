@@ -7,6 +7,7 @@ import { ArrowRight, Clipboard } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { track } from "@/lib/analytics";
 
 function isSafeRedirect(url: string | null): boolean {
   // Only allow relative paths, not protocol-relative or absolute URLs
@@ -241,6 +242,31 @@ function OtpPageInner() {
       localStorage.removeItem("otp_login_type");
       localStorage.removeItem("otp_login_identifier");
       toast.success("Verification successful! Redirecting...");
+      
+      // Track OTP verification and signup/login
+      track("otp_verified", {
+        user_email: loginType === "email" ? identifier : undefined,
+        category: "authentication",
+        label: mode,
+      });
+      
+      if (mode === "signup") {
+        track("signup", {
+          user_email: loginType === "email" ? identifier : undefined,
+          user_id: data.user?.id,
+        });
+        if (loginType === "email") {
+          track("email_verified", {
+            user_email: identifier,
+            user_id: data.user?.id,
+          });
+        }
+      } else {
+        track("login", {
+          user_email: loginType === "email" ? identifier : undefined,
+          user_id: data.user?.id,
+        });
+      }
       
       // Get user role from the signin response
       const userRole = data.user?.role;

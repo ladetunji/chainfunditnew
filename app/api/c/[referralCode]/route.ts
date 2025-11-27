@@ -71,6 +71,8 @@ export async function GET(
       success: true,
       redirectUrl: fullUrl,
       campaignSlug: campaign[0].slug,
+      campaignId: chainer[0].campaignId,
+      chainerId: chainer[0].id,
       referralCode
     });
   } catch (error) {

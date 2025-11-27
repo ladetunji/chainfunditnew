@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { track } from "@/lib/analytics";
 
 export default function ChainerReferralPage() {
   const params = useParams();
@@ -26,6 +27,13 @@ export default function ChainerReferralPage() {
         const data = await response.json();
         
         if (data.success && data.redirectUrl) {
+          // Track referral link click
+          track("referral_link_clicked", {
+            referral_code: referralCode,
+            campaign_id: data.campaignId,
+            chainer_id: data.chainerId,
+          });
+          
           // Redirect to the campaign page
           window.location.href = data.redirectUrl;
         } else {

@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { OAuthButtons } from "./oauth-buttons";
+import { track } from "@/lib/analytics";
 
 export function LoginForm({
   className,
@@ -133,6 +134,13 @@ export function LoginForm({
               "."
           );
         }
+
+        // Track OTP sent event
+        track("otp_sent", {
+          user_email: isPhone ? undefined : identifier,
+          category: "authentication",
+          label: "signin",
+        });
 
         // Store identifier and type for /otp page
         if (isPhone) {

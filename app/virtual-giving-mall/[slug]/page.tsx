@@ -26,6 +26,7 @@ import { useGeolocationCurrency } from '@/hooks/use-geolocation-currency';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import Image from 'next/image';
+import { track } from '@/lib/analytics';
 
 interface Charity {
   id: string;
@@ -95,6 +96,15 @@ export default function CharityDetailPage() {
       const data = await response.json();
       setCharity(data.charity);
       setStats(data.stats);
+      
+      // Track charity view
+      if (data.charity) {
+        track("charity_viewed", {
+          charity_id: data.charity.id,
+          charity_name: data.charity.name,
+          charity_slug: data.charity.slug,
+        });
+      }
     } catch (error) {
       console.error('Error fetching charity:', error);
       toast.error('Failed to load charity information');
@@ -122,6 +132,16 @@ export default function CharityDetailPage() {
 
     try {
       const currency = locationInfo?.currency.code || 'USD';
+      
+      // Track charity donation started
+      track("charity_donation_started", {
+        charity_id: charity?.id,
+        charity_name: charity?.name,
+        charity_slug: charity?.slug,
+        donation_amount: parseFloat(donationAmount),
+        donation_currency: currency,
+        is_anonymous,
+      });
       
       // Create payment intent
       const response = await fetch(`/api/charities/${charity?.id}/payment-intent`, {

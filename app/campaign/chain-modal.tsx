@@ -35,6 +35,14 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign, o
   
   const { user } = useAuth();
   const { createChain, loading, error } = useChain();
+  
+  // Import analytics for tracking
+  const trackChainer = async (eventName: "chain_created" | "referral_link_copied", data: any) => {
+    if (typeof window !== "undefined") {
+      const { trackChainer: track } = await import("@/lib/analytics");
+      track(eventName, data);
+    }
+  };
 
   const handleChainCampaign = async () => {
     if (!user) {
@@ -74,6 +82,15 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign, o
         setReferralCode(result.data.referralCode);
         setStep("success");
         toast.success('Campaign chained successfully!');
+        
+        // Track chain creation
+        trackChainer("chain_created", {
+          chainer_id: user.id,
+          referral_code: result.data.referralCode,
+          campaign_id: campaign.id,
+          commission_rate: campaign.chainerCommissionRate ? parseFloat(campaign.chainerCommissionRate) : undefined,
+        });
+        
         // Call the callback to refresh chain count
         if (onChainCreated) {
           onChainCreated();
@@ -90,6 +107,14 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign, o
     const chainLink = `${window.location.origin}/c/${referralCode}`;
     navigator.clipboard.writeText(chainLink);
     setCopied(true);
+    
+    // Track referral link copy
+    trackChainer("referral_link_copied", {
+      chainer_id: user?.id,
+      referral_code: referralCode,
+      campaign_id: campaign?.id,
+    });
+    
     setTimeout(() => setCopied(false), 2000);
   };
 

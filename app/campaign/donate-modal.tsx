@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import StripePaymentForm from "@/components/payments/StripePaymentForm";
 import Image from "next/image";
+import { trackDonation, track } from "@/lib/analytics";
 
 interface Campaign {
   id: string;
@@ -123,6 +124,15 @@ const DonateModal: React.FC<DonateModalProps> = ({
   };
 
   const handleDonate = () => {
+    // Track donation started
+    if (campaign && amount) {
+      trackDonation("donation_started", {
+        campaign_id: campaign.id,
+        amount: parseFloat(amount),
+        currency: selectedCurrency || campaign.currency,
+        is_anonymous: anonymous,
+      });
+    }
     setStep("payment");
   };
 
@@ -150,6 +160,15 @@ const DonateModal: React.FC<DonateModalProps> = ({
         chainerId: referralChainer?.id || null,
       };
 
+      // Track payment initiated
+      track("payment_initiated", {
+        campaign_id: campaign.id,
+        donation_amount: amountNum,
+        donation_currency: currencyCode,
+        payment_method: paymentProvider,
+        is_anonymous: anonymous,
+      });
+
       // Initialize donation and redirect to payment gateway
       const result = await initializeDonation(donationData, false);
 
@@ -168,6 +187,13 @@ const DonateModal: React.FC<DonateModalProps> = ({
           setStep("stripe-payment");
         }
       } else if (result && !result.success) {
+        // Track payment failure
+        trackDonation("donation_failed", {
+          campaign_id: campaign.id,
+          amount: amountNum,
+          currency: currencyCode,
+          payment_method: paymentProvider,
+        });
         toast.error(result.error || "Donation failed. Please try again.");
       }
     } catch (error) {
@@ -178,6 +204,17 @@ const DonateModal: React.FC<DonateModalProps> = ({
 
 
   const handleStripePaymentSuccess = () => {
+    // Track donation completion
+    if (campaign && stripePaymentData) {
+      trackDonation("donation_completed", {
+        donation_id: stripePaymentData.donationId,
+        campaign_id: campaign.id,
+        amount: stripePaymentData.amount,
+        currency: stripePaymentData.currency,
+        payment_method: "stripe",
+        is_anonymous: anonymous,
+      });
+    }
     setStep("thankyou");
   };
 

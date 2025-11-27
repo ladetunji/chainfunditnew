@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { HandCoins, CheckCircle, XCircle } from 'lucide-react';
+import { track } from '@/lib/analytics';
 
 // Initialize Stripe
 const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
@@ -81,10 +82,22 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
 
       if (error) {
         console.error('Payment failed:', error);
+        // Track payment failure
+        track("payment_failed", {
+          donation_id,
+          payment_method: "stripe",
+          error_message: error.message,
+        });
         onError(error.message || 'Payment failed. Please try again.');
         setPaymentStatus('error');
         toast.error(error.message || 'Payment failed. Please try again.');
       } else if (paymentIntent.status === 'succeeded') {
+        // Track payment success
+        track("payment_succeeded", {
+          donation_id,
+          payment_intent_id: paymentIntent.id,
+          payment_method: "stripe",
+        });
         // Call our callback endpoint to update the donation status
         try {
           const callbackResponse = await fetch('/api/payments/stripe/callback', {

@@ -60,6 +60,7 @@ import { toast } from "sonner";
 import { Upload } from "@/components/ui/upload";
 import ClientToaster from "@/components/ui/client-toaster";
 import { Switch } from "@/components/ui/switch";
+import { trackCampaign, track } from "@/lib/analytics";
 
 const reasons = [
   { text: "Business", icon: <Briefcase /> },
@@ -324,6 +325,16 @@ export default function CreateCampaignPage() {
         ...data.data,
         shortUrl: shortUrl || campaignUrl,
       });
+      
+      // Track campaign creation
+      trackCampaign("campaign_created", {
+        campaign_id: data.data.id,
+        campaign_title: formData.title,
+        campaign_slug: data.data.slug,
+        campaign_goal: formData.goal,
+        campaign_currency: formData.currency,
+      });
+      
       setShowSuccessModal(true);
     } catch (err) {
       alert("Failed to create campaign. Please try again.");
@@ -356,6 +367,15 @@ export default function CreateCampaignPage() {
     const campaignUrl =
       createdCampaign?.shortUrl || `chainfund.it/${createdCampaign?.slug}`;
     const shareText = `Check out my campaign: ${formData.title}`;
+
+    // Track campaign share
+    track("campaign_shared", {
+      campaign_id: createdCampaign?.id,
+      campaign_title: formData.title,
+      campaign_slug: createdCampaign?.slug,
+      category: "social_share",
+      label: platform,
+    });
 
     let shareUrl = "";
     switch (platform) {
