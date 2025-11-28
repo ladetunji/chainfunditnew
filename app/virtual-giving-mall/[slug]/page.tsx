@@ -135,12 +135,12 @@ export default function CharityDetailPage() {
       
       // Track charity donation started
       track("charity_donation_started", {
-        charity_id: charity?.id,
+        charity_id: charity?.id?.toString(),
         charity_name: charity?.name,
         charity_slug: charity?.slug,
         donation_amount: parseFloat(donationAmount),
         donation_currency: currency,
-        is_anonymous,
+        is_anonymous: isAnonymous,
       });
       
       // Create payment intent

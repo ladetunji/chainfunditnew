@@ -84,7 +84,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
         console.error('Payment failed:', error);
         // Track payment failure
         track("payment_failed", {
-          donation_id,
+          donation_id: donationId,
           payment_method: "stripe",
           error_message: error.message,
         });
@@ -94,7 +94,7 @@ const PaymentForm: React.FC<PaymentFormProps> = ({
       } else if (paymentIntent.status === 'succeeded') {
         // Track payment success
         track("payment_succeeded", {
-          donation_id,
+          donation_id: donationId,
           payment_intent_id: paymentIntent.id,
           payment_method: "stripe",
         });

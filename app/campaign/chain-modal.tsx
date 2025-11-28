@@ -85,10 +85,10 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign, o
         
         // Track chain creation
         trackChainer("chain_created", {
-          chainer_id: user.id,
+          chainer_id: String(user.id),
           referral_code: result.data.referralCode,
-          campaign_id: campaign.id,
-          commission_rate: campaign.chainerCommissionRate ? parseFloat(campaign.chainerCommissionRate) : undefined,
+          campaign_id: String(campaign.id),
+          commission_rate: campaign.chainerCommissionRate,
         });
         
         // Call the callback to refresh chain count
@@ -110,9 +110,9 @@ const ChainModal: React.FC<ChainModalProps> = ({ open, onOpenChange, campaign, o
     
     // Track referral link copy
     trackChainer("referral_link_copied", {
-      chainer_id: user?.id,
+      chainer_id: user?.id?.toString(),
       referral_code: referralCode,
-      campaign_id: campaign?.id,
+      campaign_id: campaign?.id?.toString(),
     });
     
     setTimeout(() => setCopied(false), 2000);
